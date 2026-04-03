@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { getDashboardStats, getFamilies, getRecentRecordsAllFamilies, getInsights, getWeeklySleep } from "@/lib/db";
+import { getDashboardStats, getFamilies, getRecentRecordsAllFamilies, getInsights, getWeeklySleep, getSubscription } from "@/lib/db";
+import { trialDaysLeft, isTrialExpired } from "@/lib/types";
 import { getGreeting, timeAgo, babyAgeLabel, sleepScore, statusFromScore } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
 import Link from "next/link";
 import {
-  Users, CheckCircle, AlertTriangle, TrendingUp, TrendingDown,
+  Users, CheckCircle, Check, AlertTriangle, TrendingUp, TrendingDown,
   Clock, Brain, ArrowRight, ArrowUpRight, CalendarDays, Moon, Sparkles,
+  Crown, Zap,
 } from "lucide-react";
 
 const typeEmojis: Record<string, string> = {
@@ -26,11 +28,12 @@ export default async function DashboardPage() {
   const firstName = (user.user_metadata?.full_name || user.email?.split("@")[0] || "Asesora").split(" ")[0];
   const greeting = getGreeting();
 
-  const [stats, families, recentActivity, insights] = await Promise.all([
+  const [stats, families, recentActivity, insights, subscription] = await Promise.all([
     getDashboardStats(user.id),
     getFamilies(user.id),
     getRecentRecordsAllFamilies(user.id, 8),
     getInsights(user.id, { unreadOnly: false, limit: 4 }),
+    getSubscription(user.id),
   ]);
 
   const activeFamilies = families.filter((f) => f.status === "active");
@@ -129,6 +132,41 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {subscription?.status === "trialing" && (
+        <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 rounded-2xl p-5 md:p-6 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-5 h-5 text-amber-300" />
+                <span className="text-xs font-bold text-violet-200 uppercase tracking-wider">Prueba Premium</span>
+              </div>
+              <h3 className="text-lg md:text-xl font-bold mb-1">
+                Te quedan {trialDaysLeft(subscription)} días de acceso completo
+              </h3>
+              <p className="text-violet-200 text-sm">
+                Elige tu plan antes de que termine para no perder el acceso a tus familias e insights IA
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="bg-white/10 backdrop-blur rounded-xl px-4 py-3 text-center">
+                <div className="text-2xl font-extrabold">{trialDaysLeft(subscription)}</div>
+                <div className="text-[10px] text-violet-200 font-medium uppercase">días</div>
+              </div>
+              <Link href="/plan" className="bg-white text-violet-700 font-bold text-sm px-6 py-3 rounded-xl hover:bg-violet-50 transition shadow-lg flex items-center gap-2">
+                Ver planes <Zap className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <div className="relative mt-4 pt-4 border-t border-white/10 flex flex-wrap gap-x-6 gap-y-2 text-xs text-violet-200">
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-300" /> 50% dto. 3 primeros meses</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-300" /> Desde 24.50€/mes</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-300" /> Cancela cuando quieras</span>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left column */}

@@ -106,49 +106,38 @@ const features = [
 
 const plans = [
   {
-    name: "Starter",
-    desc: "Para empezar con tus primeras familias",
-    price: "0",
-    period: "para siempre",
+    name: "Básico",
+    desc: "Para asesoras que empiezan",
+    discountedPrice: "24.50",
+    regularPrice: "49",
+    afterMonthly: "49",
     features: [
-      "Hasta 3 familias activas",
+      "Hasta 10 familias",
       "Registros ilimitados",
-      "Gráficas básicas de sueño",
-      "App para padres con tu nombre",
+      "Gráficas de sueño",
+      "Informes PDF",
+      "App para padres",
+      "Soporte por email",
     ],
-    cta: "Empezar gratis",
+    cta: "Empezar 14 días gratis",
     popular: false,
   },
   {
-    name: "Pro",
-    desc: "Para asesoras en crecimiento",
-    price: "19",
-    period: "/mes",
+    name: "Premium",
+    desc: "Para asesoras que quieren crecer",
+    discountedPrice: "39.50",
+    regularPrice: "79",
+    afterMonthly: "79",
     features: [
-      "Hasta 15 familias activas",
+      "Familias ilimitadas",
       "Análisis IA + recomendaciones",
       "White-label (logo, colores, dominio)",
       "Gráficas avanzadas + PDF",
-      "Landing de captación propia",
-    ],
-    cta: "Probar 14 días gratis",
-    popular: true,
-  },
-  {
-    name: "Clínica",
-    desc: "Para equipos y centros de sueño",
-    price: "49",
-    period: "/mes",
-    features: [
-      "Familias ilimitadas",
-      "Multi-asesora (hasta 5)",
-      "Todo lo de Pro incluido",
-      "Dominio personalizado",
+      "Hasta 5 miembros del equipo",
       "Soporte prioritario",
-      "Onboarding dedicado",
     ],
-    cta: "Contactar",
-    popular: false,
+    cta: "Empezar 14 días gratis",
+    popular: true,
   },
 ];
 
@@ -193,7 +182,7 @@ const faqs = [
   },
   {
     q: "¿Puedo personalizar la app con mi marca?",
-    a: "Sí. En Pro y Clínica puedes poner tu logo, colores y dominio. Los padres ven tu marca, no la nuestra.",
+    a: "Sí. En el plan Premium puedes poner tu logo, colores y dominio. Los padres ven tu marca, no la nuestra.",
   },
   {
     q: "¿Funciona sin conexión a internet?",
@@ -256,7 +245,7 @@ export default function LandingPage() {
               href="/registro"
               className="text-[13px] font-semibold bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
             >
-              Probar gratis
+              Probar 14 días gratis
             </Link>
           </div>
         </div>
@@ -290,7 +279,7 @@ export default function LandingPage() {
                   href="/registro"
                   className="inline-flex items-center justify-center gap-2 bg-violet-600 text-white font-semibold px-7 py-3.5 rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-600/20"
                 >
-                  Crear mi cuenta gratis
+                  Probar 14 días gratis
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a
@@ -303,7 +292,7 @@ export default function LandingPage() {
               <div className="mt-12 flex items-center gap-3 text-sm text-gray-400">
                 <span className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-violet-500" />
-                  Gratis para siempre
+                  14 días gratis
                 </span>
                 <span className="w-px h-3.5 bg-gray-200" />
                 <span className="flex items-center gap-1.5">
@@ -781,7 +770,7 @@ export default function LandingPage() {
               href="/registro"
               className="inline-flex items-center gap-2 bg-violet-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-600/20 text-sm"
             >
-              Empezar gratis
+              Probar 14 días gratis
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -1434,7 +1423,13 @@ export default function LandingPage() {
               Tus familias nunca pagan. Tú eliges el plan que encaje.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-800">
+              <Sparkles className="w-4 h-4 shrink-0 text-violet-600" />
+              Prueba 14 días gratis — acceso Premium completo sin tarjeta
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-start">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -1462,24 +1457,34 @@ export default function LandingPage() {
                   >
                     {plan.desc}
                   </p>
-                  <div className="mt-6 mb-1">
-                    <span
-                      className={`text-5xl font-extrabold tracking-tight ${plan.popular ? "text-white" : "text-gray-900"}`}
+                  <div className="mt-6 mb-6">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-2">
+                      <span
+                        className={`text-5xl font-extrabold tracking-tight ${plan.popular ? "text-white" : "text-gray-900"}`}
+                      >
+                        {plan.discountedPrice}€
+                      </span>
+                      <span
+                        className={`text-xl font-semibold line-through ${plan.popular ? "text-gray-500" : "text-gray-400"}`}
+                      >
+                        {plan.regularPrice}€
+                      </span>
+                      <span
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                          plan.popular
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        -50% 3 meses
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-2 text-xs ${plan.popular ? "text-gray-500" : "text-gray-500"}`}
                     >
-                      {plan.price}€
-                    </span>
-                    <span
-                      className={`text-sm ${plan.popular ? "text-gray-500" : "text-gray-400"}`}
-                    >
-                      {" "}{plan.period}
-                    </span>
-                  </div>
-                  {plan.price === "0" && (
-                    <p className="text-xs text-emerald-600 font-medium mb-5">
-                      Sin tarjeta. Sin límite de tiempo.
+                      después {plan.afterMonthly}€/mes
                     </p>
-                  )}
-                  {plan.price !== "0" && <div className="mb-6" />}
+                  </div>
                   <ul className="space-y-3 mb-8">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2.5">
@@ -1557,14 +1562,14 @@ export default function LandingPage() {
             Dedica tu tiempo a lo que importa: ayudar a familias a dormir mejor
           </h2>
           <p className="mt-5 text-gray-400 text-lg">
-            Plan Starter gratis para siempre. Sin tarjeta, sin compromiso.
+            14 días de Premium gratis. Sin tarjeta, sin compromiso.
           </p>
           <div className="mt-10">
             <Link
               href="/registro"
               className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold py-3.5 px-8 rounded-xl hover:bg-gray-100 transition text-sm"
             >
-              Crear mi cuenta gratis
+              Probar 14 días gratis
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
