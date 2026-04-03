@@ -58,12 +58,12 @@ export function getGreeting(): string {
 }
 
 export function inviteUrl(token: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://nanniapp.com";
   return `${base}/invite/${token}`;
 }
 
 export function parentAppUrl(token: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://nanniapp.com";
   return `${base}/p/${token}`;
 }
 
