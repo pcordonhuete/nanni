@@ -49,7 +49,7 @@ export function NotificationPanel({ notifications, unreadCount }: NotificationPa
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 lg:bottom-full lg:top-auto lg:left-0 lg:right-auto lg:mb-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
           <div className="flex items-center justify-between p-4 border-b border-gray-50">
             <h3 className="font-bold text-gray-900 text-sm">Notificaciones</h3>
             {unreadCount > 0 && (

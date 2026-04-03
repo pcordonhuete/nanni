@@ -156,7 +156,7 @@ export async function createRecordFromParent(
 
   if (!family) return { error: "Familia no encontrada" };
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("activity_records")
     .insert({
       family_id: family.id,
@@ -166,9 +166,7 @@ export async function createRecordFromParent(
       ended_at: endedAt,
       duration_minutes: durationMinutes,
       details: { ...details, recorded_by_name: parentName },
-    })
-    .select()
-    .single();
+    });
 
   if (error) return { error: error.message };
 
@@ -177,15 +175,19 @@ export async function createRecordFromParent(
     play: "juego", mood: "humor", note: "nota", wake: "despertar",
   };
 
-  await supabase.from("notifications").insert({
-    user_id: family.advisor_id,
-    type: "new_record",
-    title: `${parentName} registró ${typeLabels[type]} de ${family.baby_name}`,
-    body: `Nuevo registro de ${typeLabels[type]}`,
-    link: `/familia/${family.id}`,
-  });
+  try {
+    await supabase.from("notifications").insert({
+      user_id: family.advisor_id,
+      type: "new_record",
+      title: `${parentName} registró ${typeLabels[type]} de ${family.baby_name}`,
+      body: `Nuevo registro de ${typeLabels[type]}`,
+      link: `/familia/${family.id}`,
+    });
+  } catch {
+    // Notification insert may fail for anon users — non-blocking
+  }
 
-  return { data };
+  return { success: true };
 }
 
 // ─── Sleep Plans ───

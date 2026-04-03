@@ -91,10 +91,9 @@ export function ParentApp({ family, brand, token, initialRecords }: ParentAppPro
         details,
         parentName
       );
-      if (!result.error) {
-        setShowForm(false);
-        router.refresh();
-      }
+      if (result.error) return;
+      setShowForm(false);
+      router.refresh();
     });
   }
 
@@ -207,6 +206,11 @@ export function ParentApp({ family, brand, token, initialRecords }: ParentAppPro
                     {r.duration_minutes ? `${r.duration_minutes} min` : ""}
                     {(r.details as Record<string, unknown>)?.text ? String((r.details as Record<string, unknown>).text) : ""}
                   </p>
+                  {typeof (r.details as Record<string, unknown>)?.recorded_by_name === "string" && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      por {(r.details as Record<string, string>).recorded_by_name}
+                    </p>
+                  )}
                 </div>
               </div>
             );
