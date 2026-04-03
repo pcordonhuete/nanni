@@ -11,6 +11,8 @@ const PROTECTED_PATHS = [
   "/onboarding",
 ];
 
+const PAYWALL_EXEMPT = ["/plan", "/ajustes", "/api/stripe"];
+
 const AUTH_PATHS = ["/login", "/registro"];
 
 export async function middleware(request: NextRequest) {
@@ -44,6 +46,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
   const isAuth = AUTH_PATHS.includes(path);
+  const isPaywallExempt = PAYWALL_EXEMPT.some((p) => path.startsWith(p));
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
@@ -55,6 +58,26 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  if (user && isProtected && !isPaywallExempt) {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("plan, status, trial_ends_at")
+      .eq("advisor_id", user.id)
+      .single();
+
+    if (sub) {
+      const isActive = sub.status === "active";
+      const isTrialing = sub.status === "trialing";
+      const trialExpired = isTrialing && new Date(sub.trial_ends_at) < new Date();
+
+      if (!isActive && (!isTrialing || trialExpired)) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/plan";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return supabaseResponse;
@@ -69,6 +92,7 @@ export const config = {
     "/marca/:path*",
     "/ajustes/:path*",
     "/onboarding/:path*",
+    "/plan/:path*",
     "/login",
     "/registro",
   ],

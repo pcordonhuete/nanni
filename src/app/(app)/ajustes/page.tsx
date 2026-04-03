@@ -18,8 +18,8 @@ const notifications = [
   { key: "weekly", label: "Resumen semanal", description: "Informe resumido cada lunes", enabled: true },
 ];
 
-const planNames: Record<string, string> = { starter: "Starter", pro: "Pro", clinica: "Clínica" };
-const planPrices: Record<string, string> = { starter: "0€", pro: "29€/mes", clinica: "79€/mes" };
+const planNames: Record<string, string> = { trial: "Prueba gratuita", basico: "Básico", premium: "Premium" };
+const planPrices: Record<string, string> = { trial: "0€ (14 días)", basico: "49€/mes", premium: "79€/mes" };
 
 export default function AjustesPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -57,21 +57,6 @@ export default function AjustesPage() {
     });
   }
 
-  async function handleUpgrade(plan: "pro" | "clinica") {
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, billing: "monthly" }),
-      });
-      const { url, error } = await res.json();
-      if (error) { toast(error, "error"); return; }
-      if (url) window.location.href = url;
-    } catch {
-      toast("Error al conectar con el sistema de pagos", "error");
-    }
-  }
-
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -90,7 +75,7 @@ export default function AjustesPage() {
     );
   }
 
-  const currentPlan = subscription?.plan || "starter";
+  const currentPlan = subscription?.plan || "trial";
   const limits = PLAN_LIMITS[currentPlan as keyof typeof PLAN_LIMITS];
 
   return (
@@ -176,28 +161,15 @@ export default function AjustesPage() {
           </div>
         </div>
 
-        {currentPlan === "starter" && (
-          <div className="grid sm:grid-cols-2 gap-3">
-            <button
-              onClick={() => handleUpgrade("pro")}
-              className="p-4 border border-violet-200 rounded-xl hover:bg-violet-50 transition text-left"
+        {(currentPlan === "trial" || currentPlan === "basico") && (
+          <div className="mt-3">
+            <a
+              href="/plan"
+              className="inline-flex items-center gap-2 text-sm font-medium text-violet-600 hover:text-violet-800 transition"
             >
-              <p className="font-bold text-gray-900">Plan Pro — 29€/mes</p>
-              <p className="text-xs text-gray-500 mt-1">Hasta 20 familias, IA, white-label, PDF</p>
-              <span className="text-xs text-violet-600 font-medium mt-2 flex items-center gap-1">
-                Upgrade <ArrowUpRight className="w-3 h-3" />
-              </span>
-            </button>
-            <button
-              onClick={() => handleUpgrade("clinica")}
-              className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-left"
-            >
-              <p className="font-bold text-gray-900">Plan Clínica — 79€/mes</p>
-              <p className="text-xs text-gray-500 mt-1">Familias ilimitadas, equipo, dominio propio</p>
-              <span className="text-xs text-gray-600 font-medium mt-2 flex items-center gap-1">
-                Upgrade <ArrowUpRight className="w-3 h-3" />
-              </span>
-            </button>
+              {currentPlan === "trial" ? "Elige tu plan" : "Upgrade a Premium"}
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
           </div>
         )}
       </div>

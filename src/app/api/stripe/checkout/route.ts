@@ -10,9 +10,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const { plan, billing } = await request.json();
+  const { plan } = await request.json();
 
-  if (!["pro", "clinica"].includes(plan) || !["monthly", "yearly"].includes(billing)) {
+  if (!["basico", "premium"].includes(plan)) {
     return NextResponse.json({ error: "Plan no válido" }, { status: 400 });
   }
 
@@ -21,7 +21,6 @@ export async function POST(request: Request) {
       user.id,
       user.email!,
       plan,
-      billing
     );
     return NextResponse.json({ url: session.url });
   } catch (error) {

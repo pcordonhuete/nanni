@@ -22,13 +22,14 @@ export type NotificationType =
   | "reminder"
   | "system";
 
-export type SubscriptionPlan = "starter" | "pro" | "clinica";
+export type SubscriptionPlan = "trial" | "basico" | "premium";
 
 export type SubscriptionStatus =
   | "active"
   | "trialing"
   | "past_due"
-  | "cancelled";
+  | "cancelled"
+  | "expired";
 
 export type Relationship = "mother" | "father" | "caregiver";
 
@@ -166,6 +167,7 @@ export interface Subscription {
   stripe_subscription_id: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
+  trial_ends_at: string;
   max_families: number;
   created_at: string;
   updated_at: string;
@@ -264,7 +266,29 @@ export const PLAN_LIMITS: Record<
   SubscriptionPlan,
   { max_families: number; ai: boolean; whitelabel: boolean; pdf: boolean; team: number }
 > = {
-  starter: { max_families: 3, ai: false, whitelabel: false, pdf: false, team: 1 },
-  pro: { max_families: 20, ai: true, whitelabel: true, pdf: true, team: 1 },
-  clinica: { max_families: 999, ai: true, whitelabel: true, pdf: true, team: 5 },
+  trial: { max_families: 999, ai: true, whitelabel: true, pdf: true, team: 1 },
+  basico: { max_families: 10, ai: false, whitelabel: false, pdf: true, team: 1 },
+  premium: { max_families: 999, ai: true, whitelabel: true, pdf: true, team: 5 },
 };
+
+export const PLAN_PRICES = {
+  basico: { monthly: 49, discounted: 24.5, currency: "€" },
+  premium: { monthly: 79, discounted: 39.5, currency: "€" },
+} as const;
+
+export function isTrialExpired(subscription: Subscription | null): boolean {
+  if (!subscription) return true;
+  if (subscription.status === "active") return false;
+  if (subscription.status === "trialing") {
+    return new Date(subscription.trial_ends_at) < new Date();
+  }
+  return true;
+}
+
+export function trialDaysLeft(subscription: Subscription | null): number {
+  if (!subscription) return 0;
+  const end = new Date(subscription.trial_ends_at);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}

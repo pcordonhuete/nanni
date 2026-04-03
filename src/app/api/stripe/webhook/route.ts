@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
 const PLAN_LIMITS: Record<string, number> = {
-  pro: 20,
-  clinica: 999,
+  basico: 10,
+  premium: 999,
 };
 
 export async function POST(request: Request) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const advisorId = session.metadata?.advisor_id;
-      const plan = session.metadata?.plan || "pro";
+      const plan = session.metadata?.plan || "basico";
 
       if (advisorId) {
         await supabase
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
             status: "active",
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
-            max_families: PLAN_LIMITS[plan] || 20,
+            max_families: PLAN_LIMITS[plan] || 10,
             current_period_start: new Date().toISOString(),
           })
           .eq("advisor_id", advisorId);
@@ -65,9 +65,8 @@ export async function POST(request: Request) {
       await supabase
         .from("subscriptions")
         .update({
-          plan: "starter",
-          status: "cancelled",
-          max_families: 3,
+          status: "expired",
+          max_families: 0,
         })
         .eq("stripe_subscription_id", sub.id);
       break;

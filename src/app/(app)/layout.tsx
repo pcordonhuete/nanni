@@ -4,6 +4,7 @@ import Navigation from "@/components/app/Navigation";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getNotifications, getUnreadNotificationCount, getFamilies, getSubscription } from "@/lib/db";
 import type { SubscriptionPlan } from "@/lib/types";
+import { trialDaysLeft } from "@/lib/types";
 
 export default async function AppLayout({
   children,
@@ -36,7 +37,9 @@ export default async function AppLayout({
     getSubscription(user.id),
   ]);
 
-  const plan: SubscriptionPlan = (subscription?.plan as SubscriptionPlan) || "starter";
+  const plan: SubscriptionPlan = (subscription?.plan as SubscriptionPlan) || "trial";
+  const daysLeft = trialDaysLeft(subscription);
+  const isTrialing = subscription?.status === "trialing" && daysLeft > 0;
 
   return (
     <ToastProvider>
@@ -49,8 +52,20 @@ export default async function AppLayout({
           unreadCount={unreadCount}
           families={families}
           plan={plan}
+          trialDaysLeft={isTrialing ? daysLeft : undefined}
         />
         <main className="lg:ml-64 pt-14 pb-20 lg:pt-0 lg:pb-0 min-h-screen">
+          {isTrialing && (
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-center text-xs py-2 px-4">
+              <span className="font-medium">
+                Te quedan {daysLeft} día{daysLeft !== 1 ? "s" : ""} de prueba Premium
+              </span>
+              {" · "}
+              <a href="/plan" className="underline font-bold hover:text-violet-200 transition">
+                Elige tu plan
+              </a>
+            </div>
+          )}
           <div className="p-4 md:p-6 lg:p-8">{children}</div>
         </main>
       </div>
