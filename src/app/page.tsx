@@ -6,10 +6,11 @@ import {
   Brain,
   Palette,
   Users,
-  PenTool,
+  Camera,
   Check,
   ArrowRight,
-  Menu,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 
 const plans = [
@@ -65,36 +66,48 @@ const features = [
     title: "App nativa (PWA)",
     description:
       "Se instala como una app en el móvil de los padres. Funciona offline, notificaciones push incluidas. Sin necesidad de App Store.",
+    iconBg: "bg-violet-100",
+    iconColor: "text-violet-600",
   },
   {
     icon: BarChart3,
     title: "Gráficas de evolución",
     description:
       "Visualiza la evolución del sueño por semana. Horas totales, despertares, latencia... todo en gráficas claras para ti y para los padres.",
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
   },
   {
-    icon: Brain,
+    icon: Sparkles,
     title: "Análisis IA integrado",
     description:
       "Detecta patrones que el ojo no ve: correlaciones entre tomas y despertares, ventanas de sueño óptimas, regresiones... y te sugiere qué ajustar.",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
   },
   {
-    icon: PenTool,
+    icon: Camera,
     title: "Contenido para redes",
     description:
       "Genera carruseles, tips y casos de éxito anonimizados para Instagram y TikTok. Con datos reales de tus familias. Tu marketing, en automático.",
+    iconBg: "bg-rose-100",
+    iconColor: "text-rose-500",
   },
   {
     icon: Users,
     title: "Multi-padre sincronizado",
     description:
       "Mamá y papá registran desde su móvil. Todo se sincroniza al instante. Sin duplicados, sin coordinarse.",
+    iconBg: "bg-sky-100",
+    iconColor: "text-sky-600",
   },
   {
     icon: Palette,
     title: "White-label total",
     description:
       "Tu logo, tus colores, tu dominio. Los padres ven tu marca, no la nuestra. Refuerza tu imagen profesional con cada interacción.",
+    iconBg: "bg-gray-100",
+    iconColor: "text-gray-600",
   },
 ];
 
@@ -146,36 +159,31 @@ export default function LandingPage() {
               Para padres
             </a>
             <a
+              href="#funcionalidades"
+              className="text-sm text-gray-600 hover:text-gray-900 transition"
+            >
+              Funcionalidades
+            </a>
+            <a
               href="#precios"
               className="text-sm text-gray-600 hover:text-gray-900 transition"
             >
               Precios
             </a>
           </nav>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 transition"
-            >
-              Iniciar sesión
-            </Link>
-            <Link
-              href="/registro"
-              className="bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-violet-700 transition"
-            >
-              Probar gratis
-            </Link>
-            <button className="md:hidden p-2 text-gray-600" aria-label="Menú">
-              <Menu className="w-5 h-5" />
-            </button>
-          </div>
+          <Link
+            href="/login"
+            className="text-sm text-gray-600 hover:text-gray-900 transition font-medium"
+          >
+            Entrar
+          </Link>
         </div>
       </header>
 
       {/* ───────── Hero ───────── */}
       <section className="pt-28 pb-16 md:pt-36 md:pb-24 bg-gradient-to-br from-violet-50 via-white to-indigo-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             <div>
               <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
                 <Moon className="w-4 h-4" />
@@ -183,27 +191,28 @@ export default function LandingPage() {
                   La herramienta que las asesoras de sueño necesitaban
                 </span>
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-gray-900 leading-[1.1] tracking-tight">
                 Registros de sueño{" "}
                 <span className="text-violet-600">
                   que las familias sí rellenan
                 </span>
               </h1>
-              <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-xl leading-relaxed">
+              <p className="mt-6 text-lg text-gray-500 max-w-xl leading-relaxed">
                 Tus familias registran sueño, tomas y rutinas en segundos desde
                 el móvil. Tú recibes los datos organizados, con análisis IA y
                 recomendaciones listas para usar.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/registro"
-                  className="bg-violet-600 text-white font-semibold px-8 py-3.5 rounded-full hover:bg-violet-700 transition text-center shadow-lg shadow-violet-200"
+                  className="inline-flex items-center justify-center gap-2 bg-violet-600 text-white font-semibold px-7 py-3 rounded-full hover:bg-violet-700 transition shadow-lg shadow-violet-200"
                 >
                   Quiero probarlo
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a
                   href="#demo"
-                  className="border border-gray-300 text-gray-700 font-semibold px-8 py-3.5 rounded-full hover:bg-gray-50 transition text-center"
+                  className="inline-flex items-center justify-center border border-gray-200 text-gray-700 font-medium px-7 py-3 rounded-full hover:bg-gray-50 transition"
                 >
                   Ver cómo funciona
                 </a>
@@ -213,128 +222,252 @@ export default function LandingPage() {
                   {["MA", "LC", "SG", "PR"].map((initials) => (
                     <div
                       key={initials}
-                      className="w-9 h-9 rounded-full bg-violet-200 border-2 border-white flex items-center justify-center text-xs font-semibold text-violet-700"
+                      className="w-8 h-8 rounded-full bg-violet-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-violet-700"
                     >
                       {initials}
                     </div>
                   ))}
                 </div>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-400">
                   +120 asesoras ya en lista de espera
                 </span>
               </div>
             </div>
 
-            {/* Phone mockup */}
-            <div className="relative flex justify-center lg:justify-end">
-              <div className="animate-float">
-                <div className="relative">
-                  <div className="absolute -inset-6 bg-gradient-to-r from-violet-400/20 to-indigo-400/20 rounded-[60px] blur-3xl" />
-                  <div className="relative w-[300px] bg-white rounded-[40px] shadow-2xl border border-gray-200 overflow-hidden">
-                    <div className="flex items-center justify-center pt-3 pb-1">
-                      <div className="w-24 h-6 bg-gray-900 rounded-full" />
-                    </div>
-                    <div className="px-4 pb-6">
-                      <div className="text-center mb-4 mt-2">
-                        <p className="text-xs text-gray-400">Hoy, 3 abril</p>
-                        <h3 className="font-semibold text-gray-900 text-sm">
-                          Diario de Mateo 🌙
-                        </h3>
-                      </div>
-                      <div className="space-y-2.5">
-                        <div className="flex items-start gap-2.5 bg-violet-50 rounded-xl p-2.5">
-                          <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-sm shrink-0">
-                            😴
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline">
-                              <span className="text-xs font-medium text-gray-900">
-                                Siesta mañana
-                              </span>
-                              <span className="text-[10px] text-gray-400">
-                                09:30
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-gray-500">
-                              1h 20min · En cuna · Se durmió solo
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2.5 bg-amber-50 rounded-xl p-2.5">
-                          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm shrink-0">
-                            🍼
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline">
-                              <span className="text-xs font-medium text-gray-900">
-                                Toma
-                              </span>
-                              <span className="text-[10px] text-gray-400">
-                                10:50
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-gray-500">
-                              Pecho izq. 15min + derecho 10min
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2.5 bg-green-50 rounded-xl p-2.5">
-                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-sm shrink-0">
-                            🧸
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline">
-                              <span className="text-xs font-medium text-gray-900">
-                                Juego libre
-                              </span>
-                              <span className="text-[10px] text-gray-400">
-                                11:05
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-gray-500">
-                              45min · Humor: contento
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2.5 bg-indigo-50 rounded-xl p-2.5">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-sm shrink-0 animate-pulse">
-                            🌙
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline">
-                              <span className="text-xs font-medium text-gray-900">
-                                Siesta tarde
-                              </span>
-                              <span className="text-[10px] text-gray-400">
-                                14:00
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-violet-600 font-medium">
-                              En curso...
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 grid grid-cols-4 gap-1 bg-gray-50 rounded-2xl p-2.5">
-                        {[
-                          { emoji: "😴", label: "Sueño" },
-                          { emoji: "🍼", label: "Toma" },
-                          { emoji: "💩", label: "Pañal" },
-                          { emoji: "📝", label: "Nota" },
-                        ].map((action) => (
-                          <div
-                            key={action.label}
-                            className="flex flex-col items-center gap-0.5"
-                          >
-                            <span className="text-lg">{action.emoji}</span>
-                            <span className="text-[9px] text-gray-500">
-                              {action.label}
+            {/* Floating UI cards */}
+            <div className="relative hidden lg:block h-[520px]">
+              {/* Main timeline card */}
+              <div className="absolute top-6 right-4 w-[320px] bg-white rounded-3xl shadow-xl border border-gray-100 p-5 transform rotate-1">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    Mateo 🌙
+                  </h3>
+                  <div className="w-3 h-3 rounded-full bg-amber-400" />
+                </div>
+                <p className="text-[11px] text-gray-400 mb-4">Hoy, 3 abril</p>
+
+                <div className="space-y-2">
+                  {[
+                    {
+                      emoji: "😴",
+                      title: "Siesta mañana",
+                      time: "09:30",
+                      detail: "1h 20min · En cuna · Se durmió solo",
+                      bg: "bg-violet-50",
+                    },
+                    {
+                      emoji: "🍼",
+                      title: "Toma",
+                      time: "10:50",
+                      detail: "Pecho izq. 15min + derecho 10min",
+                      bg: "bg-amber-50",
+                    },
+                    {
+                      emoji: "🧸",
+                      title: "Juego libre",
+                      time: "11:05",
+                      detail: "45min · Humor: contento",
+                      bg: "bg-green-50",
+                    },
+                    {
+                      emoji: "🌙",
+                      title: "Siesta tarde",
+                      time: "",
+                      detail: "En curso... · En cuna",
+                      bg: "bg-indigo-50",
+                      active: true,
+                    },
+                  ].map((entry) => (
+                    <div
+                      key={entry.title}
+                      className={`flex items-start gap-2 ${entry.bg} rounded-xl p-2.5`}
+                    >
+                      <span className="text-base mt-0.5 shrink-0">
+                        {entry.emoji}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs font-semibold text-gray-800">
+                            {entry.title}
+                          </span>
+                          {entry.time && (
+                            <span className="text-[10px] text-gray-400">
+                              {entry.time}
                             </span>
-                          </div>
-                        ))}
+                          )}
+                        </div>
+                        <p
+                          className={`text-[10px] ${entry.active ? "text-violet-600 font-medium" : "text-gray-500"}`}
+                        >
+                          {entry.detail}
+                        </p>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Action pills */}
+                <div className="mt-4 flex gap-2">
+                  {[
+                    {
+                      emoji: "😴",
+                      label: "Sueño",
+                      color: "bg-violet-100 text-violet-700",
+                    },
+                    {
+                      emoji: "🍼",
+                      label: "Toma",
+                      color: "bg-amber-100 text-amber-700",
+                    },
+                    {
+                      emoji: "💩",
+                      label: "Pañal",
+                      color: "bg-orange-100 text-orange-700",
+                    },
+                    {
+                      emoji: "📝",
+                      label: "Nota",
+                      color: "bg-blue-100 text-blue-700",
+                    },
+                  ].map((action) => (
+                    <span
+                      key={action.label}
+                      className={`${action.color} text-[10px] font-medium px-2.5 py-1.5 rounded-full flex items-center gap-1`}
+                    >
+                      <span className="text-xs">{action.emoji}</span>
+                      {action.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* IA detecta - floating chip */}
+              <div className="absolute top-28 -left-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-3 pr-5 transform -rotate-3 z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-violet-600" />
                   </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">
+                      IA detecta
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      Ventana de sueño corta
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Post listo - floating chip */}
+              <div className="absolute bottom-10 right-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-3 pr-5 transform rotate-2 z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-rose-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">
+                      Post listo
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      Carrusel de tips
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative gradient blobs */}
+              <div className="absolute top-0 right-0 w-72 h-72 bg-violet-200/30 rounded-full blur-3xl -z-10" />
+              <div className="absolute bottom-0 left-8 w-48 h-48 bg-indigo-200/20 rounded-full blur-3xl -z-10" />
+            </div>
+
+            {/* Mobile: simplified card version */}
+            <div className="lg:hidden">
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-5 max-w-sm mx-auto">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    Mateo 🌙
+                  </h3>
+                  <div className="w-3 h-3 rounded-full bg-amber-400" />
+                </div>
+                <p className="text-[11px] text-gray-400 mb-4">Hoy, 3 abril</p>
+                <div className="space-y-2">
+                  {[
+                    {
+                      emoji: "😴",
+                      title: "Siesta mañana",
+                      time: "09:30",
+                      detail: "1h 20min · En cuna",
+                      bg: "bg-violet-50",
+                    },
+                    {
+                      emoji: "🍼",
+                      title: "Toma",
+                      time: "10:50",
+                      detail: "Pecho 15min + 10min",
+                      bg: "bg-amber-50",
+                    },
+                    {
+                      emoji: "🌙",
+                      title: "Siesta tarde",
+                      time: "",
+                      detail: "En curso...",
+                      bg: "bg-indigo-50",
+                    },
+                  ].map((entry) => (
+                    <div
+                      key={entry.title}
+                      className={`flex items-start gap-2 ${entry.bg} rounded-xl p-2.5`}
+                    >
+                      <span className="text-base shrink-0">{entry.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs font-semibold text-gray-800">
+                            {entry.title}
+                          </span>
+                          {entry.time && (
+                            <span className="text-[10px] text-gray-400">
+                              {entry.time}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-gray-500">
+                          {entry.detail}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex gap-2">
+                  {[
+                    {
+                      emoji: "😴",
+                      label: "Sueño",
+                      color: "bg-violet-100 text-violet-700",
+                    },
+                    {
+                      emoji: "🍼",
+                      label: "Toma",
+                      color: "bg-amber-100 text-amber-700",
+                    },
+                    {
+                      emoji: "💩",
+                      label: "Pañal",
+                      color: "bg-orange-100 text-orange-700",
+                    },
+                    {
+                      emoji: "📝",
+                      label: "Nota",
+                      color: "bg-blue-100 text-blue-700",
+                    },
+                  ].map((action) => (
+                    <span
+                      key={action.label}
+                      className={`${action.color} text-[10px] font-medium px-2.5 py-1.5 rounded-full flex items-center gap-1`}
+                    >
+                      <span className="text-xs">{action.emoji}</span>
+                      {action.label}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -353,7 +486,7 @@ export default function LandingPage() {
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
                 Deja de perseguir registros por WhatsApp
               </h2>
-              <p className="mt-5 text-lg text-gray-600 leading-relaxed">
+              <p className="mt-5 text-lg text-gray-500 leading-relaxed">
                 Tus familias registran todo desde una app bonita y sencilla. Tú
                 recibes los datos limpios, con gráficas de evolución y
                 recomendaciones IA que te ahorran horas de análisis.
@@ -369,13 +502,13 @@ export default function LandingPage() {
                     <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="w-3.5 h-3.5 text-violet-600" />
                     </div>
-                    <span className="text-gray-700">{item}</span>
+                    <span className="text-gray-600">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-violet-100/50 to-indigo-100/50 rounded-3xl -rotate-2" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-violet-100/40 to-indigo-100/40 rounded-3xl -rotate-2" />
               <div className="relative bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center">
@@ -383,7 +516,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <p className="font-bold text-violet-600">Nanni Pro</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-400">
                       Panel de María Asesora
                     </p>
                   </div>
@@ -402,7 +535,7 @@ export default function LandingPage() {
                       <div className="text-xl font-bold text-gray-900">
                         {stat.value}
                       </div>
-                      <div className="text-xs text-gray-500">{stat.label}</div>
+                      <div className="text-xs text-gray-400">{stat.label}</div>
                     </div>
                   ))}
                 </div>
@@ -424,7 +557,7 @@ export default function LandingPage() {
                         </p>
                       </div>
                       <span
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${family.statusColor}`}
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${family.statusColor}`}
                       >
                         {family.status}
                       </span>
@@ -438,11 +571,11 @@ export default function LandingPage() {
       </section>
 
       {/* ───────── Para Padres ───────── */}
-      <section id="padres" className="py-20 md:py-28 bg-violet-50/50">
+      <section id="padres" className="py-20 md:py-28 bg-gray-50/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1">
-              <div className="bg-white rounded-3xl shadow-xl p-6 max-w-sm mx-auto">
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 max-w-sm mx-auto">
                 <p className="text-center text-xs text-gray-400 mb-1">
                   Registrar actividad
                 </p>
@@ -502,7 +635,7 @@ export default function LandingPage() {
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
                 Registrar el día de tu bebé en 10 segundos
               </h2>
-              <p className="mt-5 text-lg text-gray-600 leading-relaxed">
+              <p className="mt-5 text-lg text-gray-500 leading-relaxed">
                 Nada de rellenar tablas ni mandar fotos de notas. Tap, tap, y
                 listo. Tu asesora lo ve al instante.
               </p>
@@ -517,7 +650,7 @@ export default function LandingPage() {
                     <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="w-3.5 h-3.5 text-violet-600" />
                     </div>
-                    <span className="text-gray-700">{item}</span>
+                    <span className="text-gray-600">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -529,74 +662,47 @@ export default function LandingPage() {
       {/* ───────── Dashboard Preview ───────── */}
       <section id="demo" className="py-20 md:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide uppercase mb-3">
-              Panel de la asesora
-            </p>
+          <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
               Todos tus casos, bajo control
             </h2>
-            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
               Así se ve tu dashboard. Datos limpios, sin perseguir a nadie.
             </p>
           </div>
           <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 text-center text-xs text-gray-400">
-                  nanni.app/dashboard
-                </div>
-              </div>
-              <div className="p-4 md:p-8">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+              <div className="p-5 md:p-8">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-sm font-bold text-white">
+                    <p className="font-bold text-gray-900 text-lg">
+                      Nanni Pro
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">
+                      María Asesora
+                    </span>
+                    <div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white">
                       MA
-                    </div>
-                    <div>
-                      <p className="font-bold text-violet-600 text-lg">
-                        Nanni Pro
-                      </p>
-                      <p className="text-sm text-gray-500">María Asesora</p>
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
                   {[
-                    {
-                      value: "8",
-                      label: "Familias activas",
-                      color: "text-violet-600",
-                    },
-                    {
-                      value: "94%",
-                      label: "Registros al día",
-                      color: "text-emerald-600",
-                    },
-                    {
-                      value: "3",
-                      label: "Necesitan atención",
-                      color: "text-amber-600",
-                    },
-                    {
-                      value: "12",
-                      label: "Posts generados",
-                      color: "text-blue-600",
-                    },
+                    { value: "8", label: "Familias activas" },
+                    { value: "94%", label: "Registros al día" },
+                    { value: "3", label: "Necesitan atención" },
+                    { value: "12", label: "Posts generados" },
                   ].map((stat) => (
                     <div
                       key={stat.label}
                       className="bg-gray-50 rounded-xl p-4"
                     >
-                      <div className={`text-3xl font-bold ${stat.color}`}>
+                      <div className="text-2xl font-bold text-gray-900">
                         {stat.value}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">
+                      <div className="text-xs text-gray-400 mt-1">
                         {stat.label}
                       </div>
                     </div>
@@ -604,12 +710,14 @@ export default function LandingPage() {
                 </div>
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Familias</h4>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+                      Familias
+                    </h4>
                     <div className="space-y-3">
                       {dashboardFamilies.map((family) => (
                         <div
                           key={family.initial}
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition border border-gray-100"
+                          className="flex items-center gap-3 p-3 rounded-xl border border-gray-100"
                         >
                           <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-sm font-bold text-violet-700">
                             {family.initial}
@@ -623,7 +731,7 @@ export default function LandingPage() {
                             </p>
                           </div>
                           <span
-                            className={`text-xs font-medium px-2.5 py-1 rounded-full ${family.statusColor}`}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${family.statusColor}`}
                           >
                             {family.status}
                           </span>
@@ -632,39 +740,42 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-4">
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
                       IA Insights
                     </h4>
                     <div className="space-y-3">
                       <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="text-xs font-bold text-emerald-700">
                             Recomendación
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-600">
                           Mateo ha reducido despertares nocturnos un 40% esta
                           semana. Sugerir adelantar la hora de acostarse 15 min.
                         </p>
                       </div>
                       <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span className="text-xs font-bold text-amber-700">
                             Alerta
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-600">
                           Lucía: las ventanas de vigilia superan lo recomendado
                           para 4 meses (&gt;2h).
                         </p>
                       </div>
                       <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          <span className="text-xs font-bold text-blue-700">
                             Contenido listo
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-600">
                           Post generado: &quot;¿Tu bebé se despierta a las 5am?
                           3 claves para que aguante más&quot;
                         </p>
@@ -679,7 +790,10 @@ export default function LandingPage() {
       </section>
 
       {/* ───────── Features Grid ───────── */}
-      <section className="py-20 md:py-28 bg-gradient-to-br from-violet-50/50 to-indigo-50/50">
+      <section
+        id="funcionalidades"
+        className="py-20 md:py-28 bg-gray-50/60"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -692,13 +806,17 @@ export default function LandingPage() {
                 key={feature.title}
                 className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center mb-5">
-                  <feature.icon className="w-6 h-6 text-violet-600" />
+                <div
+                  className={`w-12 h-12 rounded-2xl ${feature.iconBg} flex items-center justify-center mb-5`}
+                >
+                  <feature.icon
+                    className={`w-6 h-6 ${feature.iconColor}`}
+                  />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed text-sm">
+                <p className="text-gray-500 leading-relaxed text-sm">
                   {feature.description}
                 </p>
               </div>
@@ -714,30 +832,21 @@ export default function LandingPage() {
             Las asesoras que más crecen son las que tienen las mejores
             herramientas
           </h2>
-          <p className="mt-4 text-lg text-violet-200 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-violet-200/80 max-w-2xl mx-auto">
             Tus familias felices = más reseñas = más clientes. Y con contenido
             automático para redes, tu visibilidad se multiplica.
           </p>
           <div className="mt-16 grid sm:grid-cols-3 gap-8 md:gap-12">
             {[
-              {
-                value: "3x",
-                label: "más adherencia al plan",
-              },
-              {
-                value: "5h",
-                label: "ahorradas por semana",
-              },
-              {
-                value: "∞",
-                label: "contenido para redes",
-              },
+              { value: "3x", label: "más adherencia al plan" },
+              { value: "5h", label: "ahorradas por semana" },
+              { value: "∞", label: "contenido para redes" },
             ].map((stat) => (
               <div key={stat.label}>
                 <div className="text-5xl md:text-6xl font-extrabold text-violet-300">
                   {stat.value}
                 </div>
-                <div className="mt-2 text-violet-200">{stat.label}</div>
+                <div className="mt-2 text-violet-200/70">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -751,22 +860,22 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
               Precios para asesoras, no para multinacionales
             </h2>
-            <p className="mt-4 text-lg text-gray-600">
+            <p className="mt-4 text-lg text-gray-500">
               Tus familias nunca pagan. Tú eliges el plan que encaje.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto items-start">
             {plans.map((plan) => (
               <div
                 key={plan.name}
                 className={`relative rounded-2xl p-6 md:p-8 ${
                   plan.popular
-                    ? "bg-violet-600 text-white shadow-2xl shadow-violet-200 scale-105 border-2 border-violet-500"
+                    ? "bg-violet-600 text-white shadow-2xl shadow-violet-200 md:scale-105 border-2 border-violet-500 ring-4 ring-violet-100"
                     : "bg-white border border-gray-200 shadow-sm"
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-400 text-gray-900 text-xs font-bold px-4 py-1 rounded-full shadow-sm">
                     Popular
                   </div>
                 )}
@@ -776,7 +885,7 @@ export default function LandingPage() {
                   {plan.name}
                 </h3>
                 <p
-                  className={`text-sm mt-1 ${plan.popular ? "text-violet-200" : "text-gray-500"}`}
+                  className={`text-sm mt-1 ${plan.popular ? "text-violet-200" : "text-gray-400"}`}
                 >
                   {plan.description}
                 </p>
@@ -787,7 +896,7 @@ export default function LandingPage() {
                     {plan.price}€
                   </span>
                   <span
-                    className={`${plan.popular ? "text-violet-200" : "text-gray-500"}`}
+                    className={`${plan.popular ? "text-violet-200" : "text-gray-400"}`}
                   >
                     {" "}
                     /mes
@@ -824,20 +933,23 @@ export default function LandingPage() {
       </section>
 
       {/* ───────── CTA ───────── */}
-      <section className="py-20 md:py-28 bg-gradient-to-br from-violet-50 to-indigo-50">
+      <section
+        id="waitlist"
+        className="py-20 md:py-28 bg-gradient-to-br from-violet-50 to-indigo-50"
+      >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Moon className="w-12 h-12 text-violet-600 mx-auto mb-6" />
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
             Ayuda a más familias a dormir mejor
           </h2>
-          <p className="mt-4 text-lg text-gray-600 max-w-xl mx-auto">
+          <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
             Únete a la lista de espera y sé de las primeras asesoras en usar
             Nanni. Acceso gratuito durante la beta.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+          <div className="mt-8">
             <Link
               href="/registro"
-              className="flex-1 bg-violet-600 text-white font-semibold py-3.5 px-8 rounded-full hover:bg-violet-700 transition shadow-lg shadow-violet-200 flex items-center justify-center gap-2"
+              className="inline-flex items-center justify-center gap-2 bg-violet-600 text-white font-semibold py-3.5 px-10 rounded-full hover:bg-violet-700 transition shadow-lg shadow-violet-200"
             >
               Quiero acceso
               <ArrowRight className="w-4 h-4" />
@@ -857,7 +969,7 @@ export default function LandingPage() {
               <Moon className="w-5 h-5 text-violet-600" />
               <span className="font-bold text-gray-900">Nanni</span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-6 text-sm text-gray-400">
               <a href="#" className="hover:text-gray-900 transition">
                 Privacidad
               </a>
