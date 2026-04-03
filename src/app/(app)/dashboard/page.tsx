@@ -1,330 +1,265 @@
 import { createClient } from "@/lib/supabase/server";
+import { getDashboardStats, getFamilies, getRecentRecordsAllFamilies, getInsights, getWeeklySleep } from "@/lib/db";
+import { getGreeting, timeAgo, babyAgeLabel, sleepScore, statusFromScore } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/EmptyState";
 import Link from "next/link";
 import {
-  Users,
-  CheckCircle,
-  AlertTriangle,
-  FileText,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  Brain,
-  Sparkles,
-  ArrowRight,
+  Users, CheckCircle, AlertTriangle, TrendingUp, TrendingDown,
+  Clock, Brain, ArrowRight, ArrowUpRight, CalendarDays, Moon, Sparkles,
 } from "lucide-react";
 
-const mockFamilies = [
-  {
-    id: "mateo",
-    initial: "M",
-    name: "Mateo",
-    age: "7 meses",
-    lastRecord: "hace 23 min",
-    status: "Mejorando",
-    statusColor: "bg-emerald-100 text-emerald-700",
-    statusIcon: TrendingUp,
-    sleepHours: "13.5h",
-    awakenings: "2",
-    trend: "up",
-  },
-  {
-    id: "lucia",
-    initial: "L",
-    name: "Lucía",
-    age: "4 meses",
-    lastRecord: "hace 2h",
-    status: "En proceso",
-    statusColor: "bg-amber-100 text-amber-700",
-    statusIcon: Clock,
-    sleepHours: "12h",
-    awakenings: "4",
-    trend: "neutral",
-  },
-  {
-    id: "pablo",
-    initial: "P",
-    name: "Pablo",
-    age: "11 meses",
-    lastRecord: "desde ayer",
-    status: "Atención",
-    statusColor: "bg-red-100 text-red-700",
-    statusIcon: AlertTriangle,
-    sleepHours: "11h",
-    awakenings: "5",
-    trend: "down",
-  },
-  {
-    id: "sofia",
-    initial: "S",
-    name: "Sofía",
-    age: "6 meses",
-    lastRecord: "hace 1h",
-    status: "Mejorando",
-    statusColor: "bg-emerald-100 text-emerald-700",
-    statusIcon: TrendingUp,
-    sleepHours: "14h",
-    awakenings: "1",
-    trend: "up",
-  },
-  {
-    id: "emma",
-    initial: "E",
-    name: "Emma",
-    age: "3 meses",
-    lastRecord: "hace 45 min",
-    status: "En proceso",
-    statusColor: "bg-amber-100 text-amber-700",
-    statusIcon: Clock,
-    sleepHours: "15h",
-    awakenings: "3",
-    trend: "neutral",
-  },
-];
+const typeEmojis: Record<string, string> = {
+  sleep: "😴", feed: "🍼", diaper: "💩", play: "🧸",
+  mood: "😊", note: "📝", wake: "☀️",
+};
 
-const mockInsights = [
-  {
-    type: "recommendation" as const,
-    color: "bg-emerald-50 border-emerald-100",
-    badge: "bg-emerald-100 text-emerald-700",
-    label: "Recomendación",
-    text: "Mateo ha reducido despertares nocturnos un 40% esta semana. Sugerir adelantar la hora de acostarse 15 min.",
-  },
-  {
-    type: "alert" as const,
-    color: "bg-amber-50 border-amber-100",
-    badge: "bg-amber-100 text-amber-700",
-    label: "Alerta",
-    text: "Lucía: las ventanas de vigilia superan lo recomendado para 4 meses (>2h). Revisar rutina de día.",
-  },
-  {
-    type: "content" as const,
-    color: "bg-blue-50 border-blue-100",
-    badge: "bg-blue-100 text-blue-700",
-    label: "Contenido listo",
-    text: 'Post generado: "¿Tu bebé se despierta a las 5am? 3 claves para que aguante más"',
-  },
-  {
-    type: "recommendation" as const,
-    color: "bg-violet-50 border-violet-100",
-    badge: "bg-violet-100 text-violet-700",
-    label: "Patrón detectado",
-    text: "Emma duerme 25 min más cuando la última toma es al menos 30 min antes de acostarse.",
-  },
-];
-
-const mockPosts = [
-  {
-    title: "¿Tu bebé se despierta a las 5am? 3 claves para que aguante más",
-    type: "Carrusel Instagram",
-    status: "Listo",
-  },
-  {
-    title: "Regresión de los 4 meses: qué es y cómo sobrevivir",
-    type: "Post + Reel",
-    status: "Listo",
-  },
-  {
-    title: "Rutina de noche en 5 pasos (caso real anonimizado)",
-    type: "Carrusel Instagram",
-    status: "Borrador",
-  },
-];
+const typeLabels: Record<string, string> = {
+  sleep: "sueño", feed: "toma", diaper: "pañal", play: "juego",
+  mood: "humor", note: "nota", wake: "despertar",
+};
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
 
-  const userName =
-    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Asesora";
+  const firstName = (user.user_metadata?.full_name || user.email?.split("@")[0] || "Asesora").split(" ")[0];
+  const greeting = getGreeting();
+
+  const [stats, families, recentActivity, insights] = await Promise.all([
+    getDashboardStats(user.id),
+    getFamilies(user.id),
+    getRecentRecordsAllFamilies(user.id, 8),
+    getInsights(user.id, { unreadOnly: false, limit: 4 }),
+  ]);
+
+  const activeFamilies = families.filter((f) => f.status === "active");
+
+  if (families.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{greeting}, {firstName}</h1>
+        </div>
+        <EmptyState
+          icon={Users}
+          title="Añade tu primera familia"
+          description="Crea una familia, comparte el enlace con los padres y empieza a recibir datos de sueño y rutinas."
+          action={{ label: "Añadir familia", href: "/familias" }}
+        />
+      </div>
+    );
+  }
+
+  const statCards = [
+    {
+      icon: Users,
+      value: stats.active_families.toString(),
+      label: "Familias activas",
+      trend: stats.families_trend > 0 ? `+${stats.families_trend} este mes` : "Sin cambios",
+      trendUp: stats.families_trend >= 0,
+      color: "text-violet-600",
+      bg: "bg-violet-50",
+    },
+    {
+      icon: CheckCircle,
+      value: `${stats.records_today_pct}%`,
+      label: "Registros al día",
+      trend: stats.records_trend > 0 ? `+${stats.records_trend}% vs sem. pasada` : "Sin datos",
+      trendUp: stats.records_trend >= 0,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+    },
+    {
+      icon: AlertTriangle,
+      value: stats.families_needing_attention.toString(),
+      label: "Necesitan atención",
+      trend: stats.attention_trend < 0 ? `${stats.attention_trend} vs ayer` : "Sin cambios",
+      trendUp: stats.attention_trend <= 0,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+    },
+    {
+      icon: Moon,
+      value: stats.avg_sleep_hours > 0 ? `${stats.avg_sleep_hours}h` : "—",
+      label: "Media sueño/día",
+      trend: stats.sleep_trend > 0 ? `+${stats.sleep_trend}h vs sem. pasada` : "Sin datos",
+      trendUp: stats.sleep_trend >= 0,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+  ];
+
+  const familiesNeedingAttention = activeFamilies.filter((f) => {
+    const lastRecord = recentActivity.find((r) => r.family_id === f.id);
+    if (!lastRecord) return true;
+    const hoursSince = (Date.now() - new Date(lastRecord.created_at).getTime()) / (1000 * 60 * 60);
+    return hoursSince > 24;
+  });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-          Hola, {userName.split(" ")[0]} 👋
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Aquí tienes el resumen de hoy.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            {greeting}, {firstName}
+          </h1>
+          <p className="text-gray-400 mt-1 text-sm">
+            {stats.families_needing_attention > 0
+              ? `Tienes ${stats.families_needing_attention} alerta${stats.families_needing_attention > 1 ? "s" : ""} pendiente${stats.families_needing_attention > 1 ? "s" : ""}.`
+              : "Todo bajo control hoy."}
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            icon: Users,
-            value: "8",
-            label: "Familias activas",
-            color: "text-violet-600",
-            bg: "bg-violet-50",
-          },
-          {
-            icon: CheckCircle,
-            value: "94%",
-            label: "Registros al día",
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-          },
-          {
-            icon: AlertTriangle,
-            value: "3",
-            label: "Necesitan atención",
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-          },
-          {
-            icon: FileText,
-            value: "12",
-            label: "Posts generados",
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-          },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"
-          >
-            <div
-              className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center mb-3`}
-            >
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {statCards.map((stat) => (
+          <div key={stat.label} className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100 shadow-sm">
+            <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center mb-3`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
-            <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
-            <div className="text-sm text-gray-500 mt-0.5">{stat.label}</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-900">{stat.value}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{stat.label}</div>
+            <div className={`flex items-center gap-1 mt-2 text-[11px] font-medium ${stat.trendUp ? "text-emerald-600" : "text-amber-600"}`}>
+              {stat.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {stat.trend}
+            </div>
           </div>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Families */}
-        <div
-          id="familias"
-          className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm"
-        >
-          <div className="p-5 border-b border-gray-50 flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">Familias</h2>
-            <span className="text-xs text-gray-400">
-              {mockFamilies.length} activas
-            </span>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {mockFamilies.map((family) => (
-              <Link
-                key={family.id}
-                href={`/familia/${family.id}`}
-                className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition group"
-              >
-                <div className="w-11 h-11 rounded-full bg-violet-100 flex items-center justify-center text-sm font-bold text-violet-700 shrink-0">
-                  {family.initial}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {family.name}
-                    </p>
-                    <span className="text-xs text-gray-400">{family.age}</span>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    Último registro: {family.lastRecord}
-                  </p>
-                </div>
-                <div className="hidden sm:flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Sueño</p>
-                    <p className="text-sm font-semibold text-gray-700">
-                      {family.sleepHours}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Despertares</p>
-                    <p className="text-sm font-semibold text-gray-700">
-                      {family.awakenings}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${family.statusColor}`}
-                >
-                  {family.status}
-                </span>
-                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-violet-500 transition shrink-0" />
+        {/* Left column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Recent activity */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div className="p-4 md:p-5 border-b border-gray-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-violet-600" />
+                <h2 className="font-bold text-gray-900">Actividad reciente</h2>
+              </div>
+              <Link href="/familias" className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
+                Ver todas <ArrowUpRight className="w-3 h-3" />
               </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Insights */}
-        <div
-          id="analytics"
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm"
-        >
-          <div className="p-5 border-b border-gray-50 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-violet-600" />
-            <h2 className="font-bold text-gray-900">IA Insights</h2>
-          </div>
-          <div className="p-4 space-y-3">
-            {mockInsights.map((insight, i) => (
-              <div
-                key={i}
-                className={`p-3.5 rounded-xl border ${insight.color}`}
-              >
-                <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${insight.badge}`}
-                >
-                  {insight.label}
-                </span>
-                <p className="text-sm text-gray-700 mt-2 leading-relaxed">
-                  {insight.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content for socials */}
-      <div
-        id="contenido"
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm"
-      >
-        <div className="p-5 border-b border-gray-50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-violet-600" />
-            <h2 className="font-bold text-gray-900">
-              Contenido para tus redes
-            </h2>
-          </div>
-          <span className="text-xs text-gray-400">Generado por IA</span>
-        </div>
-        <div className="divide-y divide-gray-50">
-          {mockPosts.map((post, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 text-violet-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {post.title}
-                </p>
-                <p className="text-xs text-gray-400">{post.type}</p>
-              </div>
-              <span
-                className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
-                  post.status === "Listo"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {post.status}
-              </span>
             </div>
-          ))}
+            {recentActivity.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-sm text-gray-400">Aún no hay registros. Invita a una familia para empezar.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {recentActivity.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/familia/${item.family_id}`}
+                    className="flex items-center gap-3 p-4 hover:bg-gray-50/50 transition"
+                  >
+                    <span className="text-lg shrink-0">{typeEmojis[item.type] || "📋"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-700 truncate">
+                        {item.family?.baby_name} — {typeLabels[item.type] || item.type}
+                        {item.duration_minutes ? ` (${item.duration_minutes} min)` : ""}
+                      </p>
+                    </div>
+                    <span className="text-[11px] text-gray-400 shrink-0">
+                      {timeAgo(item.created_at)}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Families needing attention */}
+          {familiesNeedingAttention.length > 0 && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-100 p-4 md:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <h3 className="font-bold text-gray-900">Necesitan atención</h3>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {familiesNeedingAttention.slice(0, 4).map((f) => (
+                  <Link
+                    key={f.id}
+                    href={`/familia/${f.id}`}
+                    className="bg-white rounded-xl p-3 flex items-center gap-3 hover:shadow-md transition border border-amber-100/50"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700 shrink-0">
+                      {f.baby_name[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {f.baby_name} <span className="text-gray-400 font-normal">· {babyAgeLabel(f.baby_birth_date)}</span>
+                      </p>
+                      <p className="text-xs text-amber-600">Sin registrar recientemente</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-300" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right column: AI Insights */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div className="p-4 md:p-5 border-b border-gray-50 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-violet-600" />
+              <h2 className="font-bold text-gray-900">IA Insights</h2>
+            </div>
+            {insights.length === 0 ? (
+              <div className="p-6 text-center">
+                <Sparkles className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Los insights aparecerán cuando haya datos suficientes.</p>
+              </div>
+            ) : (
+              <div className="p-3 space-y-3">
+                {insights.map((insight) => {
+                  const colors = {
+                    improvement: { bg: "bg-emerald-50 border-emerald-100", text: "text-emerald-700" },
+                    alert: { bg: "bg-amber-50 border-amber-100", text: "text-amber-700" },
+                    pattern: { bg: "bg-violet-50 border-violet-100", text: "text-violet-700" },
+                    recommendation: { bg: "bg-blue-50 border-blue-100", text: "text-blue-700" },
+                  };
+                  const c = colors[insight.type] || colors.pattern;
+                  const insightIcons = { improvement: TrendingUp, alert: AlertTriangle, pattern: Brain, recommendation: Sparkles };
+                  const InsightIcon = insightIcons[insight.type] || Brain;
+                  return (
+                    <div key={insight.id} className={`p-3.5 rounded-xl border ${c.bg}`}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <InsightIcon className={`w-3.5 h-3.5 ${c.text}`} />
+                        <span className={`text-[11px] font-bold ${c.text}`}>{insight.title}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{insight.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Families overview */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-5">
+            <h3 className="font-bold text-gray-900 mb-1">Familias</h3>
+            <p className="text-xs text-gray-400 mb-4">{activeFamilies.length} activas</p>
+            <div className="space-y-2">
+              {activeFamilies.slice(0, 5).map((f) => (
+                <Link key={f.id} href={`/familia/${f.id}`} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 transition">
+                  <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-[10px] font-bold text-violet-700">
+                    {f.baby_name[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-900 truncate">{f.baby_name}</p>
+                    <p className="text-[10px] text-gray-400">{babyAgeLabel(f.baby_birth_date)}</p>
+                  </div>
+                  <ArrowRight className="w-3 h-3 text-gray-300" />
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

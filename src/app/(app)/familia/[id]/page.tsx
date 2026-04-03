@@ -1,357 +1,260 @@
-import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
-  Moon,
-  TrendingUp,
-  Clock,
-  Baby,
-  Brain,
-} from "lucide-react";
+  getFamilyWithStats,
+  getTodayRecords,
+  getWeeklySleep,
+  getInsights,
+  getNotes,
+  getPlans,
+  getPlanWithDetails,
+} from "@/lib/db";
+import { createNote } from "@/lib/actions";
+import {
+  babyAgeLabel,
+  formatTime,
+  statusFromScore,
+} from "@/lib/utils";
+import {
+  FamilyDetailTabs,
+  type PlanWithDetails,
+  type TimelineEntry,
+} from "./family-detail-tabs";
+import type {
+  ActivityRecord,
+  FamilyMember,
+  FeedDetails,
+  DiaperDetails,
+  PlayDetails,
+  MoodDetails,
+  NoteDetails,
+  WakeDetails,
+} from "@/lib/types";
 
-const mockTimeline = [
-  {
-    time: "07:00",
-    emoji: "🌅",
-    title: "Despertar",
-    detail: "Se despertó contento, sin llorar",
-    color: "bg-amber-50 border-amber-100",
-  },
-  {
-    time: "07:15",
-    emoji: "🍼",
-    title: "Toma",
-    detail: "Pecho izq. 12min + derecho 8min",
-    color: "bg-orange-50 border-orange-100",
-  },
-  {
-    time: "07:45",
-    emoji: "💩",
-    title: "Pañal",
-    detail: "Deposición normal",
-    color: "bg-yellow-50 border-yellow-100",
-  },
-  {
-    time: "08:00",
-    emoji: "🧸",
-    title: "Juego libre",
-    detail: "45min · Humor: contento",
-    color: "bg-green-50 border-green-100",
-  },
-  {
-    time: "09:30",
-    emoji: "😴",
-    title: "Siesta mañana",
-    detail: "1h 20min · En cuna · Se durmió solo",
-    color: "bg-violet-50 border-violet-100",
-  },
-  {
-    time: "10:50",
-    emoji: "🍼",
-    title: "Toma",
-    detail: "Pecho izq. 15min + derecho 10min",
-    color: "bg-orange-50 border-orange-100",
-  },
-  {
-    time: "11:05",
-    emoji: "🧸",
-    title: "Juego libre",
-    detail: "45min · Humor: contento",
-    color: "bg-green-50 border-green-100",
-  },
-  {
-    time: "12:00",
-    emoji: "🍼",
-    title: "Toma",
-    detail: "Biberón 150ml",
-    color: "bg-orange-50 border-orange-100",
-  },
-  {
-    time: "14:00",
-    emoji: "🌙",
-    title: "Siesta tarde",
-    detail: "En curso... · En cuna",
-    color: "bg-indigo-50 border-indigo-100",
-    active: true,
-  },
-];
+async function createNoteFormAction(formData: FormData) {
+  "use server";
+  const familyId = formData.get("family_id") as string;
+  const content = (formData.get("content") as string)?.trim();
+  if (!familyId || !content) return;
+  await createNote(familyId, content);
+}
 
-const mockWeekData = [
-  { day: "L", hours: 13.0, awakenings: 3 },
-  { day: "M", hours: 13.5, awakenings: 2 },
-  { day: "X", hours: 12.5, awakenings: 4 },
-  { day: "J", hours: 14.0, awakenings: 2 },
-  { day: "V", hours: 13.5, awakenings: 1 },
-  { day: "S", hours: 14.5, awakenings: 1 },
-  { day: "D", hours: 13.0, awakenings: 2 },
-];
-
-const babyData: Record<
-  string,
-  { name: string; age: string; status: string; statusColor: string }
+const RECORD_META: Record<
+  ActivityRecord["type"],
+  { emoji: string; label: string }
 > = {
-  mateo: {
-    name: "Mateo",
-    age: "7 meses",
-    status: "Mejorando",
-    statusColor: "bg-emerald-100 text-emerald-700",
-  },
-  lucia: {
-    name: "Lucía",
-    age: "4 meses",
-    status: "En proceso",
-    statusColor: "bg-amber-100 text-amber-700",
-  },
-  pablo: {
-    name: "Pablo",
-    age: "11 meses",
-    status: "Atención",
-    statusColor: "bg-red-100 text-red-700",
-  },
-  sofia: {
-    name: "Sofía",
-    age: "6 meses",
-    status: "Mejorando",
-    statusColor: "bg-emerald-100 text-emerald-700",
-  },
-  emma: {
-    name: "Emma",
-    age: "3 meses",
-    status: "En proceso",
-    statusColor: "bg-amber-100 text-amber-700",
-  },
+  sleep: { emoji: "😴", label: "Sueño" },
+  wake: { emoji: "☀️", label: "Despertar" },
+  feed: { emoji: "🍼", label: "Toma" },
+  diaper: { emoji: "💩", label: "Pañal" },
+  play: { emoji: "🧸", label: "Juego" },
+  mood: { emoji: "😊", label: "Humor" },
+  note: { emoji: "📝", label: "Nota" },
 };
 
-export default async function FamiliaPage({
+function formatDurationMinutes(mins: number | null): string {
+  if (mins == null || mins <= 0) return "";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}min`;
+  if (h > 0) return `${h}h`;
+  return `${m}min`;
+}
+
+function buildRecordDetail(rec: ActivityRecord): string {
+  const dur = formatDurationMinutes(rec.duration_minutes);
+  const det = rec.details;
+
+  switch (rec.type) {
+    case "sleep": {
+      const d = det as { location?: string; fell_asleep_alone?: boolean };
+      const bits = [
+        dur,
+        d?.location,
+        d?.fell_asleep_alone != null
+          ? d.fell_asleep_alone
+            ? "Se durmió solo/a"
+            : "Con ayuda"
+          : "",
+      ].filter(Boolean);
+      return bits.join(" · ") || "Registro de sueño";
+    }
+    case "feed": {
+      const d = det as FeedDetails;
+      const bits = [
+        d?.food_description,
+        d?.amount_ml != null ? `${d.amount_ml} ml` : "",
+        d?.method,
+      ].filter(Boolean);
+      return [dur, ...bits].filter(Boolean).join(" · ") || "Toma";
+    }
+    case "diaper": {
+      const d = det as DiaperDetails;
+      const bits = [d?.diaper_type, d?.color, d?.notes].filter(Boolean);
+      return bits.join(" · ") || "Cambio de pañal";
+    }
+    case "play": {
+      const d = det as PlayDetails;
+      return [d?.activity, d?.location].filter(Boolean).join(" · ") || "Juego";
+    }
+    case "mood": {
+      const d = det as MoodDetails;
+      return d?.label || (d?.level != null ? `Nivel ${d.level}` : "Humor");
+    }
+    case "note": {
+      const d = det as NoteDetails;
+      return d?.text || "";
+    }
+    case "wake": {
+      const d = det as WakeDetails;
+      return d?.mood ? `Humor: ${d.mood}` : dur || "Despertar";
+    }
+    default:
+      return dur;
+  }
+}
+
+function registrarLabel(
+  rec: ActivityRecord,
+  memberByProfile: Map<string, string>
+): string {
+  const fromDetails =
+    rec.details &&
+    typeof rec.details === "object" &&
+    "recorded_by_name" in rec.details &&
+    typeof (rec.details as { recorded_by_name?: unknown }).recorded_by_name ===
+      "string"
+      ? (rec.details as { recorded_by_name: string }).recorded_by_name
+      : null;
+
+  if (fromDetails) return fromDetails;
+  if (rec.recorded_by && memberByProfile.has(rec.recorded_by)) {
+    return memberByProfile.get(rec.recorded_by)!;
+  }
+  return "Familia";
+}
+
+function buildTimeline(
+  records: ActivityRecord[],
+  members: FamilyMember[]
+): TimelineEntry[] {
+  const memberByProfile = new Map(members.map((m) => [m.profile_id, m.name]));
+  const sorted = [...records].sort(
+    (a, b) =>
+      new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
+  );
+
+  return sorted.map((rec) => {
+    const meta = RECORD_META[rec.type];
+    return {
+      id: rec.id,
+      time: formatTime(rec.started_at),
+      emoji: meta.emoji,
+      label: meta.label,
+      detail: buildRecordDetail(rec),
+      by: registrarLabel(rec, memberByProfile),
+      type: rec.type,
+    };
+  });
+}
+
+function weeklyTrendLabel(weekly: { awakenings: number; total: number }[]): {
+  label: string;
+  positive: boolean;
+} {
+  if (weekly.length < 2) {
+    return { label: "Sin tendencia", positive: true };
+  }
+  const mid = Math.floor(weekly.length / 2) || 1;
+  const first = weekly.slice(0, mid);
+  const second = weekly.slice(mid);
+  const a1 =
+    first.reduce((s, d) => s + d.awakenings, 0) / Math.max(first.length, 1);
+  const a2 =
+    second.reduce((s, d) => s + d.awakenings, 0) /
+    Math.max(second.length, 1);
+  const diff = a2 - a1;
+  if (Math.abs(diff) < 0.35) return { label: "Estable", positive: true };
+  if (diff < 0) return { label: "Despertares a la baja", positive: true };
+  return { label: "Despertares al alza", positive: false };
+}
+
+function parentsLabel(members: FamilyMember[]): string {
+  const names = members
+    .filter((m) =>
+      ["mother", "father", "caregiver"].includes(m.relationship)
+    )
+    .map((m) => m.name);
+  if (names.length === 0) return "Sin padres vinculados";
+  return names.join(" · ");
+}
+
+export default async function FamiliaDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const baby = babyData[id] || {
-    name: "Bebé",
-    age: "",
-    status: "Activo",
-    statusColor: "bg-gray-100 text-gray-700",
-  };
 
-  const maxHours = Math.max(...mockWeekData.map((d) => d.hours));
+  const stats = await getFamilyWithStats(id);
+  if (!stats) notFound();
+
+  const [todayRecords, weeklySleep, insights, notes, plansRaw] =
+    await Promise.all([
+      getTodayRecords(id),
+      getWeeklySleep(id),
+      getInsights(stats.advisor_id, { familyId: id }),
+      getNotes(id),
+      getPlans(id),
+    ]);
+
+  const planDetails = await Promise.all(
+    plansRaw.map((p) => getPlanWithDetails(p.id))
+  );
+  const plans: PlanWithDetails[] = planDetails.filter(
+    (p): p is PlanWithDetails => p != null
+  );
+
+  const timeline = buildTimeline(todayRecords, stats.members);
+  const trend = weeklyTrendLabel(weeklySleep);
+  const { label: statusLabel, color: statusColorClass } = statusFromScore(
+    stats.score
+  );
+  const daysWithData = weeklySleep.filter(
+    (d) => d.total > 0 || d.awakenings > 0
+  ).length;
+
+  const babyInitial = stats.baby_name.trim().charAt(0).toUpperCase() || "?";
+  const sinceLabel = new Date(stats.created_at).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Back + Header */}
-      <div>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver al dashboard
-        </Link>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center text-2xl">
-            <Baby className="w-7 h-7 text-violet-600" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{baby.name}</h1>
-              <span
-                className={`text-xs font-medium px-2.5 py-1 rounded-full ${baby.statusColor}`}
-              >
-                {baby.status}
-              </span>
-            </div>
-            <p className="text-gray-500">{baby.age}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          {
-            icon: Moon,
-            label: "Sueño total",
-            value: "13.5h",
-            sub: "ayer",
-            color: "text-violet-600",
-            bg: "bg-violet-50",
-          },
-          {
-            icon: Clock,
-            label: "Despertares",
-            value: "2",
-            sub: "noche",
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-          },
-          {
-            icon: TrendingUp,
-            label: "Tendencia",
-            value: "+40%",
-            sub: "vs. sem. pasada",
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-          },
-          {
-            icon: Brain,
-            label: "IA Score",
-            value: "8.5",
-            sub: "/10",
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-          },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
-          >
-            <div
-              className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center mb-2`}
-            >
-              <stat.icon className={`w-4 h-4 ${stat.color}`} />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-            <div className="text-xs text-gray-400">
-              {stat.label}{" "}
-              <span className="text-gray-300">{stat.sub}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid lg:grid-cols-5 gap-6">
-        {/* Timeline */}
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="p-5 border-b border-gray-50 flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">
-              Hoy, 3 abril 🌙
-            </h2>
-            <span className="text-xs text-gray-400">
-              {mockTimeline.length} registros
-            </span>
-          </div>
-          <div className="p-4">
-            <div className="relative">
-              <div className="absolute left-[23px] top-4 bottom-4 w-px bg-gray-100" />
-              <div className="space-y-1">
-                {mockTimeline.map((entry, i) => (
-                  <div key={i} className="flex items-start gap-3 relative">
-                    <div className="w-[47px] text-right shrink-0">
-                      <span className="text-xs text-gray-400 font-mono">
-                        {entry.time}
-                      </span>
-                    </div>
-                    <div className="w-3 h-3 rounded-full bg-white border-2 border-violet-300 mt-1.5 shrink-0 relative z-10" />
-                    <div
-                      className={`flex-1 flex items-start gap-2.5 ${entry.color} border rounded-xl p-3 ${entry.active ? "ring-2 ring-violet-300" : ""}`}
-                    >
-                      <span className="text-lg shrink-0">{entry.emoji}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {entry.title}
-                        </p>
-                        <p
-                          className={`text-xs ${entry.active ? "text-violet-600 font-medium" : "text-gray-500"}`}
-                        >
-                          {entry.detail}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Weekly chart + insights */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Weekly sleep chart */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="font-bold text-gray-900 mb-4">
-              Sueño semanal
-            </h3>
-            <div className="flex items-end gap-2 h-32">
-              {mockWeekData.map((d) => (
-                <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {d.hours}h
-                  </span>
-                  <div
-                    className="w-full bg-violet-200 rounded-t-lg transition-all"
-                    style={{
-                      height: `${(d.hours / maxHours) * 100}%`,
-                      minHeight: "8px",
-                    }}
-                  />
-                  <span className="text-[10px] text-gray-500 font-medium">
-                    {d.day}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50">
-              <span className="text-xs text-gray-400">Media semanal</span>
-              <span className="text-sm font-bold text-violet-600">
-                {(
-                  mockWeekData.reduce((acc, d) => acc + d.hours, 0) /
-                  mockWeekData.length
-                ).toFixed(1)}
-                h
-              </span>
-            </div>
-          </div>
-
-          {/* AI Recommendation */}
-          <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-100 p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Brain className="w-5 h-5 text-violet-600" />
-              <h3 className="font-bold text-gray-900">
-                Recomendación IA
-              </h3>
-            </div>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {baby.name} ha reducido despertares nocturnos un 40% esta semana.
-              Los datos sugieren que adelantar la hora de acostarse 15 minutos
-              podría consolidar aún más el sueño nocturno.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <button className="text-xs font-medium bg-violet-600 text-white px-3 py-1.5 rounded-lg hover:bg-violet-700 transition">
-                Enviar a la familia
-              </button>
-              <button className="text-xs font-medium bg-white text-violet-700 px-3 py-1.5 rounded-lg hover:bg-violet-50 transition border border-violet-200">
-                Editar
-              </button>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="font-bold text-gray-900 mb-3">
-              Notas de la asesora
-            </h3>
-            <div className="space-y-2">
-              <div className="p-3 bg-gray-50 rounded-xl">
-                <p className="text-xs text-gray-400">31 marzo</p>
-                <p className="text-sm text-gray-700">
-                  Empezamos con método de acompañamiento gradual. Padres
-                  motivados.
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-xl">
-                <p className="text-xs text-gray-400">28 marzo</p>
-                <p className="text-sm text-gray-700">
-                  Primera consulta. Problemas principales: despertares
-                  frecuentes, dificultad para conciliar.
-                </p>
-              </div>
-            </div>
-            <button className="w-full mt-3 text-xs font-medium text-violet-600 hover:text-violet-700 py-2 rounded-lg hover:bg-violet-50 transition">
-              + Añadir nota
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <FamilyDetailTabs
+      familyId={stats.id}
+      advisorId={stats.advisor_id}
+      babyName={stats.baby_name}
+      babyInitial={babyInitial}
+      ageLabel={babyAgeLabel(stats.baby_birth_date)}
+      parentsLabel={parentsLabel(stats.members)}
+      sinceLabel={sinceLabel}
+      statusLabel={statusLabel}
+      statusColorClass={statusColorClass}
+      familyStatus={stats.status}
+      totalSleepToday={stats.total_sleep_today}
+      awakeningsLastNight={stats.awakenings_last_night}
+      score={stats.score}
+      trendLabel={trend.label}
+      trendPositive={trend.positive}
+      weeklySleep={weeklySleep}
+      daysWithData={daysWithData}
+      timeline={timeline}
+      insights={insights}
+      notes={notes}
+      plans={plans}
+      inviteToken={stats.invite_token}
+      createNoteAction={createNoteFormAction}
+    />
   );
 }

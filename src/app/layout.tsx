@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -22,12 +22,26 @@ export const metadata: Metadata = {
     "app sueño bebé",
     "sleep consultant tool",
   ],
+  manifest: "/manifest.json",
   openGraph: {
     title: "Nanni — Registros de sueño que las familias sí rellenan",
     description:
       "Tus familias registran sueño, tomas y rutinas en segundos. Tú recibes datos organizados con análisis IA.",
     type: "website",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Nanni",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#7C3AED",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

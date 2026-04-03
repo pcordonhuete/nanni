@@ -2,18 +2,18 @@
 
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Moon, Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Moon, Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function RegistroPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<"asesora" | "padre">("asesora");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -27,49 +27,29 @@ export default function RegistroPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: name,
-          role,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      setSuccess(true);
-      setLoading(false);
+      return;
     }
-  }
 
-  if (success) {
-    return (
-      <div className="text-center">
-        <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-7 h-7 text-emerald-600" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          ¡Revisa tu email!
-        </h1>
-        <p className="text-gray-500 mt-2 max-w-sm mx-auto">
-          Te hemos enviado un enlace de confirmación a{" "}
-          <span className="font-medium text-gray-700">{email}</span>. Haz clic
-          en él para activar tu cuenta.
-        </p>
-        <Link
-          href="/login"
-          className="inline-block mt-8 text-violet-600 font-medium hover:text-violet-700"
-        >
-          Volver a iniciar sesión
-        </Link>
-      </div>
-    );
+    if (data.session) {
+      router.push("/dashboard");
+      router.refresh();
+    } else {
+      router.push("/dashboard");
+      router.refresh();
+    }
   }
 
   return (
@@ -93,37 +73,6 @@ export default function RegistroPage() {
             {error}
           </div>
         )}
-
-        {/* Role selector */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Soy...
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setRole("asesora")}
-              className={`p-3 rounded-xl border-2 text-sm font-medium transition ${
-                role === "asesora"
-                  ? "border-violet-500 bg-violet-50 text-violet-700"
-                  : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
-            >
-              🌙 Asesora de sueño
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("padre")}
-              className={`p-3 rounded-xl border-2 text-sm font-medium transition ${
-                role === "padre"
-                  ? "border-violet-500 bg-violet-50 text-violet-700"
-                  : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
-            >
-              👶 Padre / Madre
-            </button>
-          </div>
-        </div>
 
         <div>
           <label

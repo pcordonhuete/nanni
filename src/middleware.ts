@@ -1,6 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const PROTECTED_PATHS = [
+  "/dashboard",
+  "/familias",
+  "/familia",
+  "/analiticas",
+  "/marca",
+  "/ajustes",
+  "/onboarding",
+];
+
+const AUTH_PATHS = ["/login", "/registro"];
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -30,17 +42,16 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
+  const isAuth = AUTH_PATHS.includes(path);
 
-  if (
-    !user &&
-    (path.startsWith("/dashboard") || path.startsWith("/familia"))
-  ) {
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && (path === "/login" || path === "/registro")) {
+  if (user && isAuth) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -50,5 +61,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/familia/:path*", "/login", "/registro"],
+  matcher: [
+    "/dashboard/:path*",
+    "/familias/:path*",
+    "/familia/:path*",
+    "/analiticas/:path*",
+    "/marca/:path*",
+    "/ajustes/:path*",
+    "/onboarding/:path*",
+    "/login",
+    "/registro",
+  ],
 };

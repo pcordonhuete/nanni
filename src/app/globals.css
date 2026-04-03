@@ -1,16 +1,14 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-nanni: #6C5CE7;
-  --color-nanni-light: #A29BFE;
-  --color-nanni-dark: #5041C7;
+  --color-nanni: #6D28D9;
+  --color-nanni-light: #8B5CF6;
+  --color-nanni-dark: #5B21B6;
   --color-nanni-50: #F5F3FF;
   --color-nanni-100: #EDE9FE;
   --color-nanni-200: #DDD6FE;
-  --color-nanni-800: #2E1065;
-  --color-nanni-900: #1A103D;
-  --color-gold: #FDCB6E;
-  --color-gold-dark: #F0B429;
+  --color-nanni-800: #3B0764;
+  --color-nanni-900: #1E1B4B;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -25,11 +23,74 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-card {
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.03),
+    0 2px 4px rgb(0 0 0 / 0.04),
+    0 12px 24px rgb(0 0 0 / 0.04);
+}
+
+.shadow-mock {
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.05),
+    0 4px 8px rgb(0 0 0 / 0.04),
+    0 20px 40px rgb(0 0 0 / 0.08),
+    0 40px 80px rgb(0 0 0 / 0.06);
+}
+
+.shadow-float {
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.04),
+    0 2px 4px rgb(0 0 0 / 0.02),
+    0 8px 16px rgb(0 0 0 / 0.06),
+    0 16px 32px rgb(0 0 0 / 0.04);
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
 }
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite 1s;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }

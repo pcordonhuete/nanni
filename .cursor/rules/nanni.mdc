@@ -1,0 +1,25 @@
+---
+description: Reglas generales del proyecto Nanni
+globs:
+alwaysApply: true
+---
+
+# Nanni - Reglas del proyecto
+
+## Despliegue
+- **NUNCA** hacer deploy a Vercel automáticamente. Solo desplegar cuando el usuario lo pida explícitamente.
+- No ejecutar `vercel`, `vercel --prod`, ni `git push` sin que el usuario lo solicite.
+
+## Testing
+- Crear tests para TODO el código nuevo o modificado.
+- Tests unitarios para componentes, utilidades y lógica de negocio.
+- Tests de integración para flujos de autenticación (login, registro, recuperar contraseña).
+- Tests E2E para flujos críticos (landing → registro → dashboard).
+- Usar la convención `__tests__/` o `.test.tsx` / `.test.ts` junto al archivo.
+- Framework de testing: Vitest + React Testing Library para unit/integration, Playwright para E2E.
+
+## Stack
+- Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- Supabase para auth y base de datos
+- Mobile-first responsive design
+- Lucide React para iconos
