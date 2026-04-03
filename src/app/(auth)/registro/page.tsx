@@ -44,11 +44,11 @@ export default function RegistroPage() {
     }
 
     if (data.session) {
-      router.push("/dashboard");
+      router.push("/onboarding");
       router.refresh();
     } else {
-      router.push("/dashboard");
-      router.refresh();
+      setError("No se pudo crear la sesión. Inténtalo de nuevo.");
+      setLoading(false);
     }
   }
 
@@ -60,7 +60,7 @@ export default function RegistroPage() {
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Crea tu cuenta</h1>
         <p className="text-gray-500 mt-1">
-          Empieza gratis, sin compromiso
+          14 días gratis de Premium, sin tarjeta
         </p>
       </div>
 
