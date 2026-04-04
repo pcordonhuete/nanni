@@ -73,14 +73,13 @@ export async function createCheckoutSession(
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    ...(discounts ? { discounts } : {}),
+    ...(discounts ? { discounts } : { allow_promotion_codes: true }),
     success_url: `${appUrl}/dashboard?upgraded=true`,
     cancel_url: `${appUrl}/plan`,
     metadata: { advisor_id: advisorId, plan },
     subscription_data: {
       metadata: { advisor_id: advisorId, plan },
     },
-    allow_promotion_codes: !discounts,
   });
 
   return session;
