@@ -56,12 +56,12 @@ export default async function AppLayout({
         />
         <main className="lg:ml-64 pt-14 pb-20 lg:pt-0 lg:pb-0 min-h-screen">
           {isTrialing && (
-            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-center text-xs py-2 px-4">
+            <div className="bg-gradient-to-r from-nanni-600 to-nanni-600 text-white text-center text-xs py-2 px-4">
               <span className="font-medium">
                 Te quedan {daysLeft} día{daysLeft !== 1 ? "s" : ""} de prueba Premium
               </span>
               {" · "}
-              <a href="/plan" className="underline font-bold hover:text-violet-200 transition">
+              <a href="/plan" className="underline font-bold hover:text-nanni-200 transition">
                 Elige tu plan
               </a>
             </div>

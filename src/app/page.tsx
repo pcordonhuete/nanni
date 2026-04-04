@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { MobileNav } from "@/components/landing/MobileNav";
+import { AnimateOnScroll } from "@/components/landing/AnimateOnScroll";
 import {
   Moon,
   ArrowRight,
@@ -25,7 +27,6 @@ import {
   Star,
   LayoutDashboard,
   Activity,
-  Globe,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -108,7 +109,7 @@ const plans = [
   {
     name: "Básico",
     desc: "Para asesoras que empiezan",
-    discountedPrice: "24.50",
+    discountedPrice: "25",
     regularPrice: "49",
     afterMonthly: "49",
     features: [
@@ -125,10 +126,11 @@ const plans = [
   {
     name: "Premium",
     desc: "Para asesoras que quieren crecer",
-    discountedPrice: "39.50",
+    discountedPrice: "40",
     regularPrice: "79",
     afterMonthly: "79",
     features: [
+      "Todo del Básico, más:",
       "Familias ilimitadas",
       "Análisis IA + recomendaciones",
       "White-label (logo, colores, dominio)",
@@ -146,28 +148,28 @@ const testimonials = [
     quote:
       "Antes perdía 2 horas por familia revisando WhatsApps. Ahora lo tengo todo en un clic y mis familias registran sin que les persiga.",
     name: "María G.",
-    role: "Asesora de sueño · Beta tester",
+    role: "Asesora de sueño infantil",
     initials: "MG",
-    bg: "bg-rose-100",
-    text: "text-rose-700",
+    bg: "bg-nanni-100",
+    text: "text-nanni-700",
   },
   {
     quote:
       "La IA detectó un patrón en los despertares de un bebé que yo no había visto. Ajustamos la ventana de vigilia y en 3 días dormía del tirón.",
     name: "Laura M.",
-    role: "Sleep coach certificada · Beta tester",
+    role: "Sleep coach certificada",
     initials: "LM",
-    bg: "bg-emerald-100",
-    text: "text-emerald-700",
+    bg: "bg-nanni-100",
+    text: "text-nanni-700",
   },
   {
     quote:
       "Que la app lleve mi marca es clave. Mis familias sienten que es MI herramienta. Refuerza mi imagen profesional con cada interacción.",
     name: "Carmen R.",
-    role: "Consultora pediátrica · Beta tester",
+    role: "Consultora pediátrica de sueño",
     initials: "CR",
-    bg: "bg-violet-100",
-    text: "text-violet-700",
+    bg: "bg-nanni-100",
+    text: "text-nanni-700",
   },
 ];
 
@@ -211,7 +213,7 @@ export default function LandingPage() {
       <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-nanni-600 flex items-center justify-center">
               <Moon className="w-4 h-4 text-white" />
             </div>
             <span className="text-lg font-bold text-gray-900 tracking-tight">
@@ -237,16 +239,17 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-[13px] font-medium text-gray-500 hover:text-gray-900 transition hidden sm:block"
+              className="text-[13px] font-medium text-gray-500 hover:text-gray-900 transition"
             >
               Entrar
             </Link>
             <Link
               href="/registro"
-              className="text-[13px] font-semibold bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+              className="text-[13px] font-semibold bg-nanni-600 text-white px-4 py-2 rounded-lg hover:bg-nanni-700 transition hidden sm:inline-flex"
             >
               Probar 14 días gratis
             </Link>
+            <MobileNav />
           </div>
         </div>
       </header>
@@ -254,18 +257,18 @@ export default function LandingPage() {
       {/* ──── Hero ──── */}
       <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 bg-grid" />
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-violet-100/60 via-transparent to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-nanni-100/60 via-transparent to-transparent rounded-full blur-3xl" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
             {/* Text */}
             <div>
-              <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-100 text-violet-700 text-xs font-semibold px-3.5 py-1.5 rounded-full mb-8">
+              <div className="inline-flex items-center gap-2 bg-nanni-50 border border-nanni-100 text-nanni-700 text-xs font-semibold px-3.5 py-1.5 rounded-full mb-8">
                 <Sparkles className="w-3.5 h-3.5" />
                 Para asesoras de sueño infantil
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold text-gray-950 leading-[1.08] tracking-tight">
                 Tus familias registran.{" "}
-                <span className="text-gradient bg-gradient-to-r from-violet-600 to-indigo-500">
+                <span className="text-gradient bg-gradient-to-r from-nanni-700 to-nanni-400">
                   Tú analizas.
                 </span>
               </h1>
@@ -277,7 +280,7 @@ export default function LandingPage() {
               <div className="mt-10 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/registro"
-                  className="inline-flex items-center justify-center gap-2 bg-violet-600 text-white font-semibold px-7 py-3.5 rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-600/20"
+                  className="inline-flex items-center justify-center gap-2 bg-nanni-600 text-white font-semibold px-7 py-3.5 rounded-xl hover:bg-nanni-700 transition shadow-lg shadow-nanni-600/20"
                 >
                   Probar 14 días gratis
                   <ArrowRight className="w-4 h-4" />
@@ -291,17 +294,17 @@ export default function LandingPage() {
               </div>
               <div className="mt-12 flex items-center gap-3 text-sm text-gray-400">
                 <span className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-violet-500" />
+                  <Check className="w-3.5 h-3.5 text-nanni-500" />
                   14 días gratis
                 </span>
                 <span className="w-px h-3.5 bg-gray-200" />
                 <span className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-violet-500" />
+                  <Check className="w-3.5 h-3.5 text-nanni-500" />
                   Sin tarjeta
                 </span>
                 <span className="w-px h-3.5 bg-gray-200" />
                 <span className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-violet-500" />
+                  <Check className="w-3.5 h-3.5 text-nanni-500" />
                   Setup en 2 min
                 </span>
               </div>
@@ -318,19 +321,19 @@ export default function LandingPage() {
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
                   </div>
                   <div className="flex-1 bg-white border border-gray-200/80 rounded-md px-3 py-1 text-[10px] text-gray-400 text-center font-mono">
-                    app.nanni.io/dashboard
+                    app.nanniapp.com/dashboard
                   </div>
                 </div>
                 <div className="flex">
                   <div className="w-12 bg-gray-50/50 border-r border-gray-100 py-4 flex flex-col items-center gap-3">
-                    <div className="w-6 h-6 rounded-md bg-violet-600 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-md bg-nanni-600 flex items-center justify-center">
                       <Moon className="w-3 h-3 text-white" />
                     </div>
                     <div className="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center">
                       <LayoutDashboard className="w-2.5 h-2.5 text-gray-400" />
                     </div>
-                    <div className="w-5 h-5 rounded-md bg-violet-50 flex items-center justify-center">
-                      <Users className="w-2.5 h-2.5 text-violet-500" />
+                    <div className="w-5 h-5 rounded-md bg-nanni-50 flex items-center justify-center">
+                      <Users className="w-2.5 h-2.5 text-nanni-500" />
                     </div>
                     <div className="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center">
                       <BarChart3 className="w-2.5 h-2.5 text-gray-400" />
@@ -349,13 +352,13 @@ export default function LandingPage() {
                           3 familias necesitan atención
                         </p>
                       </div>
-                      <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-[8px] font-bold text-violet-700">
+                      <div className="w-6 h-6 rounded-full bg-nanni-100 flex items-center justify-center text-[8px] font-bold text-nanni-700">
                         MG
                       </div>
                     </div>
                     <div className="grid grid-cols-4 gap-2 mb-4">
                       {[
-                        { v: "8", l: "Familias", c: "text-violet-600" },
+                        { v: "8", l: "Familias", c: "text-nanni-600" },
                         { v: "94%", l: "Al día", c: "text-emerald-600" },
                         { v: "3", l: "Alertas", c: "text-amber-600" },
                         { v: "13.3h", l: "Media", c: "text-blue-600" },
@@ -397,7 +400,7 @@ export default function LandingPage() {
                           key={f.n}
                           className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition"
                         >
-                          <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center text-[7px] font-bold text-violet-700">
+                          <div className="w-5 h-5 rounded-full bg-nanni-100 flex items-center justify-center text-[7px] font-bold text-nanni-700">
                             {f.n[0]}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -425,7 +428,7 @@ export default function LandingPage() {
                         {[65, 75, 60, 85, 70, 80, 72].map((h, i) => (
                           <div
                             key={i}
-                            className={`flex-1 rounded-sm ${i === 3 ? "bg-violet-500" : "bg-violet-200"}`}
+                            className={`flex-1 rounded-sm ${i === 3 ? "bg-nanni-500" : "bg-nanni-200"}`}
                             style={{ height: `${h}%` }}
                           />
                         ))}
@@ -447,10 +450,10 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2">
-                    <div className="w-5 h-5 rounded-md bg-violet-600 flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-md bg-nanni-600 flex items-center justify-center">
                       <Moon className="w-2.5 h-2.5 text-white" />
                     </div>
-                    <span className="text-[9px] font-bold text-violet-600">
+                    <span className="text-[9px] font-bold text-nanni-600">
                       Tu Marca
                     </span>
                   </div>
@@ -461,8 +464,8 @@ export default function LandingPage() {
                         label: "Siesta",
                         time: "09:30",
                         detail: "1h 20min · Cuna",
-                        bg: "bg-violet-50",
-                        ic: "text-violet-500",
+                        bg: "bg-nanni-50",
+                        ic: "text-nanni-500",
                       },
                       {
                         icon: Droplets,
@@ -485,8 +488,8 @@ export default function LandingPage() {
                         label: "Siesta",
                         time: "",
                         detail: "En curso...",
-                        bg: "bg-indigo-50",
-                        ic: "text-indigo-500",
+                        bg: "bg-nanni-50",
+                        ic: "text-nanni-500",
                         active: true,
                       },
                     ].map((e) => (
@@ -502,20 +505,20 @@ export default function LandingPage() {
                             {e.label}
                           </p>
                           <p
-                            className={`text-[7px] ${e.active ? "text-indigo-500 font-medium" : "text-gray-400"}`}
+                            className={`text-[7px] ${e.active ? "text-nanni-500 font-medium" : "text-gray-400"}`}
                           >
                             {e.time && `${e.time} · `}
                             {e.detail}
                           </p>
                         </div>
                         {e.active && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse-dot" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-nanni-500 animate-pulse-dot" />
                         )}
                       </div>
                     ))}
                     <div className="flex gap-1.5 pt-1">
                       {[
-                        { icon: Moon, c: "bg-violet-100 text-violet-600" },
+                        { icon: Moon, c: "bg-nanni-100 text-nanni-600" },
                         { icon: Droplets, c: "bg-amber-100 text-amber-600" },
                         { icon: Smile, c: "bg-rose-100 text-rose-500" },
                         { icon: FileText, c: "bg-blue-100 text-blue-600" },
@@ -554,8 +557,8 @@ export default function LandingPage() {
               {/* Floating badge: Sleep score */}
               <div className="absolute bottom-20 right-[-12px] bg-white shadow-float rounded-xl p-3 pr-5 z-20 animate-float-slow">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-4 h-4 text-violet-600" />
+                  <div className="w-8 h-8 rounded-lg bg-nanni-50 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-4 h-4 text-nanni-600" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-900">
@@ -568,8 +571,8 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="absolute top-0 right-0 w-80 h-80 bg-violet-200/20 rounded-full blur-3xl -z-10" />
-              <div className="absolute bottom-0 left-8 w-48 h-48 bg-indigo-200/15 rounded-full blur-3xl -z-10" />
+              <div className="absolute top-0 right-0 w-80 h-80 bg-nanni-200/20 rounded-full blur-3xl -z-10" />
+              <div className="absolute bottom-0 left-8 w-48 h-48 bg-nanni-200/15 rounded-full blur-3xl -z-10" />
             </div>
 
             {/* Hero Product Mock — Mobile: phone mock */}
@@ -586,10 +589,10 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 px-5 py-2 border-b border-gray-50">
-                    <div className="w-6 h-6 rounded-md bg-violet-600 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-md bg-nanni-600 flex items-center justify-center">
                       <Moon className="w-3 h-3 text-white" />
                     </div>
-                    <span className="text-[10px] font-bold text-violet-600">
+                    <span className="text-[10px] font-bold text-nanni-600">
                       Tu Marca
                     </span>
                   </div>
@@ -599,8 +602,8 @@ export default function LandingPage() {
                         icon: Moon,
                         l: "Siesta mañana",
                         d: "1h 20min · Cuna",
-                        bg: "bg-violet-50",
-                        ic: "text-violet-500",
+                        bg: "bg-nanni-50",
+                        ic: "text-nanni-500",
                       },
                       {
                         icon: Droplets,
@@ -620,8 +623,8 @@ export default function LandingPage() {
                         icon: Moon,
                         l: "Siesta tarde",
                         d: "En curso...",
-                        bg: "bg-indigo-50",
-                        ic: "text-indigo-500",
+                        bg: "bg-nanni-50",
+                        ic: "text-nanni-500",
                         active: true,
                       },
                     ].map((e) => (
@@ -637,13 +640,13 @@ export default function LandingPage() {
                             {e.l}
                           </p>
                           <p
-                            className={`text-[10px] ${e.active ? "text-indigo-500 font-medium" : "text-gray-500"}`}
+                            className={`text-[10px] ${e.active ? "text-nanni-500 font-medium" : "text-gray-500"}`}
                           >
                             {e.d}
                           </p>
                         </div>
                         {e.active && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse-dot ml-auto shrink-0" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-nanni-500 animate-pulse-dot ml-auto shrink-0" />
                         )}
                       </div>
                     ))}
@@ -654,8 +657,8 @@ export default function LandingPage() {
                         {
                           icon: Moon,
                           l: "Sueño",
-                          bg: "bg-violet-100",
-                          ic: "text-violet-600",
+                          bg: "bg-nanni-100",
+                          ic: "text-nanni-600",
                         },
                         {
                           icon: Droplets,
@@ -696,69 +699,79 @@ export default function LandingPage() {
       </section>
 
       {/* ──── Problem ──── */}
-      <section className="py-24 md:py-32 bg-white">
+      <section className="py-24 md:py-32 bg-gray-50/40 border-t border-gray-100/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-16">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-              Si esto te suena, no estás sola
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
-              Tu semana no debería ser así
-            </h2>
-            <p className="mt-4 text-lg text-gray-500">
-              Las asesoras de sueño pierden horas en tareas que una buena
-              herramienta debería resolver.
-            </p>
-          </div>
+          <AnimateOnScroll>
+            <div className="max-w-2xl mb-16">
+              <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                Si esto te suena, no estás sola
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
+                Tu semana no debería ser así
+              </h2>
+              <p className="mt-4 text-lg text-gray-500">
+                Las asesoras de sueño pierden horas en tareas que una buena
+                herramienta debería resolver.
+              </p>
+            </div>
+          </AnimateOnScroll>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {painPoints.map((pain) => (
-              <div
-                key={pain.title}
-                className="group bg-white rounded-2xl p-6 shadow-card hover:shadow-lg transition-shadow duration-300 border border-gray-100"
-              >
-                <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center mb-5 group-hover:bg-red-100 transition-colors">
-                  <pain.icon className="w-5 h-5 text-red-500" />
+            {painPoints.map((pain, painIdx) => (
+              <AnimateOnScroll key={pain.title} delay={painIdx * 100}>
+                <div className="group bg-white rounded-2xl p-6 shadow-card hover:shadow-lg transition-shadow duration-300 border border-gray-100 h-full">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-colors ${painIdx === 2 ? "bg-red-50 group-hover:bg-red-100" : "bg-gray-100 group-hover:bg-gray-200"}`}>
+                    <pain.icon className={`w-5 h-5 ${painIdx === 2 ? "text-red-500" : "text-gray-500"}`} />
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2 text-[15px]">
+                    {pain.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {pain.text}
+                  </p>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-[15px]">
-                  {pain.title}
-                </h3>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  {pain.text}
-                </p>
-              </div>
+              </AnimateOnScroll>
             ))}
           </div>
+          <AnimateOnScroll delay={400}>
+            <p className="text-center text-lg text-gray-500 mt-14 font-medium">
+              Nanni resuelve todo esto en 3 pasos.
+            </p>
+          </AnimateOnScroll>
         </div>
       </section>
 
       {/* ──── How It Works ──── */}
       <section id="como-funciona" className="py-24 md:py-32 bg-gray-50/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-              Cómo funciona
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
-              Tres pasos. Sin complicaciones.
-            </h2>
-          </div>
+          <AnimateOnScroll>
+            <div className="text-center mb-20">
+              <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                Cómo funciona
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
+                Tres pasos. Sin complicaciones.
+              </h2>
+            </div>
+          </AnimateOnScroll>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
-            <div className="hidden md:block absolute top-14 left-[20%] right-[20%] h-px bg-gradient-to-r from-violet-200 via-violet-300 to-violet-200" />
-            {steps.map((step) => (
-              <div key={step.num} className="relative text-center">
-                <div className="w-[72px] h-[72px] rounded-2xl bg-white shadow-card border border-gray-100 flex items-center justify-center mx-auto mb-6 relative z-10">
-                  <step.icon className="w-7 h-7 text-violet-600" />
+            <div className="hidden md:block absolute top-14 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-nanni-200 via-nanni-300 to-nanni-200" />
+            {steps.map((step, stepIdx) => (
+              <AnimateOnScroll key={step.num} delay={stepIdx * 150}>
+                <div className="relative text-center">
+                  <div className="w-[72px] h-[72px] rounded-2xl bg-white shadow-card border border-gray-100 flex items-center justify-center mx-auto mb-6 relative z-10">
+                    <step.icon className="w-7 h-7 text-nanni-600" />
+                  </div>
+                  <p className="text-xs font-bold text-nanni-600 tracking-widest mb-2">
+                    PASO {step.num}
+                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+                    {step.text}
+                  </p>
                 </div>
-                <p className="text-xs font-bold text-violet-600 tracking-widest mb-2">
-                  PASO {step.num}
-                </p>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                  {step.text}
-                </p>
-              </div>
+              </AnimateOnScroll>
             ))}
           </div>
           {/* Result + CTA */}
@@ -768,7 +781,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/registro"
-              className="inline-flex items-center gap-2 bg-violet-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-600/20 text-sm"
+              className="inline-flex items-center gap-2 bg-nanni-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-nanni-700 transition shadow-lg shadow-nanni-600/20 text-sm"
             >
               Probar 14 días gratis
               <ArrowRight className="w-4 h-4" />
@@ -781,9 +794,10 @@ export default function LandingPage() {
       <section className="py-24 md:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-                La experiencia de tus familias
+            <AnimateOnScroll>
+              <div>
+                <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                  La experiencia de tus familias
               </p>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight leading-tight">
                 Una app con tu marca que los padres sí usan
@@ -808,8 +822,8 @@ export default function LandingPage() {
                   },
                 ].map((item) => (
                   <li key={item.title} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-md bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-violet-600" />
+                    <div className="w-5 h-5 rounded-md bg-nanni-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-nanni-600" />
                     </div>
                     <div>
                       <span className="text-gray-900 font-semibold text-[15px]">
@@ -822,159 +836,90 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-            </div>
-            {/* Phone mock */}
-            <div className="flex justify-center">
-              <div className="bg-gray-950 rounded-[2.5rem] p-2 shadow-mock max-w-[280px] w-full">
-                <div className="bg-white rounded-[2rem] overflow-hidden">
-                  <div className="flex items-center justify-between px-6 pt-3 pb-1">
-                    <span className="text-[10px] font-semibold text-gray-900">
-                      9:41
-                    </span>
-                    <div className="w-16 h-5 bg-gray-900 rounded-full mx-auto" />
-                    <div className="flex gap-0.5 items-center">
-                      <div className="w-4 h-2 rounded-sm border border-gray-900" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
-                        <Moon className="w-3.5 h-3.5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-bold text-violet-600">
-                          Dulces Sueños
-                        </p>
-                        <p className="text-[8px] text-gray-400">
-                          Diario de Mateo
-                        </p>
+              </div>
+            </AnimateOnScroll>
+            {/* Phone mock — Weekly Progress View */}
+            <AnimateOnScroll delay={200}>
+              <div className="flex justify-center">
+                <div className="bg-gray-950 rounded-[2.5rem] p-2 shadow-mock max-w-[280px] w-full">
+                  <div className="bg-white rounded-[2rem] overflow-hidden">
+                    <div className="flex items-center justify-between px-6 pt-3 pb-1">
+                      <span className="text-[10px] font-semibold text-gray-900">9:41</span>
+                      <div className="w-16 h-5 bg-gray-900 rounded-full mx-auto" />
+                      <div className="flex gap-0.5 items-center">
+                        <div className="w-4 h-2 rounded-sm border border-gray-900" />
                       </div>
                     </div>
-                    <Sun className="w-4 h-4 text-gray-300" />
-                  </div>
-                  <div className="px-4 py-3 space-y-2">
-                    {[
-                      {
-                        icon: Sun,
-                        l: "Despertar",
-                        t: "07:15",
-                        d: "Contento",
-                        bg: "bg-amber-50",
-                        ic: "text-amber-500",
-                      },
-                      {
-                        icon: Droplets,
-                        l: "Toma",
-                        t: "07:30",
-                        d: "Pecho izq. 15min + der. 10min",
-                        bg: "bg-sky-50",
-                        ic: "text-sky-500",
-                      },
-                      {
-                        icon: Moon,
-                        l: "Siesta mañana",
-                        t: "09:30",
-                        d: "1h 20min · Cuna · Solo",
-                        bg: "bg-violet-50",
-                        ic: "text-violet-500",
-                      },
-                      {
-                        icon: Droplets,
-                        l: "Toma",
-                        t: "10:50",
-                        d: "Pecho 12min + biberón 60ml",
-                        bg: "bg-sky-50",
-                        ic: "text-sky-500",
-                      },
-                      {
-                        icon: Activity,
-                        l: "Juego libre",
-                        t: "11:05",
-                        d: "45min · Parque",
-                        bg: "bg-emerald-50",
-                        ic: "text-emerald-500",
-                      },
-                      {
-                        icon: Moon,
-                        l: "Siesta tarde",
-                        t: "14:00",
-                        d: "En curso...",
-                        bg: "bg-indigo-50",
-                        ic: "text-indigo-500",
-                        active: true,
-                      },
-                    ].map((e) => (
-                      <div
-                        key={e.l + e.t}
-                        className={`flex items-center gap-2.5 ${e.bg} rounded-xl p-2.5`}
-                      >
-                        <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
-                          <e.icon className={`w-3.5 h-3.5 ${e.ic}`} />
+                    <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-nanni-600 flex items-center justify-center">
+                          <Moon className="w-3.5 h-3.5 text-white" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-semibold text-gray-800">
-                              {e.l}
-                            </span>
-                            <span className="text-[9px] text-gray-400">
-                              {e.t}
-                            </span>
+                        <div>
+                          <p className="text-[11px] font-bold text-nanni-600">Dulces Sueños</p>
+                          <p className="text-[8px] text-gray-400">Resumen semanal</p>
+                        </div>
+                      </div>
+                      <BarChart3 className="w-4 h-4 text-nanni-400" />
+                    </div>
+                    <div className="px-4 py-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[10px] font-bold text-gray-700">Sueño de Mateo</p>
+                        <span className="text-[8px] text-nanni-600 font-semibold bg-nanni-50 px-2 py-0.5 rounded-full">Esta semana</span>
+                      </div>
+                      <div className="flex items-end gap-1.5 h-20 mb-1">
+                        {[
+                          { h: 65, l: "L" },
+                          { h: 75, l: "M" },
+                          { h: 60, l: "X" },
+                          { h: 85, l: "J" },
+                          { h: 70, l: "V" },
+                          { h: 80, l: "S" },
+                          { h: 78, l: "D" },
+                        ].map((bar, bIdx) => (
+                          <div key={bar.l} className="flex-1 flex flex-col items-center gap-0.5">
+                            <div className={`w-full rounded-t-sm ${bIdx === 3 ? "bg-nanni-500" : "bg-nanni-200"}`} style={{ height: `${bar.h}%` }} />
+                            <span className="text-[7px] text-gray-400">{bar.l}</span>
                           </div>
-                          <p
-                            className={`text-[9px] ${e.active ? "text-indigo-500 font-medium" : "text-gray-500"}`}
-                          >
-                            {e.d}
-                          </p>
-                        </div>
-                        {e.active && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse-dot shrink-0" />
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <div className="px-4 pb-4">
-                    <div className="flex gap-2">
-                      {[
-                        {
-                          icon: Moon,
-                          l: "Sueño",
-                          bg: "bg-violet-100",
-                          ic: "text-violet-600",
-                        },
-                        {
-                          icon: Droplets,
-                          l: "Toma",
-                          bg: "bg-sky-100",
-                          ic: "text-sky-600",
-                        },
-                        {
-                          icon: Smile,
-                          l: "Humor",
-                          bg: "bg-rose-100",
-                          ic: "text-rose-500",
-                        },
-                        {
-                          icon: FileText,
-                          l: "Nota",
-                          bg: "bg-gray-100",
-                          ic: "text-gray-600",
-                        },
-                      ].map((a) => (
-                        <div
-                          key={a.l}
-                          className={`flex-1 ${a.bg} rounded-xl py-2 flex flex-col items-center gap-1`}
-                        >
-                          <a.icon className={`w-4 h-4 ${a.ic}`} />
-                          <span className="text-[8px] font-medium text-gray-700">
-                            {a.l}
-                          </span>
+                      <div className="flex items-center justify-between mt-3 mb-2">
+                        <p className="text-[9px] text-gray-400">Media: 13.2h/día</p>
+                        <p className="text-[9px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                          <TrendingUp className="w-2.5 h-2.5" /> +0.5h
+                        </p>
+                      </div>
+                      <div className="space-y-1.5 mt-3">
+                        {[
+                          { label: "Siestas/día", value: "2.3", trend: "+0.1", good: true },
+                          { label: "Despertares nocturnos", value: "1.2", trend: "-0.5", good: true },
+                          { label: "Tiempo dormido (noche)", value: "10.8h", trend: "+0.3h", good: true },
+                        ].map((metric) => (
+                          <div key={metric.label} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                            <span className="text-[9px] text-gray-600">{metric.label}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-gray-900">{metric.value}</span>
+                              <span className="text-[8px] text-emerald-600 font-medium">{metric.trend}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="px-4 pb-4">
+                      <div className="bg-emerald-50 rounded-xl p-2.5">
+                        <div className="flex items-center gap-2">
+                          <Brain className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <p className="text-[9px] font-bold text-emerald-700">IA: Mejora detectada</p>
+                            <p className="text-[8px] text-emerald-600">Adelantar acostarse 15min está funcionando</p>
+                          </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </AnimateOnScroll>
           </div>
         </div>
       </section>
@@ -982,21 +927,23 @@ export default function LandingPage() {
       {/* ──── Dashboard Showcase ──── */}
       <section className="py-24 md:py-32 bg-gray-50/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-              Tu panel de control
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
-              De 8 familias en 8 chats a{" "}
-              <span className="text-gradient bg-gradient-to-r from-violet-600 to-indigo-500">
-                una sola pantalla
-              </span>
-            </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-              Datos en tiempo real, alertas automáticas e insights de IA.
-              Sin perseguir a nadie.
-            </p>
-          </div>
+          <AnimateOnScroll>
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                Tu panel de control
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
+                De 8 familias en 8 chats a{" "}
+                <span className="text-gradient bg-gradient-to-r from-nanni-700 to-nanni-400">
+                  una sola pantalla
+                </span>
+              </h2>
+              <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+                Datos en tiempo real, alertas automáticas e insights de IA.
+                Sin perseguir a nadie.
+              </p>
+            </div>
+          </AnimateOnScroll>
           {/* Large dashboard mock */}
           <div className="max-w-5xl mx-auto">
             <div className="shadow-mock rounded-xl overflow-hidden bg-white border border-gray-200/60">
@@ -1007,13 +954,13 @@ export default function LandingPage() {
                   <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
                 </div>
                 <div className="flex-1 max-w-md mx-auto bg-white border border-gray-200/80 rounded-lg px-4 py-1.5 text-xs text-gray-400 text-center font-mono">
-                  app.nanni.io/dashboard
+                  app.nanniapp.com/dashboard
                 </div>
               </div>
               <div className="flex">
                 <div className="hidden md:flex w-48 bg-gray-50/50 border-r border-gray-100 flex-col py-5 px-3 shrink-0">
                   <div className="flex items-center gap-2 px-2 mb-6">
-                    <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-lg bg-nanni-600 flex items-center justify-center">
                       <Moon className="w-3.5 h-3.5 text-white" />
                     </div>
                     <div>
@@ -1026,17 +973,17 @@ export default function LandingPage() {
                       {
                         icon: LayoutDashboard,
                         l: "Dashboard",
-                        active: true,
+                        active: false,
                       },
                       { icon: Users, l: "Familias", active: false },
-                      { icon: BarChart3, l: "Analíticas", active: false },
+                      { icon: BarChart3, l: "Analíticas", active: true },
                       { icon: Palette, l: "Mi marca", active: false },
                     ].map((nav) => (
                       <div
                         key={nav.l}
                         className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs ${
                           nav.active
-                            ? "bg-violet-50 text-violet-700 font-semibold"
+                            ? "bg-nanni-50 text-nanni-700 font-semibold"
                             : "text-gray-400"
                         }`}
                       >
@@ -1050,144 +997,64 @@ export default function LandingPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <p className="text-sm font-bold text-gray-900">
-                        Buenos días, María
+                        Analíticas · Mateo (7 meses)
                       </p>
                       <p className="text-xs text-gray-400">
-                        Tienes 2 alertas y 3 tareas hoy
+                        Últimos 7 días
                       </p>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-[10px] font-bold text-violet-700">
-                      MG
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full">Mejorando</span>
+                      <div className="w-8 h-8 rounded-full bg-nanni-100 flex items-center justify-center text-[10px] font-bold text-nanni-700">
+                        M
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div className="grid grid-cols-3 gap-3 mb-5">
                     {[
-                      {
-                        v: "8",
-                        l: "Familias activas",
-                        t: "+2",
-                        tc: "text-emerald-600",
-                        ic: Users,
-                        icbg: "bg-violet-50",
-                        icc: "text-violet-600",
-                      },
-                      {
-                        v: "94%",
-                        l: "Registros al día",
-                        t: "+3%",
-                        tc: "text-emerald-600",
-                        ic: Target,
-                        icbg: "bg-emerald-50",
-                        icc: "text-emerald-600",
-                      },
-                      {
-                        v: "2",
-                        l: "Necesitan atención",
-                        t: "-1",
-                        tc: "text-emerald-600",
-                        ic: Clock,
-                        icbg: "bg-amber-50",
-                        icc: "text-amber-600",
-                      },
-                      {
-                        v: "13.3h",
-                        l: "Media sueño/día",
-                        t: "+0.3h",
-                        tc: "text-emerald-600",
-                        ic: Moon,
-                        icbg: "bg-blue-50",
-                        icc: "text-blue-600",
-                      },
+                      { v: "13.5h", l: "Sueño total", t: "+0.5h", ic: Moon, icbg: "bg-nanni-50", icc: "text-nanni-600" },
+                      { v: "1.2", l: "Despertares noche", t: "-40%", ic: TrendingUp, icbg: "bg-emerald-50", icc: "text-emerald-600" },
+                      { v: "2.3", l: "Siestas/día", t: "Estable", ic: Sun, icbg: "bg-amber-50", icc: "text-amber-600" },
                     ].map((s) => (
-                      <div
-                        key={s.l}
-                        className="bg-gray-50 rounded-xl p-3.5"
-                      >
-                        <div
-                          className={`w-7 h-7 ${s.icbg} rounded-lg flex items-center justify-center mb-2`}
-                        >
-                          <s.ic className={`w-3.5 h-3.5 ${s.icc}`} />
+                      <div key={s.l} className="bg-gray-50 rounded-xl p-3">
+                        <div className={`w-6 h-6 ${s.icbg} rounded-lg flex items-center justify-center mb-1.5`}>
+                          <s.ic className={`w-3 h-3 ${s.icc}`} />
                         </div>
-                        <p className="text-xl font-bold text-gray-900">
-                          {s.v}
-                        </p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">
-                          {s.l}
-                        </p>
-                        <p
-                          className={`text-[10px] font-medium mt-1 flex items-center gap-0.5 ${s.tc}`}
-                        >
-                          <TrendingUp className="w-2.5 h-2.5" />
-                          {s.t}
-                        </p>
+                        <p className="text-lg font-bold text-gray-900">{s.v}</p>
+                        <p className="text-[9px] text-gray-400">{s.l}</p>
+                        <p className="text-[9px] font-medium text-emerald-600 mt-0.5">{s.t}</p>
                       </div>
                     ))}
                   </div>
                   <div className="grid md:grid-cols-5 gap-5">
                     <div className="md:col-span-3">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                        Familias
+                        Sueño Semanal
                       </p>
-                      <div className="space-y-2">
-                        {[
-                          {
-                            n: "Mateo",
-                            a: "7 meses",
-                            t: "hace 23 min",
-                            s: "Mejorando",
-                            sc: "bg-emerald-50 text-emerald-700",
-                            h: "13.5h",
-                          },
-                          {
-                            n: "Lucía",
-                            a: "4 meses",
-                            t: "hace 2h",
-                            s: "En proceso",
-                            sc: "bg-amber-50 text-amber-700",
-                            h: "12h",
-                          },
-                          {
-                            n: "Pablo",
-                            a: "11 meses",
-                            t: "desde ayer",
-                            s: "Atención",
-                            sc: "bg-red-50 text-red-600",
-                            h: "11h",
-                          },
-                          {
-                            n: "Sofía",
-                            a: "6 meses",
-                            t: "hace 1h",
-                            s: "Mejorando",
-                            sc: "bg-emerald-50 text-emerald-700",
-                            h: "14h",
-                          },
-                        ].map((f) => (
-                          <div
-                            key={f.n}
-                            className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 bg-white"
-                          >
-                            <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-[10px] font-bold text-violet-700 shrink-0">
-                              {f.n[0]}
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <div className="flex items-end gap-2 h-28">
+                          {[
+                            { d: "L", n: 68, s: 22, t: 10 },
+                            { d: "M", n: 72, s: 20, t: 8 },
+                            { d: "X", n: 65, s: 25, t: 10 },
+                            { d: "J", n: 80, s: 15, t: 5 },
+                            { d: "V", n: 75, s: 18, t: 7 },
+                            { d: "S", n: 78, s: 16, t: 6 },
+                            { d: "D", n: 82, s: 14, t: 4 },
+                          ].map((bar) => (
+                            <div key={bar.d} className="flex-1 flex flex-col items-center gap-0.5">
+                              <div className="w-full flex flex-col gap-px" style={{ height: `${bar.n}%` }}>
+                                <div className="flex-1 bg-nanni-400 rounded-t-sm" />
+                                <div style={{ height: `${bar.s}%` }} className="bg-nanni-200 rounded-sm" />
+                              </div>
+                              <span className="text-[8px] text-gray-400 mt-1">{bar.d}</span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-gray-900">
-                                {f.n}{" "}
-                                <span className="text-gray-400 font-normal">
-                                  · {f.a}
-                                </span>
-                              </p>
-                              <p className="text-[10px] text-gray-400">
-                                {f.t} · {f.h} sueño
-                              </p>
-                            </div>
-                            <span
-                              className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${f.sc}`}
-                            >
-                              {f.s}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100">
+                          <span className="flex items-center gap-1 text-[8px] text-gray-500"><span className="w-2 h-2 rounded-sm bg-nanni-400" /> Noche</span>
+                          <span className="flex items-center gap-1 text-[8px] text-gray-500"><span className="w-2 h-2 rounded-sm bg-nanni-200" /> Siestas</span>
+                        </div>
                       </div>
                     </div>
                     <div className="md:col-span-2">
@@ -1195,36 +1062,18 @@ export default function LandingPage() {
                         IA Insights
                       </p>
                       <div className="space-y-2">
-                        {[
-                          {
-                            l: "Mejora detectada",
-                            t: "Mateo: -40% despertares. Adelantar acostarse 15 min.",
-                            bg: "bg-emerald-50",
-                            bc: "border-emerald-100",
-                            tc: "text-emerald-700",
-                          },
-                          {
-                            l: "Alerta",
-                            t: "Lucía: ventanas vigilia >2h (alto para 4 meses).",
-                            bg: "bg-amber-50",
-                            bc: "border-amber-100",
-                            tc: "text-amber-700",
-                          },
-                        ].map((i) => (
-                          <div
-                            key={i.l}
-                            className={`p-3 rounded-xl border ${i.bg} ${i.bc}`}
-                          >
-                            <p
-                              className={`text-[9px] font-bold ${i.tc} mb-1`}
-                            >
-                              {i.l}
-                            </p>
-                            <p className="text-[10px] text-gray-600 leading-relaxed">
-                              {i.t}
-                            </p>
-                          </div>
-                        ))}
+                        <div className="p-3 rounded-xl border bg-emerald-50 border-emerald-100">
+                          <p className="text-[9px] font-bold text-emerald-700 mb-1">Mejora detectada</p>
+                          <p className="text-[10px] text-gray-600 leading-relaxed">-40% despertares nocturnos. Adelantar acostarse 15 min está funcionando.</p>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-amber-50 border-amber-100">
+                          <p className="text-[9px] font-bold text-amber-700 mb-1">Sugerencia</p>
+                          <p className="text-[10px] text-gray-600 leading-relaxed">Ventana vigilia tarde &gt;2h. Probar siesta a las 13:30.</p>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-nanni-50 border-nanni-100">
+                          <p className="text-[9px] font-bold text-nanni-700 mb-1">Próximo hito</p>
+                          <p className="text-[10px] text-gray-600 leading-relaxed">A 7 meses, puede consolidar a 2 siestas.</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1248,37 +1097,56 @@ export default function LandingPage() {
       {/* ──── Features Grid ──── */}
       <section id="funcionalidades" className="py-24 md:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-16">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-              Funcionalidades
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
-              Todo lo que necesitas, nada que no
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="group bg-white rounded-2xl p-6 md:p-8 shadow-card hover:shadow-lg transition-all duration-300 border border-gray-100"
-              >
-                <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center mb-5 group-hover:bg-violet-100 transition-colors">
-                  <feature.icon className="w-5 h-5 text-violet-600" />
+          <AnimateOnScroll>
+            <div className="max-w-2xl mb-16">
+              <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                Funcionalidades
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
+                Todo lo que necesitas, nada que no
+              </h2>
+            </div>
+          </AnimateOnScroll>
+          {/* Hero features — larger cards for the top 2 */}
+          <div className="grid md:grid-cols-2 gap-5 mb-5">
+            {features.slice(0, 2).map((feature, featureIdx) => (
+              <AnimateOnScroll key={feature.title} delay={featureIdx * 100}>
+                <div className="group bg-gradient-to-br from-nanni-50/80 to-white rounded-2xl p-8 md:p-10 shadow-card hover:shadow-lg transition-all duration-300 border border-nanni-100 h-full">
+                  <div className="w-14 h-14 rounded-2xl bg-nanni-100 flex items-center justify-center mb-6 group-hover:bg-nanni-200 transition-colors">
+                    <feature.icon className="w-7 h-7 text-nanni-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[15px] text-gray-500 leading-relaxed">
+                    {feature.text}
+                  </p>
                 </div>
-                <h3 className="text-[15px] font-bold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  {feature.text}
-                </p>
-              </div>
+              </AnimateOnScroll>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {features.slice(2).map((feature, featureIdx) => (
+              <AnimateOnScroll key={feature.title} delay={200 + featureIdx * 80}>
+                <div className="group bg-white rounded-2xl p-6 md:p-8 shadow-card hover:shadow-lg transition-all duration-300 border border-gray-100 h-full">
+                  <div className="w-11 h-11 rounded-xl bg-nanni-50 flex items-center justify-center mb-5 group-hover:bg-nanni-100 transition-colors">
+                    <feature.icon className="w-5 h-5 text-nanni-600" />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-gray-900 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {feature.text}
+                  </p>
+                </div>
+              </AnimateOnScroll>
             ))}
           </div>
           {/* CTA after features */}
           <div className="text-center mt-12">
             <Link
               href="/registro"
-              className="inline-flex items-center gap-2 text-violet-600 font-semibold hover:text-violet-700 transition text-sm"
+              className="inline-flex items-center gap-2 text-nanni-600 font-semibold hover:text-nanni-700 transition text-sm"
             >
               Ver todas las funcionalidades en acción
               <ArrowRight className="w-4 h-4" />
@@ -1290,18 +1158,20 @@ export default function LandingPage() {
       {/* ──── Stats ──── */}
       <section className="py-24 md:py-32 bg-gray-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              Diseñado para que{" "}
-              <span className="text-gradient bg-gradient-to-r from-violet-400 to-indigo-400">
-                ahorres horas
-              </span>
-            </h2>
-            <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
-              Familias que registran solas, datos que se analizan solos, y tú
-              con tiempo para lo que importa: ayudar a dormir mejor.
-            </p>
-          </div>
+          <AnimateOnScroll>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+                Diseñado para que{" "}
+                <span className="text-gradient bg-gradient-to-r from-nanni-300 to-nanni-500">
+                  ahorres horas
+                </span>
+              </h2>
+              <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
+                Familias que registran solas, datos que se analizan solos, y tú
+                con tiempo para lo que importa: ayudar a dormir mejor.
+              </p>
+            </div>
+          </AnimateOnScroll>
           <div className="grid sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               {
@@ -1325,7 +1195,7 @@ export default function LandingPage() {
             ].map((stat) => (
               <div key={stat.l} className="text-center">
                 <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-                  <stat.icon className="w-6 h-6 text-violet-400" />
+                  <stat.icon className="w-6 h-6 text-nanni-400" />
                 </div>
                 <div className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
                   {stat.v}
@@ -1337,26 +1207,29 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          <p className="text-center text-xs text-gray-600 mt-10">
+            Datos basados en nuestras primeras 50 familias durante la fase beta.
+          </p>
         </div>
       </section>
 
       {/* ──── Testimonials ──── */}
       <section className="py-24 md:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-              Beta testers
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
-              Lo que dicen las primeras usuarias
-            </h2>
-          </div>
+          <AnimateOnScroll>
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                Primeras usuarias
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
+                Lo que dicen las primeras usuarias
+              </h2>
+            </div>
+          </AnimateOnScroll>
           <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <div
-                key={t.name}
-                className="bg-white rounded-2xl p-6 md:p-8 shadow-card border border-gray-100 flex flex-col"
-              >
+            {testimonials.map((t, tIdx) => (
+              <AnimateOnScroll key={t.name} delay={tIdx * 100}>
+                <div className="bg-white rounded-2xl p-6 md:p-8 shadow-card border border-gray-100 flex flex-col h-full">
                 <div className="flex gap-0.5 mb-5">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -1382,6 +1255,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+              </AnimateOnScroll>
             ))}
           </div>
         </div>
@@ -1392,7 +1266,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
             {[
-              { icon: Shield, text: "Cifrado end-to-end" },
+              { icon: Shield, text: "Datos cifrados y protegidos" },
               { icon: Zap, text: "Setup en 2 minutos" },
               { icon: Target, text: "RGPD compliant" },
               { icon: Wifi, text: "Funciona offline" },
@@ -1412,105 +1286,88 @@ export default function LandingPage() {
       {/* ──── Pricing ──── */}
       <section id="precios" className="py-24 md:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
-              Precios
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
-              Planes para asesoras, no para corporaciones
-            </h2>
-            <p className="mt-4 text-gray-500 text-lg">
-              Tus familias nunca pagan. Tú eliges el plan que encaje.
-            </p>
-          </div>
+          <AnimateOnScroll>
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
+                Precios
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
+                Planes para asesoras, no para corporaciones
+              </h2>
+              <p className="mt-4 text-gray-500 text-lg">
+                Tus familias nunca pagan. Tú eliges el plan que encaje.
+              </p>
+            </div>
+          </AnimateOnScroll>
           <div className="flex justify-center mb-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-800">
-              <Sparkles className="w-4 h-4 shrink-0 text-violet-600" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-nanni-200 bg-nanni-50 px-4 py-2.5 text-sm font-medium text-nanni-800">
+              <Sparkles className="w-4 h-4 shrink-0 text-nanni-600" />
               Prueba 14 días gratis — acceso Premium completo sin tarjeta
             </div>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-start">
             {plans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl ${
-                  plan.popular
-                    ? "bg-gray-950 text-white shadow-2xl shadow-gray-950/20 ring-1 ring-gray-800 md:-mt-4 md:mb-[-16px]"
-                    : "bg-white border border-gray-200 shadow-card"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-violet-600 text-white text-[11px] font-bold px-4 py-1 rounded-full">
-                      Más popular
-                    </span>
-                  </div>
-                )}
-                <div className="p-6 md:p-8">
-                  <h3
-                    className={`text-lg font-bold ${plan.popular ? "text-white" : "text-gray-900"}`}
-                  >
-                    {plan.name}
-                  </h3>
-                  <p
-                    className={`text-sm mt-1 ${plan.popular ? "text-gray-400" : "text-gray-400"}`}
-                  >
-                    {plan.desc}
-                  </p>
-                  <div className="mt-6 mb-6">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-2">
-                      <span
-                        className={`text-5xl font-extrabold tracking-tight ${plan.popular ? "text-white" : "text-gray-900"}`}
-                      >
-                        {plan.discountedPrice}€
-                      </span>
-                      <span
-                        className={`text-xl font-semibold line-through ${plan.popular ? "text-gray-500" : "text-gray-400"}`}
-                      >
-                        {plan.regularPrice}€
-                      </span>
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                          plan.popular
-                            ? "bg-emerald-500/20 text-emerald-300"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        -50% 3 meses
+              <AnimateOnScroll key={plan.name} delay={plan.popular ? 100 : 0}>
+                <div
+                  className={`relative rounded-2xl ${
+                    plan.popular
+                      ? "bg-white ring-2 ring-nanni-500 shadow-xl shadow-nanni-500/10 md:-mt-4 md:mb-[-16px]"
+                      : "bg-white border border-gray-200 shadow-card"
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="bg-nanni-600 text-white text-[11px] font-bold px-4 py-1 rounded-full">
+                        Más popular
                       </span>
                     </div>
-                    <p
-                      className={`mt-2 text-xs ${plan.popular ? "text-gray-500" : "text-gray-500"}`}
-                    >
-                      después {plan.afterMonthly}€/mes
+                  )}
+                  <div className="p-6 md:p-8">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {plan.name}
+                    </h3>
+                    <p className="text-sm mt-1 text-gray-400">
+                      {plan.desc}
                     </p>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5">
-                        <Check
-                          className={`w-4 h-4 mt-0.5 shrink-0 ${plan.popular ? "text-violet-400" : "text-violet-600"}`}
-                        />
-                        <span
-                          className={`text-sm ${plan.popular ? "text-gray-300" : "text-gray-600"}`}
-                        >
-                          {feature}
+                    <div className="mt-6 mb-6">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-2">
+                        <span className="text-5xl font-extrabold tracking-tight text-gray-900">
+                          {plan.discountedPrice}€
                         </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="/registro"
-                    className={`block text-center font-semibold py-3 rounded-xl transition text-sm ${
-                      plan.popular
-                        ? "bg-white text-gray-900 hover:bg-gray-100"
-                        : "bg-gray-900 text-white hover:bg-gray-800"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
+                        <span className="text-xl font-semibold line-through text-gray-400">
+                          {plan.regularPrice}€
+                        </span>
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                          -50% 3 meses
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        después {plan.afterMonthly}€/mes
+                      </p>
+                    </div>
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2.5">
+                          <Check className="w-4 h-4 mt-0.5 shrink-0 text-nanni-600" />
+                          <span className="text-sm text-gray-600">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href="/registro"
+                      className={`block text-center font-semibold py-3 rounded-xl transition text-sm ${
+                        plan.popular
+                          ? "bg-nanni-600 text-white hover:bg-nanni-700"
+                          : "bg-gray-900 text-white hover:bg-gray-800"
+                      }`}
+                    >
+                      {plan.cta}
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              </AnimateOnScroll>
             ))}
           </div>
         </div>
@@ -1520,7 +1377,7 @@ export default function LandingPage() {
       <section id="faq" className="py-24 md:py-32 bg-gray-50/60">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-violet-600 tracking-wide mb-3">
+            <p className="text-sm font-semibold text-nanni-600 tracking-wide mb-3">
               FAQ
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-950 tracking-tight">
@@ -1528,9 +1385,10 @@ export default function LandingPage() {
             </h2>
           </div>
           <div className="space-y-3">
-            {faqs.map((faq) => (
+            {faqs.map((faq, faqIdx) => (
               <details
                 key={faq.q}
+                open={faqIdx === 0}
                 className="group bg-white rounded-xl border border-gray-200 overflow-hidden"
               >
                 <summary className="flex items-center justify-between cursor-pointer p-5 list-none select-none">
@@ -1553,7 +1411,7 @@ export default function LandingPage() {
       {/* ──── Final CTA ──── */}
       <section className="py-24 md:py-32 bg-gray-950 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-[0.03]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-violet-600/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-nanni-600/10 rounded-full blur-3xl" />
         <div className="relative max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-8">
             <Moon className="w-6 h-6 text-white" />
@@ -1569,7 +1427,7 @@ export default function LandingPage() {
               href="/registro"
               className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold py-3.5 px-8 rounded-xl hover:bg-gray-100 transition text-sm"
             >
-              Probar 14 días gratis
+              Crea tu cuenta en 2 minutos
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -1584,7 +1442,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-nanni-600 flex items-center justify-center">
                 <Moon className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="font-bold text-gray-900">Nanni</span>

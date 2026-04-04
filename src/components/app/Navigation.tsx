@@ -47,7 +47,6 @@ const mobileNavItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/familias", label: "Familias", icon: Users },
   { href: "/analiticas", label: "Datos", icon: BarChart3 },
-  { href: "/marca", label: "Marca", icon: Palette },
   { href: "/ajustes", label: "Más", icon: MoreHorizontal },
 ];
 
@@ -84,7 +83,7 @@ export default function Navigation({
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-gray-100 fixed inset-y-0 left-0 z-30">
         <div className="p-5 pb-4">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-nanni-600 flex items-center justify-center">
               <Moon className="w-4 h-4 text-white" />
             </div>
             <span className="text-lg font-bold text-gray-900">Nanni</span>
@@ -92,7 +91,7 @@ export default function Navigation({
               plan === "trial"
                 ? "bg-amber-100 text-amber-700"
                 : plan === "premium"
-                ? "bg-violet-100 text-violet-700"
+                ? "bg-nanni-100 text-nanni-700"
                 : "bg-gray-100 text-gray-600"
             }`}>
               {planLabels[plan]}
@@ -120,7 +119,7 @@ export default function Navigation({
         <div className="px-3 mb-4">
           <button
             onClick={() => setShowInvite(true)}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-white bg-violet-600 rounded-xl hover:bg-violet-700 transition"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-white bg-nanni-600 rounded-xl hover:bg-nanni-700 transition"
           >
             <Plus className="w-4 h-4" />
             Añadir familia
@@ -142,11 +141,11 @@ export default function Navigation({
                       href={item.href}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
                         active
-                          ? "bg-violet-50 text-violet-700"
+                          ? "bg-nanni-50 text-nanni-700"
                           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                       }`}
                     >
-                      <item.icon className={`w-[18px] h-[18px] ${active ? "text-violet-600" : ""}`} />
+                      <item.icon className={`w-[18px] h-[18px] ${active ? "text-nanni-600" : ""}`} />
                       {item.label}
                     </Link>
                   );
@@ -158,7 +157,7 @@ export default function Navigation({
 
         <div className="p-3 border-t border-gray-100">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 shrink-0">
+            <div className="w-9 h-9 rounded-full bg-nanni-100 flex items-center justify-center text-xs font-bold text-nanni-700 shrink-0">
               {userInitials}
             </div>
             <div className="flex-1 min-w-0">
@@ -181,7 +180,7 @@ export default function Navigation({
       <header className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-nanni-600 flex items-center justify-center">
               <Moon className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-bold text-gray-900">Nanni</span>
@@ -189,12 +188,12 @@ export default function Navigation({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowInvite(true)}
-              className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition"
+              className="p-2 text-nanni-600 hover:bg-nanni-50 rounded-lg transition"
             >
               <Plus className="w-5 h-5" />
             </button>
             <NotificationPanel notifications={notifications} unreadCount={unreadCount} />
-            <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-[10px] font-bold text-violet-700 ml-1">
+            <div className="w-8 h-8 rounded-full bg-nanni-100 flex items-center justify-center text-[10px] font-bold text-nanni-700 ml-1">
               {userInitials}
             </div>
           </div>
@@ -211,13 +210,13 @@ export default function Navigation({
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 min-w-[56px] transition relative ${
-                  active ? "text-violet-600" : "text-gray-400"
+                  active ? "text-nanni-600" : "text-gray-400"
                 }`}
               >
                 <item.icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{item.label}</span>
                 {active && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-violet-600 rounded-full" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-nanni-600 rounded-full" />
                 )}
               </Link>
             );

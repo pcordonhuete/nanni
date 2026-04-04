@@ -46,7 +46,7 @@ export default function RecuperarPage() {
         </p>
         <Link
           href="/login"
-          className="inline-block mt-8 text-violet-600 font-medium hover:text-violet-700"
+          className="inline-block mt-8 text-nanni-600 font-medium hover:text-nanni-700"
         >
           Volver a iniciar sesión
         </Link>
@@ -57,8 +57,8 @@ export default function RecuperarPage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
-          <KeyRound className="w-7 h-7 text-violet-600" />
+        <div className="w-14 h-14 rounded-2xl bg-nanni-100 flex items-center justify-center mx-auto mb-4">
+          <KeyRound className="w-7 h-7 text-nanni-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
           Recupera tu contraseña
@@ -92,14 +92,14 @@ export default function RecuperarPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-violet-600 text-white font-semibold py-3 rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-nanni-600 text-white font-semibold py-3 rounded-xl hover:bg-nanni-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -115,7 +115,7 @@ export default function RecuperarPage() {
       <p className="text-center text-sm text-gray-500 mt-6">
         <Link
           href="/login"
-          className="text-violet-600 font-medium hover:text-violet-700"
+          className="text-nanni-600 font-medium hover:text-nanni-700"
         >
           Volver a iniciar sesión
         </Link>

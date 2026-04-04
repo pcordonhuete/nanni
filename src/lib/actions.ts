@@ -433,3 +433,292 @@ export async function acceptInvite(
 
   return { success: true, familyId: family.id };
 }
+
+// ─── Notification Preferences ───
+
+export async function updateNotificationPreferences(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const prefs = {
+    advisor_id: user.id,
+    new_record: formData.get("new_record") === "true",
+    family_inactive: formData.get("family_inactive") === "true",
+    insight: formData.get("insight") === "true",
+    weekly_summary: formData.get("weekly_summary") === "true",
+  };
+
+  const { error } = await supabase
+    .from("notification_preferences")
+    .upsert(prefs, { onConflict: "advisor_id" });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/ajustes");
+  return { success: true };
+}
+
+// ─── Sleep Plan Templates ───
+
+export async function createPlanFromTemplate(
+  familyId: string,
+  templateId: string
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const { data: template } = await supabase
+    .from("sleep_plan_templates")
+    .select("*")
+    .eq("id", templateId)
+    .single();
+
+  if (!template) return { error: "Plantilla no encontrada" };
+
+  const { data: plan, error: planError } = await supabase
+    .from("sleep_plans")
+    .insert({
+      family_id: familyId,
+      advisor_id: user.id,
+      title: template.title,
+      description: template.description,
+      status: "draft",
+    })
+    .select()
+    .single();
+
+  if (planError || !plan) return { error: planError?.message || "Error creando plan" };
+
+  const goals = (template.goals as { description: string; target_value?: number; metric?: string }[]) || [];
+  for (const goal of goals) {
+    await supabase.from("sleep_plan_goals").insert({
+      plan_id: plan.id,
+      description: goal.description,
+      target_value: goal.target_value ?? null,
+      metric: goal.metric ?? null,
+    });
+  }
+
+  const steps = (template.steps as { title: string; description?: string; duration_days: number }[]) || [];
+  for (let i = 0; i < steps.length; i++) {
+    await supabase.from("sleep_plan_steps").insert({
+      plan_id: plan.id,
+      step_order: i + 1,
+      title: steps[i].title,
+      description: steps[i].description ?? null,
+      duration_days: steps[i].duration_days,
+    });
+  }
+
+  revalidatePath(`/familia/${familyId}`);
+  return { success: true, planId: plan.id };
+}
+
+export async function createSleepPlanTemplate(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const method = formData.get("method") as string;
+
+  if (!title) return { error: "Título obligatorio" };
+
+  const { error } = await supabase.from("sleep_plan_templates").insert({
+    advisor_id: user.id,
+    is_system: false,
+    title,
+    description: description || null,
+    method: method || null,
+    goals: [],
+    steps: [],
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/familias");
+  return { success: true };
+}
+
+// ─── Bulk Family Actions ───
+
+export async function bulkUpdateFamilyStatus(
+  familyIds: string[],
+  status: string
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("families")
+    .update({ status })
+    .in("id", familyIds);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/familias");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// ─── Intake Questionnaires ───
+
+export async function createIntakeTemplate(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const questionsRaw = formData.get("questions") as string;
+
+  let questions = [];
+  try {
+    questions = JSON.parse(questionsRaw);
+  } catch {
+    return { error: "Formato de preguntas inválido" };
+  }
+
+  const { error } = await supabase.from("intake_templates").insert({
+    advisor_id: user.id,
+    title,
+    description: description || null,
+    questions,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/ajustes");
+  return { success: true };
+}
+
+export async function submitIntakeResponse(
+  familyToken: string,
+  templateId: string,
+  answers: Record<string, string | number | boolean>
+) {
+  const supabase = await createClient();
+
+  const { data: family } = await supabase
+    .from("families")
+    .select("id")
+    .eq("invite_token", familyToken)
+    .single();
+
+  if (!family) return { error: "Familia no encontrada" };
+
+  const { error } = await supabase.from("intake_responses").insert({
+    family_id: family.id,
+    template_id: templateId,
+    answers,
+  });
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+// ─── Password Change ───
+
+export async function changePassword(newPassword: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+// ─── Delete Account ───
+
+export async function deleteAccount() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  await supabase.from("profiles").delete().eq("id", user.id);
+  await supabase.auth.signOut();
+  return { success: true };
+}
+
+// ─── Family contact info ───
+
+export async function updateFamilyContact(
+  familyId: string,
+  parentPhone: string | null,
+  parentEmail: string | null
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("families")
+    .update({ parent_phone: parentPhone, parent_email: parentEmail })
+    .eq("id", familyId);
+
+  if (error) return { error: error.message };
+  revalidatePath(`/familia/${familyId}`);
+  return { success: true };
+}
+
+// ─── Logo Upload ───
+
+export async function uploadLogo(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const file = formData.get("logo") as File;
+  if (!file || file.size === 0) return { error: "No se seleccionó archivo" };
+  if (file.size > 2 * 1024 * 1024) return { error: "El archivo excede 2MB" };
+
+  const ext = file.name.split(".").pop() || "png";
+  const path = `logos/${user.id}/logo.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("brands")
+    .upload(path, file, { upsert: true });
+
+  if (uploadError) return { error: uploadError.message };
+
+  const { data: urlData } = supabase.storage.from("brands").getPublicUrl(path);
+
+  const { error: updateError } = await supabase
+    .from("brands")
+    .update({ logo_url: urlData.publicUrl })
+    .eq("advisor_id", user.id);
+
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/marca");
+  return { success: true, url: urlData.publicUrl };
+}
+
+// ─── CSV Export ───
+
+export async function exportFamiliesCSV() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const { data: families } = await supabase
+    .from("families")
+    .select("*")
+    .eq("advisor_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (!families || families.length === 0) return { error: "No hay datos para exportar" };
+
+  const headers = ["Nombre", "Fecha nacimiento", "Estado", "Teléfono", "Email", "Creado"];
+  const rows = families.map((f) => [
+    f.baby_name,
+    f.baby_birth_date,
+    f.status,
+    f.parent_phone || "",
+    f.parent_email || "",
+    f.created_at,
+  ]);
+
+  const csv = [
+    headers.join(","),
+    ...rows.map((r) => r.map((v: string) => `"${String(v).replace(/"/g, '""')}"`).join(",")),
+  ].join("\n");
+
+  return { success: true, csv };
+}

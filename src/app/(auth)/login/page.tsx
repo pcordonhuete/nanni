@@ -41,8 +41,8 @@ export default function LoginPage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
-          <Moon className="w-7 h-7 text-violet-600" />
+        <div className="w-14 h-14 rounded-2xl bg-nanni-100 flex items-center justify-center mx-auto mb-4">
+          <Moon className="w-7 h-7 text-nanni-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
           Bienvenida de nuevo
@@ -76,7 +76,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function LoginPage() {
             </label>
             <Link
               href="/recuperar"
-              className="text-xs text-violet-600 hover:text-violet-700"
+              className="text-xs text-nanni-600 hover:text-nanni-700"
             >
               ¿La olvidaste?
             </Link>
@@ -103,7 +103,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400 pr-11"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400 pr-11"
             />
             <button
               type="button"
@@ -122,7 +122,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-violet-600 text-white font-semibold py-3 rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-nanni-600 text-white font-semibold py-3 rounded-xl hover:bg-nanni-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -139,7 +139,7 @@ export default function LoginPage() {
         ¿No tienes cuenta?{" "}
         <Link
           href="/registro"
-          className="text-violet-600 font-medium hover:text-violet-700"
+          className="text-nanni-600 font-medium hover:text-nanni-700"
         >
           Regístrate gratis
         </Link>

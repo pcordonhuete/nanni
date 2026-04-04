@@ -25,7 +25,7 @@ export function AnalyticsPeriodSelector() {
             router.push(`/analiticas?${q.toString()}`);
           }}
           className={`text-xs font-medium px-3.5 py-2 transition ${
-            current === p.param ? "bg-violet-600 text-white" : "text-gray-500 hover:text-gray-900"
+            current === p.param ? "bg-nanni-600 text-white" : "text-gray-500 hover:text-gray-900"
           }`}
         >
           {p.label}

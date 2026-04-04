@@ -1,14 +1,25 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-nanni: #6D28D9;
-  --color-nanni-light: #8B5CF6;
-  --color-nanni-dark: #5B21B6;
-  --color-nanni-50: #F5F3FF;
-  --color-nanni-100: #EDE9FE;
-  --color-nanni-200: #DDD6FE;
-  --color-nanni-800: #3B0764;
-  --color-nanni-900: #1E1B4B;
+  --color-nanni-50:  #f0f7fb;
+  --color-nanni-100: #e0eff6;
+  --color-nanni-200: #c2dfeb;
+  --color-nanni-300: #96c8da;
+  --color-nanni-400: #64afc7;
+  --color-nanni-500: #4497b0;
+  --color-nanni-600: #357d95;
+  --color-nanni-700: #2d6a7f;
+  --color-nanni-800: #275769;
+  --color-nanni-900: #224856;
+
+  --color-complementary-50:  #fdf2f8;
+  --color-complementary-100: #fce7f3;
+  --color-complementary-200: #fbcfe8;
+  --color-complementary-300: #f9a8d4;
+  --color-complementary-400: #f472b6;
+  --color-complementary-500: #ec4899;
+  --color-complementary-600: #db2777;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -93,4 +104,27 @@ body {
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.animate-on-scroll.is-visible {
+  animation: fade-in-up 0.6s ease-out forwards;
 }

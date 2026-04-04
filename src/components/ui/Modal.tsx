@@ -4,14 +4,14 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 interface ModalProps {
-  open: boolean;
+  open?: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   children: ReactNode;
   maxWidth?: string;
 }
 
-export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }: ModalProps) {
+export function Modal({ open = true, onClose, title, children, maxWidth = "max-w-lg" }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,16 +41,18 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
     >
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
       <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto`}>
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
+        {title && (
+          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+        <div className={title ? "p-5" : ""}>{children}</div>
       </div>
     </div>
   );

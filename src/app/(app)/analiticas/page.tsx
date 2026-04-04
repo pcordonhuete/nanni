@@ -128,8 +128,8 @@ export default async function AnaliticasPage({
       sub: "por día (media familias)",
       trend: tSleep.text,
       good: tSleep.good,
-      color: "text-violet-600",
-      bg: "bg-violet-50",
+      color: "text-nanni-600",
+      bg: "bg-nanni-50",
     },
     {
       icon: AlertTriangle,
@@ -201,11 +201,11 @@ export default async function AnaliticasPage({
             <h2 className="font-bold text-gray-900">Horas de sueño (media)</h2>
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-nanni-500" />
                 <span className="text-[11px] text-gray-400">Noche</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-violet-300" />
+                <div className="w-2.5 h-2.5 rounded-full bg-nanni-300" />
                 <span className="text-[11px] text-gray-400">Siesta</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -235,12 +235,12 @@ export default async function AnaliticasPage({
                       <div className="absolute bottom-0 w-full flex gap-0.5 items-end justify-center">
                         <div className="flex-1 flex flex-col justify-end items-stretch max-w-[80%]">
                           <div
-                            className="w-full bg-violet-300 rounded-t-md min-h-0"
+                            className="w-full bg-nanni-300 rounded-t-md min-h-0"
                             style={{ height: `${napPx}px` }}
                             title={`Siesta: ${d.avgNapHours}h`}
                           />
                           <div
-                            className="w-full bg-violet-500 min-h-0"
+                            className="w-full bg-nanni-500 min-h-0"
                             style={{ height: `${nightPx}px` }}
                             title={`Noche: ${d.avgNightHours}h`}
                           />
@@ -320,11 +320,11 @@ export default async function AnaliticasPage({
                 className="flex items-center gap-3 p-4 hover:bg-gray-50/60 transition"
               >
                 <span
-                  className={`w-6 text-center text-xs font-bold shrink-0 ${i < 3 ? "text-violet-600" : "text-gray-400"}`}
+                  className={`w-6 text-center text-xs font-bold shrink-0 ${i < 3 ? "text-nanni-600" : "text-gray-400"}`}
                 >
                   {i + 1}
                 </span>
-                <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 shrink-0">
+                <div className="w-9 h-9 rounded-full bg-nanni-100 flex items-center justify-center text-xs font-bold text-nanni-700 shrink-0">
                   {row.family.baby_name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -348,7 +348,7 @@ export default async function AnaliticasPage({
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="p-5 border-b border-gray-50 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-violet-600" />
+            <Brain className="w-5 h-5 text-nanni-600" />
             <div>
               <h2 className="font-bold text-gray-900">Patrones detectados</h2>
               <p className="text-xs text-gray-400">Insights desde la tabla de análisis</p>
@@ -375,12 +375,12 @@ export default async function AnaliticasPage({
                 return (
                   <div
                     key={insight.id}
-                    className="bg-violet-50 rounded-xl p-4 border border-violet-100"
+                    className="bg-nanni-50 rounded-xl p-4 border border-nanni-100"
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <h3 className="text-sm font-bold text-gray-900">{insight.title}</h3>
                       {confidence !== null && (
-                        <span className="text-[10px] font-semibold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0">
+                        <span className="text-[10px] font-semibold bg-nanni-100 text-nanni-700 px-2 py-0.5 rounded-full shrink-0">
                           {Math.round(confidence)}% confianza
                         </span>
                       )}

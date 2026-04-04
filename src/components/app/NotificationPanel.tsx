@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, Check, X } from "lucide-react";
+import { Bell, Check, X, FileText, AlertTriangle, Brain, Clock, type LucideIcon } from "lucide-react";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions";
 import { timeAgo } from "@/lib/utils";
 import type { Notification } from "@/lib/types";
@@ -12,12 +12,12 @@ interface NotificationPanelProps {
   unreadCount: number;
 }
 
-const typeIcons: Record<string, string> = {
-  new_record: "📝",
-  family_inactive: "⚠️",
-  insight: "🧠",
-  reminder: "⏰",
-  system: "🔔",
+const typeIcons: Record<string, LucideIcon> = {
+  new_record: FileText,
+  family_inactive: AlertTriangle,
+  insight: Brain,
+  reminder: Clock,
+  system: Bell,
 };
 
 export function NotificationPanel({ notifications, unreadCount }: NotificationPanelProps) {
@@ -55,7 +55,7 @@ export function NotificationPanel({ notifications, unreadCount }: NotificationPa
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllNotificationsRead()}
-                className="text-[11px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1"
+                className="text-[11px] text-nanni-600 hover:text-nanni-700 font-medium flex items-center gap-1"
               >
                 <Check className="w-3 h-3" />
                 Marcar todas leídas
@@ -73,7 +73,7 @@ export function NotificationPanel({ notifications, unreadCount }: NotificationPa
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`p-3.5 hover:bg-gray-50 transition cursor-pointer ${!n.is_read ? "bg-violet-50/30" : ""}`}
+                  className={`p-3.5 hover:bg-gray-50 transition cursor-pointer ${!n.is_read ? "bg-nanni-50/30" : ""}`}
                   onClick={() => {
                     if (!n.is_read) markNotificationRead(n.id);
                     if (n.link) window.location.href = n.link;
@@ -81,7 +81,9 @@ export function NotificationPanel({ notifications, unreadCount }: NotificationPa
                   }}
                 >
                   <div className="flex items-start gap-2.5">
-                    <span className="text-base shrink-0 mt-0.5">{typeIcons[n.type] || "🔔"}</span>
+                    <span className="w-7 h-7 rounded-lg bg-nanni-50 flex items-center justify-center shrink-0 mt-0.5">
+                      {(() => { const Icon = typeIcons[n.type] || Bell; return <Icon className="w-3.5 h-3.5 text-nanni-600" />; })()}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <p className={`text-xs leading-relaxed ${!n.is_read ? "text-gray-900 font-medium" : "text-gray-600"}`}>
                         {n.title}
@@ -91,7 +93,7 @@ export function NotificationPanel({ notifications, unreadCount }: NotificationPa
                       </p>
                     </div>
                     {!n.is_read && (
-                      <div className="w-2 h-2 rounded-full bg-violet-500 shrink-0 mt-1.5" />
+                      <div className="w-2 h-2 rounded-full bg-nanni-500 shrink-0 mt-1.5" />
                     )}
                   </div>
                 </div>

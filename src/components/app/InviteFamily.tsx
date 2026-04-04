@@ -76,7 +76,7 @@ export function InviteFamily({ open, onClose }: InviteFamilyProps) {
               type="text"
               required
               placeholder="Ej: Mateo"
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -87,13 +87,13 @@ export function InviteFamily({ open, onClose }: InviteFamilyProps) {
               name="baby_birth_date"
               type="date"
               required
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
             />
           </div>
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-violet-600 text-white font-medium py-2.5 rounded-xl hover:bg-violet-700 transition text-sm disabled:opacity-50"
+            className="w-full bg-nanni-600 text-white font-medium py-2.5 rounded-xl hover:bg-nanni-700 transition text-sm disabled:opacity-50"
           >
             {isPending ? "Creando..." : "Crear familia"}
           </button>

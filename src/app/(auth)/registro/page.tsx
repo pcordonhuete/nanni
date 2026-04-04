@@ -55,8 +55,8 @@ export default function RegistroPage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
-          <Moon className="w-7 h-7 text-violet-600" />
+        <div className="w-14 h-14 rounded-2xl bg-nanni-100 flex items-center justify-center mx-auto mb-4">
+          <Moon className="w-7 h-7 text-nanni-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Crea tu cuenta</h1>
         <p className="text-gray-500 mt-1">
@@ -88,7 +88,7 @@ export default function RegistroPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Tu nombre"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function RegistroPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
@@ -126,7 +126,7 @@ export default function RegistroPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 6 caracteres"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400 pr-11"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400 pr-11"
             />
             <button
               type="button"
@@ -145,7 +145,7 @@ export default function RegistroPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-violet-600 text-white font-semibold py-3 rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-nanni-600 text-white font-semibold py-3 rounded-xl hover:bg-nanni-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -159,11 +159,11 @@ export default function RegistroPage() {
 
         <p className="text-xs text-center text-gray-400">
           Al registrarte aceptas nuestros{" "}
-          <a href="#" className="text-violet-600 hover:underline">
+          <a href="#" className="text-nanni-600 hover:underline">
             términos
           </a>{" "}
           y{" "}
-          <a href="#" className="text-violet-600 hover:underline">
+          <a href="#" className="text-nanni-600 hover:underline">
             política de privacidad
           </a>
         </p>
@@ -173,7 +173,7 @@ export default function RegistroPage() {
         ¿Ya tienes cuenta?{" "}
         <Link
           href="/login"
-          className="text-violet-600 font-medium hover:text-violet-700"
+          className="text-nanni-600 font-medium hover:text-nanni-700"
         >
           Inicia sesión
         </Link>

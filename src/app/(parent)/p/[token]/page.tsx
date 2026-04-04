@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { babyAgeLabel, formatTime, formatDateLong } from "@/lib/utils";
+import { getWeeklySleep } from "@/lib/db";
 import { ParentApp } from "./parent-app";
-import type { ActivityRecord } from "@/lib/types";
 
 export default async function ParentPage({
   params,
@@ -29,12 +28,38 @@ export default async function ParentPage({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const { data: todayRecords } = await supabase
-    .from("activity_records")
+  const [{ data: todayRecords }, weeklySleep] = await Promise.all([
+    supabase
+      .from("activity_records")
+      .select("*")
+      .eq("family_id", family.id)
+      .gte("started_at", today.toISOString())
+      .order("started_at", { ascending: true }),
+    getWeeklySleep(family.id),
+  ]);
+
+  const { data: activePlanRow } = await supabase
+    .from("sleep_plans")
     .select("*")
     .eq("family_id", family.id)
-    .gte("started_at", today.toISOString())
-    .order("started_at", { ascending: true });
+    .eq("status", "active")
+    .limit(1)
+    .single();
+
+  let activePlan = null;
+  if (activePlanRow) {
+    const [{ data: goals }, { data: steps }] = await Promise.all([
+      supabase.from("sleep_plan_goals").select("*").eq("plan_id", activePlanRow.id).order("created_at"),
+      supabase.from("sleep_plan_steps").select("*").eq("plan_id", activePlanRow.id).order("step_order"),
+    ]);
+    activePlan = { ...activePlanRow, goals: goals || [], steps: steps || [] };
+  }
+
+  const weekAvgSleep = weeklySleep.length > 0
+    ? weeklySleep.reduce((a, d) => a + d.total, 0) / weeklySleep.length : 0;
+  const weekAvgAwakenings = weeklySleep.length > 0
+    ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length : 0;
+  const daysWithData = weeklySleep.filter((d) => d.total > 0 || d.awakenings > 0).length;
 
   return (
     <ParentApp
@@ -42,6 +67,12 @@ export default async function ParentPage({
       brand={brand}
       token={token}
       initialRecords={todayRecords || []}
+      activePlan={activePlan}
+      weekSummary={{
+        avgSleep: Math.round(weekAvgSleep * 10) / 10,
+        avgAwakenings: Math.round(weekAvgAwakenings * 10) / 10,
+        daysWithData,
+      }}
     />
   );
 }

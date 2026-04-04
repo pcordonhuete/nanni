@@ -68,6 +68,8 @@ export interface Family {
   baby_birth_date: string;
   status: FamilyStatus;
   invite_token: string;
+  parent_phone: string | null;
+  parent_email: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -243,12 +245,67 @@ export interface DashboardStats {
   sleep_trend: number;
 }
 
-export interface AgendaItem {
+export interface NotificationPreferences {
   id: string;
-  time: string;
+  advisor_id: string;
+  new_record: boolean;
+  family_inactive: boolean;
+  insight: boolean;
+  weekly_summary: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SleepPlanTemplate {
+  id: string;
+  advisor_id: string | null;
+  is_system: boolean;
   title: string;
-  type: "call" | "session" | "review" | "reminder";
-  family_id?: string;
+  description: string | null;
+  method: string | null;
+  age_min_months: number;
+  age_max_months: number;
+  goals: TemplateGoal[];
+  steps: TemplateStep[];
+  created_at: string;
+}
+
+export interface TemplateGoal {
+  description: string;
+  target_value: number | null;
+  metric: string | null;
+}
+
+export interface TemplateStep {
+  title: string;
+  description: string | null;
+  duration_days: number;
+}
+
+export interface IntakeTemplate {
+  id: string;
+  advisor_id: string;
+  title: string;
+  description: string | null;
+  questions: IntakeQuestion[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface IntakeQuestion {
+  id: string;
+  text: string;
+  type: "text" | "select" | "number" | "boolean";
+  options?: string[];
+  required?: boolean;
+}
+
+export interface IntakeResponse {
+  id: string;
+  family_id: string;
+  template_id: string | null;
+  answers: Record<string, string | number | boolean>;
+  submitted_at: string;
 }
 
 export interface WeeklySleepData {

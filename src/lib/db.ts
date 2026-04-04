@@ -14,6 +14,10 @@ import type {
   Subscription,
   DashboardStats,
   WeeklySleepData,
+  NotificationPreferences,
+  SleepPlanTemplate,
+  IntakeTemplate,
+  IntakeResponse,
 } from "@/lib/types";
 import { format, eachDayOfInterval, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -762,4 +766,133 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
     .eq("user_id", userId)
     .eq("is_read", false);
   return count || 0;
+}
+
+// ─── Notification Preferences ───
+
+export async function getNotificationPreferences(
+  advisorId: string
+): Promise<NotificationPreferences | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("notification_preferences")
+    .select("*")
+    .eq("advisor_id", advisorId)
+    .single();
+  return data;
+}
+
+// ─── Sleep Plan Templates ───
+
+export async function getSleepPlanTemplates(
+  advisorId: string
+): Promise<SleepPlanTemplate[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("sleep_plan_templates")
+    .select("*")
+    .or(`advisor_id.eq.${advisorId},is_system.eq.true`)
+    .order("is_system", { ascending: false });
+  return data || [];
+}
+
+// ─── Intake Questionnaires ───
+
+export async function getIntakeTemplates(
+  advisorId: string
+): Promise<IntakeTemplate[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("intake_templates")
+    .select("*")
+    .eq("advisor_id", advisorId)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
+export async function getIntakeResponses(
+  familyId: string
+): Promise<IntakeResponse[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("intake_responses")
+    .select("*")
+    .eq("family_id", familyId)
+    .order("submitted_at", { ascending: false });
+  return data || [];
+}
+
+// ─── Records with date range ───
+
+export async function getRecordsInRange(
+  familyId: string,
+  from: string,
+  to: string
+): Promise<ActivityRecord[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("activity_records")
+    .select("*")
+    .eq("family_id", familyId)
+    .gte("started_at", from)
+    .lte("started_at", to)
+    .order("started_at", { ascending: false });
+  return data || [];
+}
+
+export async function getWeeklySleepForRange(
+  familyId: string,
+  startDate: Date,
+  numDays: number
+): Promise<WeeklySleepData[]> {
+  const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const result: WeeklySleepData[] = [];
+  const supabase = await createClient();
+
+  for (let i = numDays - 1; i >= 0; i--) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() - i);
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const { data: sleepRecs } = await supabase
+      .from("activity_records")
+      .select("started_at, duration_minutes, details")
+      .eq("family_id", familyId)
+      .eq("type", "sleep")
+      .gte("started_at", dayStart.toISOString())
+      .lte("started_at", dayEnd.toISOString());
+
+    const { data: wakeRecs } = await supabase
+      .from("activity_records")
+      .select("id")
+      .eq("family_id", familyId)
+      .eq("type", "wake")
+      .gte("started_at", dayStart.toISOString())
+      .lte("started_at", dayEnd.toISOString());
+
+    let nightHours = 0;
+    let napHours = 0;
+    if (sleepRecs) {
+      for (const rec of sleepRecs) {
+        const mins = rec.duration_minutes || 0;
+        const hour = new Date(rec.started_at).getHours();
+        if (hour >= 19 || hour < 7) nightHours += mins / 60;
+        else napHours += mins / 60;
+      }
+    }
+
+    result.push({
+      day: days[date.getDay()],
+      date: dayStart.toISOString(),
+      night_hours: Math.round(nightHours * 10) / 10,
+      nap_hours: Math.round(napHours * 10) / 10,
+      awakenings: wakeRecs?.length || 0,
+      total: Math.round((nightHours + napHours) * 10) / 10,
+    });
+  }
+
+  return result;
 }

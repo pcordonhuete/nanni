@@ -11,12 +11,6 @@ export function getStripe(): Stripe {
   return _stripe;
 }
 
-export const stripe = {
-  get checkout() { return getStripe().checkout; },
-  get billingPortal() { return getStripe().billingPortal; },
-  get webhooks() { return getStripe().webhooks; },
-};
-
 export const PRICE_IDS: Record<string, { monthly: string }> = {
   basico: {
     monthly: process.env.STRIPE_BASICO_MONTHLY_PRICE_ID || "",
@@ -26,33 +20,89 @@ export const PRICE_IDS: Record<string, { monthly: string }> = {
   },
 };
 
+async function getOrCreateCustomer(
+  advisorId: string,
+  email: string,
+  existingCustomerId?: string | null
+): Promise<string> {
+  const stripe = getStripe();
+
+  if (existingCustomerId) {
+    try {
+      const customer = await stripe.customers.retrieve(existingCustomerId);
+      if (!customer.deleted) return existingCustomerId;
+    } catch {
+      // Customer no longer exists, create new one
+    }
+  }
+
+  const existing = await stripe.customers.list({ email, limit: 1 });
+  if (existing.data.length > 0) {
+    return existing.data[0].id;
+  }
+
+  const customer = await stripe.customers.create({
+    email,
+    metadata: { advisor_id: advisorId },
+  });
+
+  return customer.id;
+}
+
 export async function createCheckoutSession(
   advisorId: string,
   email: string,
   plan: "basico" | "premium",
+  existingCustomerId?: string | null
 ) {
   const priceId = PRICE_IDS[plan]?.monthly;
-  if (!priceId) throw new Error("Invalid plan");
+  if (!priceId) throw new Error(`No price ID configured for plan "${plan}". Set STRIPE_${plan.toUpperCase()}_MONTHLY_PRICE_ID in your environment.`);
 
-  const couponId = process.env.STRIPE_50_OFF_3_MONTHS_COUPON_ID;
+  const customerId = await getOrCreateCustomer(advisorId, email, existingCustomerId);
+  const promoId = process.env.STRIPE_BIENVENIDA_PROMOTION_CODE_ID?.trim();
+  const couponId = process.env.STRIPE_50_OFF_3_MONTHS_COUPON_ID?.trim();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const discounts = promoId
+    ? [{ promotion_code: promoId }]
+    : couponId
+      ? [{ coupon: couponId }]
+      : undefined;
 
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
-    customer_email: email,
+    customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL || ""}/dashboard?upgraded=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || ""}/plan`,
+    ...(discounts ? { discounts } : {}),
+    success_url: `${appUrl}/dashboard?upgraded=true`,
+    cancel_url: `${appUrl}/plan`,
     metadata: { advisor_id: advisorId, plan },
+    subscription_data: {
+      metadata: { advisor_id: advisorId, plan },
+    },
+    allow_promotion_codes: !discounts,
   });
 
   return session;
 }
 
 export async function createPortalSession(customerId: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const session = await getStripe().billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL || ""}/ajustes`,
+    return_url: `${appUrl}/ajustes`,
   });
   return session;
+}
+
+export async function cancelSubscription(subscriptionId: string) {
+  return getStripe().subscriptions.update(subscriptionId, {
+    cancel_at_period_end: true,
+  });
+}
+
+export async function resumeSubscription(subscriptionId: string) {
+  return getStripe().subscriptions.update(subscriptionId, {
+    cancel_at_period_end: false,
+  });
 }

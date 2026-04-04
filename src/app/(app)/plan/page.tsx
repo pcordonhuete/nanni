@@ -138,12 +138,30 @@ export default function PlanPage() {
 
   const daysLeft = trialDaysLeft(subscription);
   const trialActive = subscription?.status === "trialing" && daysLeft > 0;
-  const trialExpired = !trialActive && subscription?.status !== "active";
+  const isActive = subscription?.status === "active";
+  const trialExpired = !trialActive && !isActive;
+  const currentPlan = subscription?.plan;
+
+  async function handlePortal() {
+    setCheckoutLoading("portal");
+    try {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const { url, error } = await res.json();
+      if (error) { toast(error, "error"); setCheckoutLoading(null); return; }
+      if (url) window.location.href = url;
+    } catch {
+      toast("Error al conectar con el sistema de pagos", "error");
+      setCheckoutLoading(null);
+    }
+  }
 
   if (loading) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-nanni-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -160,6 +178,32 @@ export default function PlanPage() {
         </div>
       )}
 
+      {/* Active plan banner */}
+      {isActive && subscription && (
+        <div className="mb-8 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <Check className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-emerald-800">Plan {currentPlan === "premium" ? "Premium" : "Básico"} activo</h3>
+              <p className="text-emerald-600 text-sm">Tu suscripción está activa y al día</p>
+            </div>
+          </div>
+          <button
+            onClick={handlePortal}
+            disabled={checkoutLoading !== null}
+            className="bg-emerald-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 flex items-center gap-2 shrink-0"
+          >
+            {checkoutLoading === "portal" ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>Gestionar suscripción <ArrowRight className="w-4 h-4" /></>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Expired state */}
       {trialExpired && (
         <div className="mb-8 bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
@@ -173,9 +217,14 @@ export default function PlanPage() {
 
       {/* Hero */}
       <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 text-xs font-bold px-4 py-1.5 rounded-full mb-4">
-          <Sparkles className="w-3.5 h-3.5" />
-          50% de descuento los 3 primeros meses
+        <div className="inline-flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-nanni-100 text-nanni-700 text-xs font-bold px-4 py-2 rounded-full mb-4 mx-auto max-w-xl">
+          <span className="inline-flex items-center gap-2 justify-center">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            50% de descuento los 3 primeros meses
+          </span>
+          <span className="text-nanni-600/90 font-semibold text-[11px] sm:text-xs text-center sm:border-l sm:border-nanni-200 sm:pl-3">
+            Código <span className="font-mono tracking-wide">BIENVENIDA</span> aplicado automáticamente al pagar
+          </span>
         </div>
         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
           La herramienta que tu consulta necesita
@@ -210,12 +259,20 @@ export default function PlanPage() {
             </div>
           </div>
           <button
-            onClick={() => handleCheckout("basico")}
+            onClick={() => isActive && currentPlan === "basico" ? handlePortal() : handleCheckout("basico")}
             disabled={checkoutLoading !== null}
-            className="w-full py-3.5 rounded-xl font-bold text-sm bg-gray-900 text-white hover:bg-gray-800 transition disabled:opacity-50 flex items-center justify-center gap-2 mb-6"
+            className={`w-full py-3.5 rounded-xl font-bold text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 mb-6 ${
+              isActive && currentPlan === "basico"
+                ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
           >
             {checkoutLoading === "basico" ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : isActive && currentPlan === "basico" ? (
+              <><Check className="w-4 h-4" /> Plan actual</>
+            ) : isActive ? (
+              <>Cambiar a Básico</>
             ) : (
               <>Empezar con Básico <ArrowRight className="w-4 h-4" /></>
             )}
@@ -237,9 +294,9 @@ export default function PlanPage() {
         </div>
 
         {/* Premium */}
-        <div className="bg-white rounded-2xl border-2 border-violet-600 p-6 md:p-8 relative ring-4 ring-violet-100">
+        <div className="bg-white rounded-2xl border-2 border-nanni-600 p-6 md:p-8 relative ring-4 ring-nanni-100">
           <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-            <span className="bg-violet-600 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5">
+            <span className="bg-nanni-600 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5">
               <Crown className="w-3.5 h-3.5" /> Más popular
             </span>
           </div>
@@ -249,7 +306,7 @@ export default function PlanPage() {
           </div>
           <div className="mb-6">
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-extrabold text-violet-700">
+              <span className="text-4xl font-extrabold text-nanni-700">
                 {PLAN_PRICES.premium.discounted}€
               </span>
               <span className="text-gray-400 text-sm">/mes</span>
@@ -258,18 +315,26 @@ export default function PlanPage() {
               <span className="text-sm text-gray-400 line-through">
                 {PLAN_PRICES.premium.monthly}€/mes
               </span>
-              <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-nanni-600 bg-nanni-50 px-2 py-0.5 rounded-full">
                 -50% 3 meses
               </span>
             </div>
           </div>
           <button
-            onClick={() => handleCheckout("premium")}
+            onClick={() => isActive && currentPlan === "premium" ? handlePortal() : handleCheckout("premium")}
             disabled={checkoutLoading !== null}
-            className="w-full py-3.5 rounded-xl font-bold text-sm bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50 flex items-center justify-center gap-2 mb-6 shadow-lg shadow-violet-200"
+            className={`w-full py-3.5 rounded-xl font-bold text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 mb-6 ${
+              isActive && currentPlan === "premium"
+                ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300 shadow-none"
+                : "bg-nanni-600 text-white hover:bg-nanni-700 shadow-lg shadow-nanni-200"
+            }`}
           >
             {checkoutLoading === "premium" ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : isActive && currentPlan === "premium" ? (
+              <><Check className="w-4 h-4" /> Plan actual</>
+            ) : isActive ? (
+              <>Upgrade a Premium <ArrowRight className="w-4 h-4" /></>
             ) : (
               <>Empezar con Premium <ArrowRight className="w-4 h-4" /></>
             )}
@@ -277,7 +342,7 @@ export default function PlanPage() {
           <ul className="space-y-3">
             {features.premium.map((f) => (
               <li key={f.text} className="flex items-start gap-2.5 text-sm">
-                <Check className="w-4 h-4 text-violet-600 mt-0.5 shrink-0" />
+                <Check className="w-4 h-4 text-nanni-600 mt-0.5 shrink-0" />
                 <span className="text-gray-700 font-medium">{f.text}</span>
               </li>
             ))}
@@ -293,8 +358,8 @@ export default function PlanPage() {
           { icon: Heart, title: "Impresiona a tus clientes", desc: "App con tu marca, informes profesionales y seguimiento en tiempo real" },
         ].map(({ icon: Icon, title, desc }) => (
           <div key={title} className="bg-gray-50 rounded-2xl p-5 text-center">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center mx-auto mb-3">
-              <Icon className="w-5 h-5 text-violet-600" />
+            <div className="w-10 h-10 rounded-xl bg-nanni-100 flex items-center justify-center mx-auto mb-3">
+              <Icon className="w-5 h-5 text-nanni-600" />
             </div>
             <h4 className="font-bold text-gray-900 text-sm mb-1">{title}</h4>
             <p className="text-xs text-gray-500">{desc}</p>
@@ -317,7 +382,7 @@ export default function PlanPage() {
               </div>
               <p className="text-sm text-gray-600 mb-4 italic">&ldquo;{t.text}&rdquo;</p>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700">
+                <div className="w-9 h-9 rounded-full bg-nanni-100 flex items-center justify-center text-xs font-bold text-nanni-700">
                   {t.avatar}
                 </div>
                 <div>
@@ -354,7 +419,7 @@ export default function PlanPage() {
             },
             {
               q: "¿Cómo funciona el descuento del 50%?",
-              a: "Los 3 primeros meses pagas la mitad. Después se aplica el precio normal. Puedes cancelar cuando quieras.",
+              a: "Al ir a pagar aplicamos automáticamente la promoción BIENVENIDA (50% los 3 primeros meses). No hace falta escribir el código. Después se aplica el precio normal y puedes cancelar cuando quieras.",
             },
             {
               q: "¿Necesito tarjeta para la prueba gratuita?",

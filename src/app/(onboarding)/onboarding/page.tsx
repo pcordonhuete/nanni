@@ -53,7 +53,7 @@ export default function OnboardingPage() {
           <div key={s.id} className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition ${
               step > s.id ? "bg-emerald-500 text-white" :
-              step === s.id ? "bg-violet-600 text-white" :
+              step === s.id ? "bg-nanni-600 text-white" :
               "bg-gray-200 text-gray-500"
             }`}>
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
@@ -70,8 +70,8 @@ export default function OnboardingPage() {
         {step === 1 && (
           <>
             <div className="text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
-                <User className="w-7 h-7 text-violet-600" />
+              <div className="w-14 h-14 rounded-2xl bg-nanni-50 flex items-center justify-center mx-auto mb-4">
+                <User className="w-7 h-7 text-nanni-600" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">Cuéntanos sobre ti</h1>
               <p className="text-sm text-gray-400 mt-1">Para personalizar tu experiencia</p>
@@ -84,7 +84,7 @@ export default function OnboardingPage() {
                   type="text"
                   required
                   placeholder="Ej: María García López"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
                 />
               </div>
               <div>
@@ -93,10 +93,10 @@ export default function OnboardingPage() {
                   name="phone"
                   type="tel"
                   placeholder="+34 612 345 678"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
                 />
               </div>
-              <button type="submit" disabled={isPending} className="w-full bg-violet-600 text-white font-medium py-2.5 rounded-xl hover:bg-violet-700 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              <button type="submit" disabled={isPending} className="w-full bg-nanni-600 text-white font-medium py-2.5 rounded-xl hover:bg-nanni-700 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                 Siguiente <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -106,8 +106,8 @@ export default function OnboardingPage() {
         {step === 2 && (
           <>
             <div className="text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
-                <Palette className="w-7 h-7 text-violet-600" />
+              <div className="w-14 h-14 rounded-2xl bg-nanni-50 flex items-center justify-center mx-auto mb-4">
+                <Palette className="w-7 h-7 text-nanni-600" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">Tu marca</h1>
               <p className="text-sm text-gray-400 mt-1">Las familias verán tu marca, no la nuestra</p>
@@ -120,7 +120,7 @@ export default function OnboardingPage() {
                   type="text"
                   required
                   placeholder="Ej: Dulces Sueños by María"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
                 />
               </div>
               <div>
@@ -129,7 +129,7 @@ export default function OnboardingPage() {
                   {["#7C3AED", "#2563EB", "#DB2777", "#059669", "#EA580C"].map((c) => (
                     <label key={c} className="cursor-pointer">
                       <input type="radio" name="primary_color" value={c} className="sr-only peer" defaultChecked={c === "#7C3AED"} />
-                      <div className="w-10 h-10 rounded-full border-2 border-gray-100 peer-checked:border-violet-500 peer-checked:ring-2 peer-checked:ring-violet-200 transition" style={{ backgroundColor: c }} />
+                      <div className="w-10 h-10 rounded-full border-2 border-gray-100 peer-checked:border-nanni-500 peer-checked:ring-2 peer-checked:ring-nanni-200 transition" style={{ backgroundColor: c }} />
                     </label>
                   ))}
                 </div>
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
                 <button type="button" onClick={() => setStep(1)} className="flex-1 bg-gray-100 text-gray-700 font-medium py-2.5 rounded-xl hover:bg-gray-200 transition text-sm">
                   Atrás
                 </button>
-                <button type="submit" disabled={isPending} className="flex-1 bg-violet-600 text-white font-medium py-2.5 rounded-xl hover:bg-violet-700 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                <button type="submit" disabled={isPending} className="flex-1 bg-nanni-600 text-white font-medium py-2.5 rounded-xl hover:bg-nanni-700 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -149,8 +149,8 @@ export default function OnboardingPage() {
         {step === 3 && (
           <>
             <div className="text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-7 h-7 text-violet-600" />
+              <div className="w-14 h-14 rounded-2xl bg-nanni-50 flex items-center justify-center mx-auto mb-4">
+                <Users className="w-7 h-7 text-nanni-600" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">Añade tu primera familia</h1>
               <p className="text-sm text-gray-400 mt-1">Podrás compartir el enlace con los padres después</p>
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
                   type="text"
                   required
                   placeholder="Ej: Mateo"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
                 />
               </div>
               <div>
@@ -172,14 +172,14 @@ export default function OnboardingPage() {
                   name="baby_birth_date"
                   type="date"
                   required
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
                 />
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(2)} className="flex-1 bg-gray-100 text-gray-700 font-medium py-2.5 rounded-xl hover:bg-gray-200 transition text-sm">
                   Atrás
                 </button>
-                <button type="submit" disabled={isPending} className="flex-1 bg-violet-600 text-white font-medium py-2.5 rounded-xl hover:bg-violet-700 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                <button type="submit" disabled={isPending} className="flex-1 bg-nanni-600 text-white font-medium py-2.5 rounded-xl hover:bg-nanni-700 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                   <Sparkles className="w-4 h-4" /> Empezar
                 </button>
               </div>

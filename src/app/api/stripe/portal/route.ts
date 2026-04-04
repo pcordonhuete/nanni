@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { createCheckoutSession } from "@/lib/stripe-helpers";
+import { createPortalSession } from "@/lib/stripe-helpers";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -10,36 +10,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const { plan } = await request.json();
-
-  if (!["basico", "premium"].includes(plan)) {
-    return NextResponse.json({ error: "Plan no válido" }, { status: 400 });
-  }
-
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("stripe_customer_id, status")
+    .select("stripe_customer_id")
     .eq("advisor_id", user.id)
     .single();
 
-  if (sub?.status === "active") {
+  if (!sub?.stripe_customer_id) {
     return NextResponse.json(
-      { error: "Ya tienes una suscripción activa. Gestiona tu plan desde Ajustes." },
+      { error: "No tienes una suscripción activa con Stripe" },
       { status: 400 }
     );
   }
 
   try {
-    const session = await createCheckoutSession(
-      user.id,
-      user.email!,
-      plan,
-      sub?.stripe_customer_id,
-    );
+    const session = await createPortalSession(sub.stripe_customer_id);
     return NextResponse.json({ url: session.url });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Error desconocido";
-    console.error("[Stripe Checkout]", msg);
+    console.error("[Stripe Portal]", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

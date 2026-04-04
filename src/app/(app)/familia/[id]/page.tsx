@@ -1,34 +1,22 @@
 import { notFound } from "next/navigation";
 import {
-  getFamilyWithStats,
-  getTodayRecords,
-  getWeeklySleep,
-  getInsights,
-  getNotes,
-  getPlans,
-  getPlanWithDetails,
+  getFamilyWithStats, getTodayRecords, getWeeklySleep, getInsights,
+  getNotes, getPlans, getPlanWithDetails, getSleepPlanTemplates,
 } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { createNote } from "@/lib/actions";
+import { babyAgeLabel, formatTime, statusFromScore, babyAgeMonths } from "@/lib/utils";
 import {
-  babyAgeLabel,
-  formatTime,
-  statusFromScore,
-} from "@/lib/utils";
-import {
-  FamilyDetailTabs,
-  type PlanWithDetails,
-  type TimelineEntry,
+  FamilyDetailTabs, type PlanWithDetails, type TimelineEntry,
 } from "./family-detail-tabs";
 import type {
-  ActivityRecord,
-  FamilyMember,
-  FeedDetails,
-  DiaperDetails,
-  PlayDetails,
-  MoodDetails,
-  NoteDetails,
-  WakeDetails,
+  ActivityRecord, FamilyMember, FeedDetails, DiaperDetails,
+  PlayDetails, MoodDetails, NoteDetails, WakeDetails,
 } from "@/lib/types";
+import {
+  Moon, Sun, Droplets, Baby, Activity, Smile, FileText,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 async function createNoteFormAction(formData: FormData) {
   "use server";
@@ -38,17 +26,14 @@ async function createNoteFormAction(formData: FormData) {
   await createNote(familyId, content);
 }
 
-const RECORD_META: Record<
-  ActivityRecord["type"],
-  { emoji: string; label: string }
-> = {
-  sleep: { emoji: "😴", label: "Sueño" },
-  wake: { emoji: "☀️", label: "Despertar" },
-  feed: { emoji: "🍼", label: "Toma" },
-  diaper: { emoji: "💩", label: "Pañal" },
-  play: { emoji: "🧸", label: "Juego" },
-  mood: { emoji: "😊", label: "Humor" },
-  note: { emoji: "📝", label: "Nota" },
+const RECORD_META: Record<ActivityRecord["type"], { icon: LucideIcon; label: string }> = {
+  sleep: { icon: Moon, label: "Sueño" },
+  wake: { icon: Sun, label: "Despertar" },
+  feed: { icon: Droplets, label: "Toma" },
+  diaper: { icon: Baby, label: "Pañal" },
+  play: { icon: Activity, label: "Juego" },
+  mood: { icon: Smile, label: "Humor" },
+  note: { icon: FileText, label: "Nota" },
 };
 
 function formatDurationMinutes(mins: number | null): string {
@@ -67,30 +52,17 @@ function buildRecordDetail(rec: ActivityRecord): string {
   switch (rec.type) {
     case "sleep": {
       const d = det as { location?: string; fell_asleep_alone?: boolean };
-      const bits = [
-        dur,
-        d?.location,
-        d?.fell_asleep_alone != null
-          ? d.fell_asleep_alone
-            ? "Se durmió solo/a"
-            : "Con ayuda"
-          : "",
-      ].filter(Boolean);
+      const bits = [dur, d?.location, d?.fell_asleep_alone != null ? (d.fell_asleep_alone ? "Se durmió solo/a" : "Con ayuda") : ""].filter(Boolean);
       return bits.join(" · ") || "Registro de sueño";
     }
     case "feed": {
       const d = det as FeedDetails;
-      const bits = [
-        d?.food_description,
-        d?.amount_ml != null ? `${d.amount_ml} ml` : "",
-        d?.method,
-      ].filter(Boolean);
+      const bits = [d?.food_description, d?.amount_ml != null ? `${d.amount_ml} ml` : "", d?.method].filter(Boolean);
       return [dur, ...bits].filter(Boolean).join(" · ") || "Toma";
     }
     case "diaper": {
       const d = det as DiaperDetails;
-      const bits = [d?.diaper_type, d?.color, d?.notes].filter(Boolean);
-      return bits.join(" · ") || "Cambio de pañal";
+      return [d?.diaper_type, d?.color, d?.notes].filter(Boolean).join(" · ") || "Cambio de pañal";
     }
     case "play": {
       const d = det as PlayDetails;
@@ -113,42 +85,23 @@ function buildRecordDetail(rec: ActivityRecord): string {
   }
 }
 
-function registrarLabel(
-  rec: ActivityRecord,
-  memberByProfile: Map<string, string>
-): string {
-  const fromDetails =
-    rec.details &&
-    typeof rec.details === "object" &&
-    "recorded_by_name" in rec.details &&
-    typeof (rec.details as { recorded_by_name?: unknown }).recorded_by_name ===
-      "string"
-      ? (rec.details as { recorded_by_name: string }).recorded_by_name
-      : null;
-
+function registrarLabel(rec: ActivityRecord, memberByProfile: Map<string, string>): string {
+  const fromDetails = rec.details && typeof rec.details === "object" && "recorded_by_name" in rec.details && typeof (rec.details as { recorded_by_name?: unknown }).recorded_by_name === "string"
+    ? (rec.details as { recorded_by_name: string }).recorded_by_name : null;
   if (fromDetails) return fromDetails;
-  if (rec.recorded_by && memberByProfile.has(rec.recorded_by)) {
-    return memberByProfile.get(rec.recorded_by)!;
-  }
+  if (rec.recorded_by && memberByProfile.has(rec.recorded_by)) return memberByProfile.get(rec.recorded_by)!;
   return "Familia";
 }
 
-function buildTimeline(
-  records: ActivityRecord[],
-  members: FamilyMember[]
-): TimelineEntry[] {
+function buildTimeline(records: ActivityRecord[], members: FamilyMember[]): TimelineEntry[] {
   const memberByProfile = new Map(members.map((m) => [m.profile_id, m.name]));
-  const sorted = [...records].sort(
-    (a, b) =>
-      new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
-  );
-
+  const sorted = [...records].sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
   return sorted.map((rec) => {
     const meta = RECORD_META[rec.type];
     return {
       id: rec.id,
       time: formatTime(rec.started_at),
-      emoji: meta.emoji,
+      iconName: rec.type,
       label: meta.label,
       detail: buildRecordDetail(rec),
       by: registrarLabel(rec, memberByProfile),
@@ -157,21 +110,13 @@ function buildTimeline(
   });
 }
 
-function weeklyTrendLabel(weekly: { awakenings: number; total: number }[]): {
-  label: string;
-  positive: boolean;
-} {
-  if (weekly.length < 2) {
-    return { label: "Sin tendencia", positive: true };
-  }
+function weeklyTrendLabel(weekly: { awakenings: number; total: number }[]): { label: string; positive: boolean } {
+  if (weekly.length < 2) return { label: "Sin tendencia", positive: true };
   const mid = Math.floor(weekly.length / 2) || 1;
   const first = weekly.slice(0, mid);
   const second = weekly.slice(mid);
-  const a1 =
-    first.reduce((s, d) => s + d.awakenings, 0) / Math.max(first.length, 1);
-  const a2 =
-    second.reduce((s, d) => s + d.awakenings, 0) /
-    Math.max(second.length, 1);
+  const a1 = first.reduce((s, d) => s + d.awakenings, 0) / Math.max(first.length, 1);
+  const a2 = second.reduce((s, d) => s + d.awakenings, 0) / Math.max(second.length, 1);
   const diff = a2 - a1;
   if (Math.abs(diff) < 0.35) return { label: "Estable", positive: true };
   if (diff < 0) return { label: "Despertares a la baja", positive: true };
@@ -179,56 +124,41 @@ function weeklyTrendLabel(weekly: { awakenings: number; total: number }[]): {
 }
 
 function parentsLabel(members: FamilyMember[]): string {
-  const names = members
-    .filter((m) =>
-      ["mother", "father", "caregiver"].includes(m.relationship)
-    )
-    .map((m) => m.name);
+  const names = members.filter((m) => ["mother", "father", "caregiver"].includes(m.relationship)).map((m) => m.name);
   if (names.length === 0) return "Sin padres vinculados";
   return names.join(" · ");
 }
 
-export default async function FamiliaDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function FamiliaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
 
   const stats = await getFamilyWithStats(id);
   if (!stats) notFound();
 
-  const [todayRecords, weeklySleep, insights, notes, plansRaw] =
-    await Promise.all([
-      getTodayRecords(id),
-      getWeeklySleep(id),
-      getInsights(stats.advisor_id, { familyId: id }),
-      getNotes(id),
-      getPlans(id),
-    ]);
+  const advisorName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Asesora";
 
-  const planDetails = await Promise.all(
-    plansRaw.map((p) => getPlanWithDetails(p.id))
-  );
-  const plans: PlanWithDetails[] = planDetails.filter(
-    (p): p is PlanWithDetails => p != null
-  );
+  const [todayRecords, weeklySleep, insights, notes, plansRaw, templates] = await Promise.all([
+    getTodayRecords(id),
+    getWeeklySleep(id),
+    getInsights(stats.advisor_id, { familyId: id }),
+    getNotes(id),
+    getPlans(id),
+    getSleepPlanTemplates(stats.advisor_id),
+  ]);
+
+  const planDetails = await Promise.all(plansRaw.map((p) => getPlanWithDetails(p.id)));
+  const plans: PlanWithDetails[] = planDetails.filter((p): p is PlanWithDetails => p != null);
 
   const timeline = buildTimeline(todayRecords, stats.members);
   const trend = weeklyTrendLabel(weeklySleep);
-  const { label: statusLabel, color: statusColorClass } = statusFromScore(
-    stats.score
-  );
-  const daysWithData = weeklySleep.filter(
-    (d) => d.total > 0 || d.awakenings > 0
-  ).length;
-
+  const { label: statusLabel, color: statusColorClass } = statusFromScore(stats.score);
+  const daysWithData = weeklySleep.filter((d) => d.total > 0 || d.awakenings > 0).length;
   const babyInitial = stats.baby_name.trim().charAt(0).toUpperCase() || "?";
-  const sinceLabel = new Date(stats.created_at).toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const sinceLabel = new Date(stats.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 
   return (
     <FamilyDetailTabs
@@ -237,6 +167,7 @@ export default async function FamiliaDetailPage({
       babyName={stats.baby_name}
       babyInitial={babyInitial}
       ageLabel={babyAgeLabel(stats.baby_birth_date)}
+      ageMonths={babyAgeMonths(stats.baby_birth_date)}
       parentsLabel={parentsLabel(stats.members)}
       sinceLabel={sinceLabel}
       statusLabel={statusLabel}
@@ -254,6 +185,10 @@ export default async function FamiliaDetailPage({
       notes={notes}
       plans={plans}
       inviteToken={stats.invite_token}
+      parentPhone={stats.parent_phone}
+      parentEmail={stats.parent_email}
+      templates={templates}
+      advisorName={advisorName}
       createNoteAction={createNoteFormAction}
     />
   );

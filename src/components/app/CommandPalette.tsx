@@ -112,7 +112,7 @@ export function CommandPalette({ families }: CommandPaletteProps) {
                 key={item.href}
                 onClick={() => navigate(item.href)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition ${
-                  i === selectedIndex ? "bg-violet-50 text-violet-700" : "text-gray-600 hover:bg-gray-50"
+                  i === selectedIndex ? "bg-nanni-50 text-nanni-700" : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 <item.icon className="w-4 h-4 shrink-0" />

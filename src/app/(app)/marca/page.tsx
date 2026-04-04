@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { updateBrand } from "@/lib/actions";
+import { updateBrand, uploadLogo } from "@/lib/actions";
 import { useToast } from "@/components/ui/Toast";
 import {
   Moon, Palette, Upload, ExternalLink, Eye,
-  CheckCircle, Calendar, Globe,
+  CheckCircle, Calendar, Globe, Loader2,
+  Droplets, Sun,
 } from "lucide-react";
 import type { Brand } from "@/lib/types";
 
@@ -23,6 +24,8 @@ export default function MarcaPage() {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,17 +86,43 @@ export default function MarcaPage() {
                 Se mostrará en la app de tus familias y en tu landing
               </p>
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-violet-100 border-2 border-dashed border-violet-300 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-2xl bg-nanni-100 border-2 border-dashed border-nanni-300 flex items-center justify-center overflow-hidden">
                   {brand?.logo_url ? (
                     <img src={brand.logo_url} alt="Logo" className="w-full h-full object-cover rounded-2xl" />
                   ) : (
-                    <Moon className="w-8 h-8 text-violet-400" />
+                    <Moon className="w-8 h-8 text-nanni-400" />
                   )}
                 </div>
                 <div>
-                  <button type="button" className="bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-violet-700 transition mb-2">
-                    <Upload className="w-4 h-4" />
-                    Subir logo
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingLogo(true);
+                      const fd = new FormData();
+                      fd.set("logo", file);
+                      const result = await uploadLogo(fd);
+                      setUploadingLogo(false);
+                      if (result.error) {
+                        toast(result.error, "error");
+                      } else if (result.url) {
+                        setBrand((prev) => prev ? { ...prev, logo_url: result.url! } : prev);
+                        toast("Logo actualizado");
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingLogo}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-nanni-700 transition mb-2 disabled:opacity-50"
+                  >
+                    {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {uploadingLogo ? "Subiendo..." : "Subir logo"}
                   </button>
                   <p className="text-[11px] text-gray-400">PNG, JPG o SVG. Máx 2MB</p>
                 </div>
@@ -108,7 +137,7 @@ export default function MarcaPage() {
                 {colorPresets.map((c) => (
                   <label key={c.name} className="cursor-pointer">
                     <input type="radio" name="primary_color" value={c.primary} className="sr-only peer" defaultChecked={brand?.primary_color === c.primary} />
-                    <div className="rounded-xl p-3 text-center transition border-2 border-gray-100 peer-checked:border-violet-500 peer-checked:bg-violet-50">
+                    <div className="rounded-xl p-3 text-center transition border-2 border-gray-100 peer-checked:border-nanni-500 peer-checked:bg-nanni-50">
                       <div className="w-8 h-8 rounded-full mx-auto mb-1.5" style={{ backgroundColor: c.primary }} />
                       <span className="text-[10px] font-medium text-gray-600">{c.name}</span>
                     </div>
@@ -128,7 +157,7 @@ export default function MarcaPage() {
                     name="name"
                     type="text"
                     defaultValue={brand?.name || ""}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -139,7 +168,7 @@ export default function MarcaPage() {
                       type="text"
                       defaultValue={brand?.subdomain || ""}
                       placeholder="tu-marca"
-                      className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
                     />
                     <span className="px-4 py-2.5 bg-gray-100 border border-l-0 border-gray-200 rounded-r-xl text-sm text-gray-400">.nanni.app</span>
                   </div>
@@ -159,7 +188,7 @@ export default function MarcaPage() {
                     type="text"
                     defaultValue={brand?.headline || ""}
                     placeholder="Ayudo a tu bebé a dormir mejor"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -169,7 +198,7 @@ export default function MarcaPage() {
                     rows={3}
                     defaultValue={brand?.description || ""}
                     placeholder="Describe tu servicio..."
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent resize-none"
                   />
                 </div>
                 <div>
@@ -179,14 +208,14 @@ export default function MarcaPage() {
                     type="url"
                     defaultValue={brand?.calendly_url || ""}
                     placeholder="https://calendly.com/tu-usuario"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-4 w-full bg-violet-600 text-white font-medium py-2.5 rounded-xl hover:bg-violet-700 transition text-sm disabled:opacity-50"
+                className="mt-4 w-full bg-nanni-600 text-white font-medium py-2.5 rounded-xl hover:bg-nanni-700 transition text-sm disabled:opacity-50"
               >
                 {isPending ? "Guardando..." : "Guardar cambios"}
               </button>
@@ -197,7 +226,7 @@ export default function MarcaPage() {
           <div className="lg:col-span-2">
             <div className="lg:sticky lg:top-8 space-y-4">
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <Eye className="w-4 h-4 text-violet-600" />
+                <Eye className="w-4 h-4 text-nanni-600" />
                 Vista previa
               </h3>
 
@@ -217,12 +246,12 @@ export default function MarcaPage() {
                   <p className="text-xs text-gray-400 text-center mb-2">Así ven la app tus familias</p>
                   <div className="space-y-2">
                     {[
-                      { emoji: "😴", label: "Siesta", bg: "bg-violet-50" },
-                      { emoji: "🍼", label: "Toma", bg: "bg-amber-50" },
-                      { emoji: "🌙", label: "En curso...", bg: "bg-indigo-50" },
+                      { icon: Moon, label: "Siesta", bg: "bg-nanni-50", iconColor: "text-nanni-600" },
+                      { icon: Droplets, label: "Toma", bg: "bg-amber-50", iconColor: "text-amber-500" },
+                      { icon: Sun, label: "En curso...", bg: "bg-sky-50", iconColor: "text-sky-500" },
                     ].map((e) => (
                       <div key={e.label} className={`${e.bg} rounded-xl p-2.5 flex items-center gap-2`}>
-                        <span className="text-sm">{e.emoji}</span>
+                        <e.icon className={`w-4 h-4 ${e.iconColor}`} />
                         <span className="text-xs text-gray-700">{e.label}</span>
                       </div>
                     ))}
