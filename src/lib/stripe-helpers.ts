@@ -69,13 +69,14 @@ export async function createCheckoutSession(
       ? [{ coupon: couponId }]
       : undefined;
 
-  const session = await getStripe().checkout.sessions.create({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ui_mode: "embedded" not yet in local Stripe types
+  const session = await (getStripe().checkout.sessions.create as any)({
     mode: "subscription",
+    ui_mode: "embedded",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
     ...(discounts ? { discounts } : { allow_promotion_codes: true }),
-    success_url: `${appUrl}/dashboard?upgraded=true`,
-    cancel_url: `${appUrl}/plan`,
+    return_url: `${appUrl}/plan/checkout/resultado?session_id={CHECKOUT_SESSION_ID}`,
     metadata: { advisor_id: advisorId, plan },
     subscription_data: {
       metadata: { advisor_id: advisorId, plan },

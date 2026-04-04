@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -102,6 +103,7 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     async function load() {
@@ -119,21 +121,9 @@ export default function PlanPage() {
     load();
   }, []);
 
-  async function handleCheckout(plan: "basico" | "premium") {
+  function handleCheckout(plan: "basico" | "premium") {
     setCheckoutLoading(plan);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const { url, error } = await res.json();
-      if (error) { toast(error, "error"); setCheckoutLoading(null); return; }
-      if (url) window.location.href = url;
-    } catch {
-      toast("Error al conectar con el sistema de pagos", "error");
-      setCheckoutLoading(null);
-    }
+    router.push(`/plan/checkout?plan=${plan}`);
   }
 
   const daysLeft = trialDaysLeft(subscription);

@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       plan,
       sub?.stripe_customer_id,
     );
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ clientSecret: session.client_secret });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Error desconocido";
     console.error("[Stripe Checkout]", msg);
