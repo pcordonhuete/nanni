@@ -202,6 +202,10 @@ const faqs = [
     q: "¿Hay compromiso de permanencia?",
     a: "No. Cancela cuando quieras. Sin permanencia, sin letra pequeña.",
   },
+  {
+    q: "¿Cuál es la política de reembolsos?",
+    a: "Puedes cancelar en cualquier momento y seguirás con acceso hasta el final del periodo facturado. No realizamos reembolsos por periodos parciales salvo error imputable a Nanni. Si crees que tienes derecho a uno, escríbenos a hola@nanniapp.com y lo revisamos.",
+  },
 ];
 
 /* ─────────────── Page ─────────────── */
@@ -393,7 +397,7 @@ export default function LandingPage() {
                           a: "11m",
                           t: "Desde ayer",
                           s: "Atención",
-                          sc: "bg-red-50 text-red-600",
+                          sc: "bg-amber-50 text-amber-600",
                         },
                       ].map((f) => (
                         <div
@@ -421,17 +425,35 @@ export default function LandingPage() {
                       ))}
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-50">
-                      <p className="text-[8px] font-semibold text-gray-400 mb-2">
-                        SUEÑO SEMANAL
-                      </p>
-                      <div className="flex items-end gap-1 h-10">
-                        {[65, 75, 60, 85, 70, 80, 72].map((h, i) => (
-                          <div
-                            key={i}
-                            className={`flex-1 rounded-sm ${i === 3 ? "bg-nanni-500" : "bg-nanni-200"}`}
-                            style={{ height: `${h}%` }}
-                          />
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[8px] font-semibold text-gray-400">
+                          SUEÑO SEMANAL
+                        </p>
+                        <p className="text-[7px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                          <TrendingUp className="w-2 h-2" /> +0.5h
+                        </p>
+                      </div>
+                      <div className="flex gap-1 h-12">
+                        {[
+                          { h: 65, nap: 20 },
+                          { h: 75, nap: 23 },
+                          { h: 60, nap: 20 },
+                          { h: 85, nap: 27 },
+                          { h: 70, nap: 22 },
+                          { h: 80, nap: 25 },
+                          { h: 78, nap: 24 },
+                        ].map((bar, i) => (
+                          <div key={i} className="flex-1 flex flex-col justify-end">
+                            <div className="w-full flex flex-col gap-px" style={{ height: `${bar.h}%` }}>
+                              <div className={`w-full flex-1 rounded-t-sm ${i === 3 ? "bg-nanni-500" : "bg-nanni-300"}`} />
+                              <div className="w-full bg-nanni-100 rounded-b-sm" style={{ flexBasis: `${(bar.nap / bar.h) * 100}%`, flexShrink: 0 }} />
+                            </div>
+                          </div>
                         ))}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="flex items-center gap-1 text-[7px] text-gray-400"><span className="w-1.5 h-1.5 rounded-sm bg-nanni-300" />Noche</span>
+                        <span className="flex items-center gap-1 text-[7px] text-gray-400"><span className="w-1.5 h-1.5 rounded-sm bg-nanni-100" />Siestas</span>
                       </div>
                     </div>
                   </div>
@@ -442,94 +464,73 @@ export default function LandingPage() {
               <div className="absolute bottom-4 left-0 w-[200px] shadow-mock rounded-[2rem] bg-gray-950 p-1.5 animate-float-slow z-10">
                 <div className="bg-white rounded-[1.7rem] overflow-hidden">
                   <div className="flex items-center justify-between px-5 pt-2 pb-1">
-                    <span className="text-[8px] font-semibold text-gray-900">
-                      9:41
-                    </span>
+                    <span className="text-[8px] font-semibold text-gray-900">9:41</span>
                     <div className="flex gap-1 items-center">
                       <div className="w-3 h-1.5 rounded-sm bg-gray-900" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-2">
-                    <div className="w-5 h-5 rounded-md bg-nanni-600 flex items-center justify-center">
-                      <Moon className="w-2.5 h-2.5 text-white" />
+                  <div className="flex items-center justify-between px-4 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-md bg-nanni-600 flex items-center justify-center">
+                        <Moon className="w-2.5 h-2.5 text-white" />
+                      </div>
+                      <span className="text-[9px] font-bold text-nanni-600">Dulces Sueños</span>
                     </div>
-                    <span className="text-[9px] font-bold text-nanni-600">
-                      Tu Marca
-                    </span>
+                    <span className="text-[7px] text-gray-400">Hoy</span>
                   </div>
-                  <div className="px-3 pb-3 space-y-1.5">
+                  <div className="px-3 pb-2 space-y-1">
                     {[
-                      {
-                        icon: Moon,
-                        label: "Siesta",
-                        time: "09:30",
-                        detail: "1h 20min · Cuna",
-                        bg: "bg-nanni-50",
-                        ic: "text-nanni-500",
-                      },
-                      {
-                        icon: Droplets,
-                        label: "Toma",
-                        time: "10:50",
-                        detail: "Pecho 25min",
-                        bg: "bg-amber-50",
-                        ic: "text-amber-500",
-                      },
-                      {
-                        icon: Activity,
-                        label: "Juego",
-                        time: "11:05",
-                        detail: "45min",
-                        bg: "bg-emerald-50",
-                        ic: "text-emerald-500",
-                      },
-                      {
-                        icon: Moon,
-                        label: "Siesta",
-                        time: "",
-                        detail: "En curso...",
-                        bg: "bg-nanni-50",
-                        ic: "text-nanni-500",
-                        active: true,
-                      },
+                      { icon: Sun, label: "Despertar", time: "07:15", detail: "Contento", bg: "bg-amber-50", ic: "text-amber-500" },
+                      { icon: Droplets, label: "Toma", time: "07:30", detail: "Pecho 20min", bg: "bg-sky-50", ic: "text-sky-500" },
+                      { icon: Moon, label: "Siesta", time: "09:30", detail: "1h 20min · Cuna", bg: "bg-nanni-50", ic: "text-nanni-500" },
+                      { icon: Activity, label: "Juego", time: "11:05", detail: "45min · Parque", bg: "bg-emerald-50", ic: "text-emerald-500" },
+                      { icon: Moon, label: "Siesta", time: "", detail: "En curso...", bg: "bg-nanni-50", ic: "text-nanni-500", active: true },
                     ].map((e) => (
-                      <div
-                        key={e.label + e.time}
-                        className={`flex items-center gap-2 ${e.bg} rounded-lg p-2`}
-                      >
-                        <div className="w-5 h-5 rounded-full bg-white/80 flex items-center justify-center shrink-0">
-                          <e.icon className={`w-2.5 h-2.5 ${e.ic}`} />
+                      <div key={e.label + e.time} className={`flex items-center gap-1.5 ${e.bg} rounded-lg p-1.5`}>
+                        <div className="w-4 h-4 rounded-full bg-white/80 flex items-center justify-center shrink-0">
+                          <e.icon className={`w-2 h-2 ${e.ic}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[8px] font-semibold text-gray-800">
-                            {e.label}
-                          </p>
-                          <p
-                            className={`text-[7px] ${e.active ? "text-nanni-500 font-medium" : "text-gray-400"}`}
-                          >
-                            {e.time && `${e.time} · `}
-                            {e.detail}
+                          <p className="text-[7px] font-semibold text-gray-800">{e.label}</p>
+                          <p className={`text-[6px] ${e.active ? "text-nanni-500 font-medium" : "text-gray-400"}`}>
+                            {e.time && `${e.time} · `}{e.detail}
                           </p>
                         </div>
-                        {e.active && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-nanni-500 animate-pulse-dot" />
-                        )}
+                        {e.active && <div className="w-1 h-1 rounded-full bg-nanni-500 animate-pulse-dot" />}
                       </div>
                     ))}
-                    <div className="flex gap-1.5 pt-1">
+                  </div>
+                  {/* Mini sleep chart */}
+                  <div className="px-3 pb-1.5">
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[7px] font-semibold text-gray-500">Sueño semanal</p>
+                        <p className="text-[6px] text-emerald-600 font-semibold">+0.5h</p>
+                      </div>
+                      <div className="flex gap-0.5 h-6">
+                        {[55, 68, 50, 78, 62, 72, 70].map((h, i) => (
+                          <div key={i} className="flex-1 flex flex-col justify-end">
+                            <div className={`w-full rounded-t-sm ${i === 3 ? "bg-nanni-500" : "bg-nanni-200"}`} style={{ height: `${h}%` }} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between mt-0.5">
+                        {["L","M","X","J","V","S","D"].map((d) => (
+                          <span key={d} className="text-[5px] text-gray-300 flex-1 text-center">{d}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-3 pb-3">
+                    <div className="flex gap-1.5">
                       {[
                         { icon: Moon, c: "bg-nanni-100 text-nanni-600" },
-                        { icon: Droplets, c: "bg-amber-100 text-amber-600" },
+                        { icon: Droplets, c: "bg-sky-100 text-sky-600" },
                         { icon: Smile, c: "bg-rose-100 text-rose-500" },
-                        { icon: FileText, c: "bg-blue-100 text-blue-600" },
+                        { icon: FileText, c: "bg-gray-100 text-gray-500" },
                       ].map((a, i) => (
-                        <div
-                          key={i}
-                          className={`flex-1 ${a.c.split(" ")[0]} rounded-lg py-1.5 flex items-center justify-center`}
-                        >
-                          <a.icon
-                            className={`w-3 h-3 ${a.c.split(" ")[1]}`}
-                          />
+                        <div key={i} className={`flex-1 ${a.c.split(" ")[0]} rounded-lg py-1.5 flex items-center justify-center`}>
+                          <a.icon className={`w-2.5 h-2.5 ${a.c.split(" ")[1]}`} />
                         </div>
                       ))}
                     </div>
@@ -719,8 +720,8 @@ export default function LandingPage() {
             {painPoints.map((pain, painIdx) => (
               <AnimateOnScroll key={pain.title} delay={painIdx * 100}>
                 <div className="group bg-white rounded-2xl p-6 shadow-card hover:shadow-lg transition-shadow duration-300 border border-gray-100 h-full">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-colors ${painIdx === 2 ? "bg-red-50 group-hover:bg-red-100" : "bg-gray-100 group-hover:bg-gray-200"}`}>
-                    <pain.icon className={`w-5 h-5 ${painIdx === 2 ? "text-red-500" : "text-gray-500"}`} />
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-colors bg-gray-100 group-hover:bg-gray-200">
+                    <pain.icon className="w-5 h-5 text-gray-500" />
                   </div>
                   <h3 className="font-bold text-gray-900 mb-2 text-[15px]">
                     {pain.title}
@@ -867,7 +868,7 @@ export default function LandingPage() {
                         <p className="text-[10px] font-bold text-gray-700">Sueño de Mateo</p>
                         <span className="text-[8px] text-nanni-600 font-semibold bg-nanni-50 px-2 py-0.5 rounded-full">Esta semana</span>
                       </div>
-                      <div className="flex items-end gap-1.5 h-20 mb-1">
+                      <div className="flex gap-1.5 h-20 mb-1">
                         {[
                           { h: 65, l: "L" },
                           { h: 75, l: "M" },
@@ -877,9 +878,9 @@ export default function LandingPage() {
                           { h: 80, l: "S" },
                           { h: 78, l: "D" },
                         ].map((bar, bIdx) => (
-                          <div key={bar.l} className="flex-1 flex flex-col items-center gap-0.5">
+                          <div key={bar.l} className="flex-1 flex flex-col justify-end items-center">
                             <div className={`w-full rounded-t-sm ${bIdx === 3 ? "bg-nanni-500" : "bg-nanni-200"}`} style={{ height: `${bar.h}%` }} />
-                            <span className="text-[7px] text-gray-400">{bar.l}</span>
+                            <span className="text-[7px] text-gray-400 shrink-0 mt-0.5">{bar.l}</span>
                           </div>
                         ))}
                       </div>
@@ -1032,22 +1033,22 @@ export default function LandingPage() {
                         Sueño Semanal
                       </p>
                       <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="flex items-end gap-2 h-28">
+                        <div className="flex gap-2 h-28">
                           {[
-                            { d: "L", n: 68, s: 22, t: 10 },
-                            { d: "M", n: 72, s: 20, t: 8 },
-                            { d: "X", n: 65, s: 25, t: 10 },
-                            { d: "J", n: 80, s: 15, t: 5 },
-                            { d: "V", n: 75, s: 18, t: 7 },
-                            { d: "S", n: 78, s: 16, t: 6 },
-                            { d: "D", n: 82, s: 14, t: 4 },
+                            { d: "L", n: 68, s: 22 },
+                            { d: "M", n: 72, s: 20 },
+                            { d: "X", n: 65, s: 25 },
+                            { d: "J", n: 80, s: 15 },
+                            { d: "V", n: 75, s: 18 },
+                            { d: "S", n: 78, s: 16 },
+                            { d: "D", n: 82, s: 14 },
                           ].map((bar) => (
-                            <div key={bar.d} className="flex-1 flex flex-col items-center gap-0.5">
+                            <div key={bar.d} className="flex-1 flex flex-col justify-end items-center">
                               <div className="w-full flex flex-col gap-px" style={{ height: `${bar.n}%` }}>
                                 <div className="flex-1 bg-nanni-400 rounded-t-sm" />
-                                <div style={{ height: `${bar.s}%` }} className="bg-nanni-200 rounded-sm" />
+                                <div style={{ flexBasis: `${bar.s}%`, flexShrink: 0 }} className="bg-nanni-200 rounded-b-sm" />
                               </div>
-                              <span className="text-[8px] text-gray-400 mt-1">{bar.d}</span>
+                              <span className="text-[8px] text-gray-400 mt-1 shrink-0">{bar.d}</span>
                             </div>
                           ))}
                         </div>
@@ -1447,14 +1448,20 @@ export default function LandingPage() {
               </div>
               <span className="font-bold text-gray-900">Nanni</span>
             </div>
-            <div className="flex items-center gap-6">
-              {["Privacidad", "Términos", "Contacto"].map((l) => (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              {[
+                { label: "Privacidad", href: "/privacidad" },
+                { label: "Términos", href: "/terminos" },
+                { label: "Cookies", href: "/cookies" },
+                { label: "Aviso legal", href: "/aviso-legal" },
+                { label: "Contacto", href: "mailto:hola@nanniapp.com" },
+              ].map((l) => (
                 <a
-                  key={l}
-                  href="#"
+                  key={l.label}
+                  href={l.href}
                   className="text-sm text-gray-400 hover:text-gray-600 transition"
                 >
-                  {l}
+                  {l.label}
                 </a>
               ))}
             </div>
