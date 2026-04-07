@@ -4,11 +4,14 @@ export type FamilyStatus = "active" | "paused" | "completed";
 
 export type RecordType =
   | "sleep"
+  | "feeding"
+  | "wakeup"
+  | "note"
+  // legacy types (kept for backwards compat with existing records)
   | "feed"
   | "diaper"
   | "play"
   | "mood"
-  | "note"
   | "wake";
 
 export type PlanStatus = "draft" | "active" | "completed";
@@ -179,17 +182,52 @@ export interface Subscription {
 
 export type RecordDetails =
   | SleepDetails
+  | FeedingDetails
+  | WakeupDetails
+  | NoteDetails
+  // legacy
   | FeedDetails
   | DiaperDetails
   | PlayDetails
   | MoodDetails
-  | NoteDetails
   | WakeDetails;
 
+// ─── New detail types ───
+
 export interface SleepDetails {
-  location?: "crib" | "arms" | "stroller" | "cosleep" | "other";
+  sleep_type?: "night" | "nap";
+  awakenings?: number;
+  location?: "crib" | "cosleep" | "arms" | "stroller" | "car" | "other";
+  fell_asleep_method?: "self" | "rocking" | "feeding" | "white_noise" | "other";
+  latency_minutes?: number;
+  notes?: string;
+  recorded_by_name?: string;
+  // legacy field
   fell_asleep_alone?: boolean;
 }
+
+export interface FeedingDetails {
+  method: "breast" | "bottle" | "solids" | "mixed";
+  description?: string;
+  amount?: "little" | "normal" | "lots";
+  notes?: string;
+  recorded_by_name?: string;
+}
+
+export interface WakeupDetails {
+  mood: "happy" | "neutral" | "cranky";
+  needed_help?: boolean;
+  notes?: string;
+  recorded_by_name?: string;
+}
+
+export interface NoteDetails {
+  text?: string;
+  tags?: string[];
+  recorded_by_name?: string;
+}
+
+// ─── Legacy detail types ───
 
 export interface FeedDetails {
   method?: "breast_left" | "breast_right" | "bottle" | "solids";
@@ -211,10 +249,6 @@ export interface PlayDetails {
 export interface MoodDetails {
   level?: 1 | 2 | 3 | 4 | 5;
   label?: string;
-}
-
-export interface NoteDetails {
-  text?: string;
 }
 
 export interface WakeDetails {

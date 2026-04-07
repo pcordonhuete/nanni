@@ -78,39 +78,53 @@ function birthDate(offsetMonths) {
   return d.toISOString().split("T")[0];
 }
 
-// ─── Generate sleep records for a day ───
+// ─── Generate records for a day (new data model) ───
 function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
   const records = [];
   const improveFactor = trend === "improving" ? Math.min(dayIndex / 30, 1) : trend === "slow" ? Math.min(dayIndex / 60, 0.5) : trend === "struggling" ? 0.1 : trend === "new" ? 0.3 : 0.7;
 
-  // Night sleep (20:00 - 06:30ish)
+  const locations = ["crib", "cosleep", "arms", "stroller", "car"];
+  const methods = ["self", "rocking", "feeding", "white_noise"];
+  const latencies = [3, 7, 15, 25, 31];
+
+  // Night sleep
   const nightStart = new Date(day);
   nightStart.setDate(nightStart.getDate() - 1);
   nightStart.setHours(19 + randomInt(0, 1), randomInt(30, 59), 0, 0);
   const nightDurationMin = Math.round(randomBetween(480, 600) + improveFactor * 60);
+  const nightEnd = new Date(nightStart.getTime() + nightDurationMin * 60000);
+  const maxWakes = trend === "struggling" ? 4 : trend === "new" ? 3 : Math.max(0, Math.round(3 - improveFactor * 3));
+  const nightAwakenings = randomInt(Math.max(0, maxWakes - 1), maxWakes);
+
   records.push({
     id: uuid(), family_id: familyId, type: "sleep",
     started_at: nightStart.toISOString(),
-    ended_at: new Date(nightStart.getTime() + nightDurationMin * 60000).toISOString(),
+    ended_at: nightEnd.toISOString(),
     duration_minutes: nightDurationMin,
-    details: { location: ["crib", "cosleep", "arms"][randomInt(0, 2)], fell_asleep_alone: improveFactor > 0.5 },
+    details: {
+      sleep_type: "night",
+      awakenings: nightAwakenings,
+      location: locations[randomInt(0, 2)],
+      fell_asleep_method: improveFactor > 0.5 ? "self" : methods[randomInt(0, 3)],
+      latency_minutes: latencies[randomInt(0, improveFactor > 0.5 ? 1 : 4)],
+    },
     created_at: nightStart.toISOString(),
   });
 
-  // Night awakenings (fewer as they improve)
-  const maxWakes = trend === "struggling" ? 4 : trend === "new" ? 3 : Math.max(0, Math.round(3 - improveFactor * 3));
-  const wakeCount = randomInt(Math.max(0, maxWakes - 1), maxWakes);
-  for (let w = 0; w < wakeCount; w++) {
-    const wakeTime = new Date(nightStart.getTime() + randomBetween(120, nightDurationMin - 60) * 60000);
-    records.push({
-      id: uuid(), family_id: familyId, type: "wake",
-      started_at: wakeTime.toISOString(), ended_at: null, duration_minutes: null,
-      details: { mood: ["crying", "neutral", "happy"][randomInt(0, 2)] },
-      created_at: wakeTime.toISOString(),
-    });
-  }
+  // Morning wakeup
+  const wakeupTime = new Date(nightEnd.getTime() + randomInt(0, 15) * 60000);
+  const wakeupMoods = improveFactor > 0.5 ? ["happy", "happy", "neutral"] : ["neutral", "cranky", "happy"];
+  records.push({
+    id: uuid(), family_id: familyId, type: "wakeup",
+    started_at: wakeupTime.toISOString(), ended_at: null, duration_minutes: null,
+    details: {
+      mood: wakeupMoods[randomInt(0, 2)],
+      needed_help: improveFactor < 0.4 && Math.random() > 0.5,
+    },
+    created_at: wakeupTime.toISOString(),
+  });
 
-  // Naps (1-3 depending on age)
+  // Naps
   const napCount = ageMonths <= 4 ? randomInt(2, 3) : ageMonths <= 9 ? randomInt(2, 3) : randomInt(1, 2);
   const napStarts = [9, 12, 15].slice(0, napCount);
   for (const h of napStarts) {
@@ -122,49 +136,59 @@ function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
       started_at: napStart.toISOString(),
       ended_at: new Date(napStart.getTime() + napDur * 60000).toISOString(),
       duration_minutes: napDur,
-      details: { location: "crib", fell_asleep_alone: improveFactor > 0.4 },
+      details: {
+        sleep_type: "nap",
+        awakenings: 0,
+        location: "crib",
+        fell_asleep_method: improveFactor > 0.4 ? "self" : methods[randomInt(0, 3)],
+        latency_minutes: latencies[randomInt(0, 2)],
+      },
       created_at: napStart.toISOString(),
     });
   }
 
-  // Feeds (4-6 per day)
-  const feedCount = randomInt(4, 6);
-  for (let f = 0; f < feedCount; f++) {
-    const feedTime = new Date(day);
-    feedTime.setHours(6 + Math.round(f * (14 / feedCount)), randomInt(0, 59), 0, 0);
-    const method = ageMonths < 6 ? ["breast_left", "breast_right", "bottle"][randomInt(0, 2)] : ["bottle", "solids"][randomInt(0, 1)];
-    records.push({
-      id: uuid(), family_id: familyId, type: "feed",
-      started_at: feedTime.toISOString(), ended_at: null,
-      duration_minutes: method === "solids" ? randomInt(15, 30) : randomInt(10, 25),
-      details: { method, amount_ml: method === "bottle" ? randomInt(100, 200) : undefined },
-      created_at: feedTime.toISOString(),
-    });
-  }
-
-  // Diapers (4-7 per day)
-  const diaperCount = randomInt(4, 7);
-  for (let d = 0; d < diaperCount; d++) {
-    const diaperTime = new Date(day);
-    diaperTime.setHours(6 + Math.round(d * (14 / diaperCount)), randomInt(0, 59), 0, 0);
-    records.push({
-      id: uuid(), family_id: familyId, type: "diaper",
-      started_at: diaperTime.toISOString(), ended_at: null, duration_minutes: null,
-      details: { diaper_type: ["wet", "dirty", "both"][randomInt(0, 2)] },
-      created_at: diaperTime.toISOString(),
-    });
-  }
-
-  // Mood (1 per day)
-  const moodTime = new Date(day);
-  moodTime.setHours(18, randomInt(0, 59), 0, 0);
-  const moodLevel = Math.min(5, Math.max(1, Math.round(2 + improveFactor * 3 + randomBetween(-0.5, 0.5))));
+  // Dinner (feeding)
+  const dinnerTime = new Date(day);
+  dinnerTime.setHours(18 + randomInt(0, 1), randomInt(0, 45), 0, 0);
+  const dinnerMethods = ageMonths < 6 ? ["breast", "bottle"] : ["solids", "mixed", "bottle"];
+  const dinnerDescs = ["Puré de verduras", "Papilla de frutas", "Pollo con arroz", "Crema de calabaza", "Biberón 200ml"];
+  const amounts = ["little", "normal", "lots"];
   records.push({
-    id: uuid(), family_id: familyId, type: "mood",
-    started_at: moodTime.toISOString(), ended_at: null, duration_minutes: null,
-    details: { level: moodLevel, label: ["Muy irritable", "Irritable", "Normal", "Contento", "Muy contento"][moodLevel - 1] },
-    created_at: moodTime.toISOString(),
+    id: uuid(), family_id: familyId, type: "feeding",
+    started_at: dinnerTime.toISOString(), ended_at: null, duration_minutes: null,
+    details: {
+      method: dinnerMethods[randomInt(0, dinnerMethods.length - 1)],
+      description: ageMonths >= 6 ? dinnerDescs[randomInt(0, dinnerDescs.length - 1)] : undefined,
+      amount: amounts[randomInt(0, 2)],
+    },
+    created_at: dinnerTime.toISOString(),
   });
+
+  // Note (occasionally)
+  if (Math.random() > 0.6) {
+    const noteTime = new Date(day);
+    noteTime.setHours(randomInt(8, 20), randomInt(0, 59), 0, 0);
+    const noteTexts = [
+      "Le están saliendo los dientes, molestias todo el día",
+      "Ha dormido en casa de los abuelos",
+      "Vacuna hoy, algo inquieto por la tarde",
+      "Día muy activo en el parque, agotado por la noche",
+      "Resfriado leve, nariz congestionada",
+      "Primer día de guardería",
+      "Ha empezado a gatear, muy excitado",
+    ];
+    const tagOptions = [["teething"], ["travel"], ["vaccine"], [], ["fever"], ["routine_change"], []];
+    const idx = randomInt(0, noteTexts.length - 1);
+    records.push({
+      id: uuid(), family_id: familyId, type: "note",
+      started_at: noteTime.toISOString(), ended_at: null, duration_minutes: null,
+      details: {
+        text: noteTexts[idx],
+        tags: tagOptions[idx].length > 0 ? tagOptions[idx] : undefined,
+      },
+      created_at: noteTime.toISOString(),
+    });
+  }
 
   return records;
 }

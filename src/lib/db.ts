@@ -235,6 +235,7 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
       .gte("started_at", dayStart.toISOString())
       .lte("started_at", dayEnd.toISOString());
 
+    // Legacy: count standalone wake records
     const { data: wakeRecs } = await supabase
       .from("activity_records")
       .select("id")
@@ -245,24 +246,33 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
 
     let nightHours = 0;
     let napHours = 0;
+    let embeddedAwakenings = 0;
     if (sleepRecs) {
       for (const rec of sleepRecs) {
         const mins = rec.duration_minutes || 0;
-        const hour = new Date(rec.started_at).getHours();
-        if (hour >= 19 || hour < 7) {
+        const details = rec.details as Record<string, unknown> | null;
+        const sleepType = details?.sleep_type as string | undefined;
+        const isNight = sleepType
+          ? sleepType === "night"
+          : new Date(rec.started_at).getHours() >= 19 || new Date(rec.started_at).getHours() < 7;
+
+        if (isNight) {
           nightHours += mins / 60;
+          embeddedAwakenings += (typeof details?.awakenings === "number" ? details.awakenings : 0) as number;
         } else {
           napHours += mins / 60;
         }
       }
     }
 
+    const totalAwakenings = embeddedAwakenings + (wakeRecs?.length || 0);
+
     result.push({
       day: days[date.getDay()],
       date: dayStart.toISOString(),
       night_hours: Math.round(nightHours * 10) / 10,
       nap_hours: Math.round(napHours * 10) / 10,
-      awakenings: wakeRecs?.length || 0,
+      awakenings: totalAwakenings,
       total: Math.round((nightHours + napHours) * 10) / 10,
     });
   }
@@ -505,10 +515,14 @@ function buildDayMap(
     if (rec.type === "sleep") {
       const mins = rec.duration_minutes || 0;
       const hours = mins / 60;
+      const details = (rec as unknown as { details?: Record<string, unknown> }).details;
+      const sleepType = details?.sleep_type as string | undefined;
       const hour = new Date(rec.started_at).getHours();
-      const isNight = hour >= 19 || hour < 7;
+      const isNight = sleepType ? sleepType === "night" : (hour >= 19 || hour < 7);
       if (isNight) {
         addSleepToDay(dayMap, rec.family_id, hours, 0);
+        const aw = typeof details?.awakenings === "number" ? details.awakenings : 0;
+        for (let w = 0; w < aw; w++) addWakeToDay(dayMap, rec.family_id);
       } else {
         addSleepToDay(dayMap, rec.family_id, 0, hours);
       }
@@ -875,21 +889,33 @@ export async function getWeeklySleepForRange(
 
     let nightHours = 0;
     let napHours = 0;
+    let embeddedAwakenings = 0;
     if (sleepRecs) {
       for (const rec of sleepRecs) {
         const mins = rec.duration_minutes || 0;
-        const hour = new Date(rec.started_at).getHours();
-        if (hour >= 19 || hour < 7) nightHours += mins / 60;
-        else napHours += mins / 60;
+        const details = rec.details as Record<string, unknown> | null;
+        const sleepType = details?.sleep_type as string | undefined;
+        const isNight = sleepType
+          ? sleepType === "night"
+          : new Date(rec.started_at).getHours() >= 19 || new Date(rec.started_at).getHours() < 7;
+
+        if (isNight) {
+          nightHours += mins / 60;
+          embeddedAwakenings += (typeof details?.awakenings === "number" ? details.awakenings : 0) as number;
+        } else {
+          napHours += mins / 60;
+        }
       }
     }
+
+    const totalAwakenings = embeddedAwakenings + (wakeRecs?.length || 0);
 
     result.push({
       day: days[date.getDay()],
       date: dayStart.toISOString(),
       night_hours: Math.round(nightHours * 10) / 10,
       nap_hours: Math.round(napHours * 10) / 10,
-      awakenings: wakeRecs?.length || 0,
+      awakenings: totalAwakenings,
       total: Math.round((nightHours + napHours) * 10) / 10,
     });
   }

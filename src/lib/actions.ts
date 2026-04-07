@@ -109,7 +109,6 @@ export async function createRecord(
 
   if (error) return { error: error.message };
 
-  // Create notification for the advisor
   if (user) {
     const { data: family } = await supabase
       .from("families")
@@ -119,8 +118,8 @@ export async function createRecord(
 
     if (family && family.advisor_id !== user.id) {
       const typeLabels: Record<string, string> = {
-        sleep: "sueño", feed: "toma", diaper: "pañal",
-        play: "juego", mood: "humor", note: "nota", wake: "despertar",
+        sleep: "sueño", feeding: "cena", wakeup: "despertar", note: "nota",
+        feed: "toma", diaper: "pañal", play: "juego", mood: "humor", wake: "despertar",
       };
       await supabase.from("notifications").insert({
         user_id: family.advisor_id,
@@ -171,8 +170,8 @@ export async function createRecordFromParent(
   if (error) return { error: error.message };
 
   const typeLabels: Record<string, string> = {
-    sleep: "sueño", feed: "toma", diaper: "pañal",
-    play: "juego", mood: "humor", note: "nota", wake: "despertar",
+    sleep: "sueño", feeding: "cena", wakeup: "despertar", note: "nota",
+    feed: "toma", diaper: "pañal", play: "juego", mood: "humor", wake: "despertar",
   };
 
   try {

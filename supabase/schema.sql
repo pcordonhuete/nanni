@@ -162,7 +162,8 @@ create table if not exists public.activity_records (
   family_id uuid references public.families(id) on delete cascade not null,
   recorded_by uuid references public.profiles(id) on delete set null,
   type text not null
-    check (type in ('sleep', 'feed', 'diaper', 'play', 'mood', 'note', 'wake')),
+    check (type in ('sleep', 'feeding', 'wakeup', 'note',
+                     'feed', 'diaper', 'play', 'mood', 'wake')),
   started_at timestamptz not null,
   ended_at timestamptz,
   duration_minutes integer,
@@ -441,12 +442,14 @@ select
     0
   ) / 60.0 as sleep_hours_today,
   coalesce(
-    (select count(*)
+    (select coalesce(sum((ar.details->>'awakenings')::int), 0)
+       + count(*) filter (where ar.type = 'wake')
      from public.activity_records ar
      where ar.family_id = f.id
-       and ar.type = 'wake'
+       and ar.type in ('sleep', 'wake')
        and ar.started_at >= current_date - interval '1 day'
-       and ar.started_at < current_date),
+       and ar.started_at < current_date
+       and (ar.type = 'wake' or (ar.details->>'sleep_type') = 'night')),
     0
   ) as awakenings_last_night,
   (select max(ar.created_at)

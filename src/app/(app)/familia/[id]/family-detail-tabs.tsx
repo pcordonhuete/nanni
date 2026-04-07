@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 
 const TIMELINE_ICONS: Record<string, LucideIcon> = {
-  sleep: Moon, wake: Sun, feed: Droplets, diaper: Baby,
-  play: Activity, mood: Smile, note: FileText,
+  sleep: Moon, wakeup: Sun, feeding: Droplets, note: FileText,
+  wake: Sun, feed: Droplets, diaper: Baby, play: Activity, mood: Smile,
 };
 import {
   createPlan, addPlanGoal, addPlanStep, toggleGoal, toggleStep,

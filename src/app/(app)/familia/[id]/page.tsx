@@ -9,12 +9,9 @@ import { babyAgeLabel, formatTime, statusFromScore, babyAgeMonths } from "@/lib/
 import {
   FamilyDetailTabs, type PlanWithDetails, type TimelineEntry,
 } from "./family-detail-tabs";
-import type {
-  ActivityRecord, FamilyMember, FeedDetails, DiaperDetails,
-  PlayDetails, MoodDetails, NoteDetails, WakeDetails,
-} from "@/lib/types";
+import type { ActivityRecord, FamilyMember } from "@/lib/types";
 import {
-  Moon, Sun, Droplets, Baby, Activity, Smile, FileText,
+  Moon, Sun, Droplets, Baby, Activity, Smile, FileText, UtensilsCrossed,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -26,14 +23,16 @@ async function createNoteFormAction(formData: FormData) {
   await createNote(familyId, content);
 }
 
-const RECORD_META: Record<ActivityRecord["type"], { icon: LucideIcon; label: string }> = {
+const RECORD_META: Record<string, { icon: LucideIcon; label: string }> = {
   sleep: { icon: Moon, label: "Sueño" },
+  feeding: { icon: UtensilsCrossed, label: "Cena" },
+  wakeup: { icon: Sun, label: "Despertar" },
+  note: { icon: FileText, label: "Nota" },
   wake: { icon: Sun, label: "Despertar" },
   feed: { icon: Droplets, label: "Toma" },
   diaper: { icon: Baby, label: "Pañal" },
   play: { icon: Activity, label: "Juego" },
   mood: { icon: Smile, label: "Humor" },
-  note: { icon: FileText, label: "Nota" },
 };
 
 function formatDurationMinutes(mins: number | null): string {
@@ -47,38 +46,63 @@ function formatDurationMinutes(mins: number | null): string {
 
 function buildRecordDetail(rec: ActivityRecord): string {
   const dur = formatDurationMinutes(rec.duration_minutes);
-  const det = rec.details;
+  const det = rec.details as Record<string, unknown>;
 
   switch (rec.type) {
     case "sleep": {
-      const d = det as { location?: string; fell_asleep_alone?: boolean };
-      const bits = [dur, d?.location, d?.fell_asleep_alone != null ? (d.fell_asleep_alone ? "Se durmió solo/a" : "Con ayuda") : ""].filter(Boolean);
-      return bits.join(" · ") || "Registro de sueño";
+      const locLabels: Record<string, string> = { crib: "Cuna", cosleep: "Colecho", arms: "Brazos", stroller: "Carrito", car: "Coche" };
+      const methodLabels: Record<string, string> = { self: "Solo/a", rocking: "Meciendo", feeding: "Pecho/biberón", white_noise: "Ruido blanco" };
+      const st = det?.sleep_type as string | undefined;
+      const bits: string[] = [];
+      if (st === "night") bits.push("Nocturno");
+      else if (st === "nap") bits.push("Siesta");
+      bits.push(dur);
+      if (rec.ended_at) bits.push(`→ ${formatTime(rec.ended_at)}`);
+      const aw = det?.awakenings as number | undefined;
+      if (typeof aw === "number" && aw > 0) bits.push(`${aw} despertares`);
+      const loc = det?.location as string;
+      if (loc && locLabels[loc]) bits.push(locLabels[loc]);
+      const meth = det?.fell_asleep_method as string;
+      if (meth && methodLabels[meth]) bits.push(methodLabels[meth]);
+      if (det?.fell_asleep_alone != null) bits.push(det.fell_asleep_alone ? "Solo/a" : "Con ayuda");
+      const lat = det?.latency_minutes as number | undefined;
+      if (typeof lat === "number") bits.push(`Latencia ~${lat}min`);
+      return bits.filter(Boolean).join(" · ") || "Sueño";
+    }
+    case "feeding": {
+      const mLabels: Record<string, string> = { breast: "Pecho", bottle: "Biberón", solids: "Sólidos", mixed: "Mixto" };
+      const aLabels: Record<string, string> = { little: "Poco", normal: "Normal", lots: "Mucho" };
+      const fm = det?.method as string;
+      const fa = det?.amount as string;
+      return [fm && mLabels[fm], det?.description as string, fa && aLabels[fa]].filter(Boolean).join(" · ") || "Cena";
+    }
+    case "wakeup": {
+      const moods: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", cranky: "😫 Malhumorado" };
+      const wm = det?.mood as string;
+      return [wm && moods[wm], det?.needed_help ? "Necesitó ayuda" : ""].filter(Boolean).join(" · ") || "Despertar";
     }
     case "feed": {
-      const d = det as FeedDetails;
-      const bits = [d?.food_description, d?.amount_ml != null ? `${d.amount_ml} ml` : "", d?.method].filter(Boolean);
+      const bits = [det?.food_description as string, det?.amount_ml != null ? `${det.amount_ml} ml` : "", det?.method as string].filter(Boolean);
       return [dur, ...bits].filter(Boolean).join(" · ") || "Toma";
     }
     case "diaper": {
-      const d = det as DiaperDetails;
-      return [d?.diaper_type, d?.color, d?.notes].filter(Boolean).join(" · ") || "Cambio de pañal";
+      return [det?.diaper_type as string, det?.color as string, det?.notes as string].filter(Boolean).join(" · ") || "Pañal";
     }
     case "play": {
-      const d = det as PlayDetails;
-      return [d?.activity, d?.location].filter(Boolean).join(" · ") || "Juego";
+      return [det?.activity as string, det?.location as string].filter(Boolean).join(" · ") || "Juego";
     }
     case "mood": {
-      const d = det as MoodDetails;
-      return d?.label || (d?.level != null ? `Nivel ${d.level}` : "Humor");
+      return (det?.label as string) || (det?.level != null ? `Nivel ${det.level}` : "Humor");
     }
     case "note": {
-      const d = det as NoteDetails;
-      return d?.text || "";
+      const tagLabels: Record<string, string> = { teething: "🦷", vaccine: "💉", fever: "🤒", travel: "✈️", routine_change: "🔄" };
+      const tags = (det?.tags as string[] | undefined)?.map((t: string) => tagLabels[t] || t).join(" ") || "";
+      return [tags, det?.text as string].filter(Boolean).join(" · ") || "";
     }
     case "wake": {
-      const d = det as WakeDetails;
-      return d?.mood ? `Humor: ${d.mood}` : dur || "Despertar";
+      const moods: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", crying: "😫 Llorando" };
+      const wakeMood = det?.mood as string;
+      return wakeMood ? moods[wakeMood] : dur || "Despertar";
     }
     default:
       return dur;
@@ -97,7 +121,7 @@ function buildTimeline(records: ActivityRecord[], members: FamilyMember[]): Time
   const memberByProfile = new Map(members.map((m) => [m.profile_id, m.name]));
   const sorted = [...records].sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
   return sorted.map((rec) => {
-    const meta = RECORD_META[rec.type];
+    const meta = RECORD_META[rec.type] || { label: rec.type };
     return {
       id: rec.id,
       time: formatTime(rec.started_at),
