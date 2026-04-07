@@ -12,7 +12,7 @@ const PROTECTED_PATHS = [
   "/plan",
 ];
 
-const PAYWALL_EXEMPT = ["/plan", "/ajustes", "/api/stripe"];
+const PAYWALL_EXEMPT = ["/plan", "/ajustes", "/onboarding", "/api/stripe"];
 
 const AUTH_PATHS = ["/login", "/registro"];
 const RECOVERY_PATHS = ["/cambiar-password"];
@@ -66,13 +66,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isProtected && !isPaywallExempt) {
-    const { data: sub } = await supabase
+    const { data: sub, error: subError } = await supabase
       .from("subscriptions")
-      .select("plan, status, trial_ends_at")
+      .select("*")
       .eq("advisor_id", user.id)
       .single();
 
-    if (!sub) {
+    if (subError || !sub) {
       const url = request.nextUrl.clone();
       url.pathname = "/plan";
       return NextResponse.redirect(url);
