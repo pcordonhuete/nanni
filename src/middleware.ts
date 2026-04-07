@@ -66,26 +66,26 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isProtected && !isPaywallExempt) {
-    const { data: sub, error: subError } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("advisor_id", user.id)
-      .single();
+    try {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("advisor_id", user.id)
+        .single();
 
-    if (subError || !sub) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/plan";
-      return NextResponse.redirect(url);
-    }
+      if (sub) {
+        const isActive = sub.status === "active";
+        const isTrialing = sub.status === "trialing";
+        const trialExpired = isTrialing && sub.trial_ends_at && new Date(sub.trial_ends_at) < new Date();
 
-    const isActive = sub.status === "active";
-    const isTrialing = sub.status === "trialing";
-    const trialExpired = isTrialing && sub.trial_ends_at && new Date(sub.trial_ends_at) < new Date();
-
-    if (!isActive && (!isTrialing || trialExpired)) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/plan";
-      return NextResponse.redirect(url);
+        if (!isActive && (!isTrialing || trialExpired)) {
+          const url = request.nextUrl.clone();
+          url.pathname = "/plan";
+          return NextResponse.redirect(url);
+        }
+      }
+    } catch {
+      // If query fails, allow through rather than blocking
     }
   }
 
