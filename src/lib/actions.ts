@@ -635,6 +635,14 @@ export async function deleteAccount() {
   if (!user) return { error: "No autenticado" };
 
   await supabase.from("profiles").delete().eq("id", user.id);
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey) {
+    const { createClient: createAdmin } = await import("@supabase/supabase-js");
+    const adminClient = createAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
+    await adminClient.auth.admin.deleteUser(user.id);
+  }
+
   await supabase.auth.signOut();
   return { success: true };
 }

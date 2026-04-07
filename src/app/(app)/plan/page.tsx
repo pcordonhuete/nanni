@@ -129,7 +129,8 @@ export default function PlanPage() {
   const daysLeft = trialDaysLeft(subscription);
   const trialActive = subscription?.status === "trialing" && daysLeft > 0;
   const isActive = subscription?.status === "active";
-  const trialExpired = !trialActive && !isActive;
+  const trialExpired = subscription !== null && !trialActive && !isActive;
+  const noSubscription = subscription === null;
   const currentPlan = subscription?.plan;
 
   async function handlePortal() {

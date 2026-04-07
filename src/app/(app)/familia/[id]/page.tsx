@@ -138,6 +138,7 @@ export default async function FamiliaDetailPage({ params }: { params: Promise<{ 
 
   const stats = await getFamilyWithStats(id);
   if (!stats) notFound();
+  if (stats.advisor_id !== user.id) notFound();
 
   const advisorName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Asesora";
 

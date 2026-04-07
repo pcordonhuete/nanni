@@ -41,35 +41,43 @@ export default function AjustesPage() {
   const [intakeQuestions, setIntakeQuestions] = useState<{ id: string; text: string; type: string; options?: string[] }[]>([]);
   const { toast } = useToast();
 
+  const [authEmail, setAuthEmail] = useState<string>("");
+
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [{ data: prof }, { data: sub }, { count }, { data: prefs }, { data: intakes }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase.from("subscriptions").select("*").eq("advisor_id", user.id).single(),
-        supabase.from("families").select("*", { count: "exact", head: true }).eq("advisor_id", user.id).eq("status", "active"),
-        supabase.from("notification_preferences").select("*").eq("advisor_id", user.id).single(),
-        supabase.from("intake_templates").select("*").eq("advisor_id", user.id).order("created_at", { ascending: false }),
-      ]);
-
-      if (prof) setProfile(prof);
-      if (sub) setSubscription(sub);
-      setFamilyCount(count || 0);
-      if (prefs) setNotifPrefs(prefs);
-      if (intakes) setIntakeTemplates(intakes as IntakeTemplate[]);
-      setLoading(false);
-    }
-    load();
+    loadData();
   }, []);
+
+  async function loadData() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setAuthEmail(user.email || "");
+
+    const [{ data: prof }, { data: sub }, { count }, { data: prefs }, { data: intakes }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("subscriptions").select("*").eq("advisor_id", user.id).single(),
+      supabase.from("families").select("*", { count: "exact", head: true }).eq("advisor_id", user.id).eq("status", "active"),
+      supabase.from("notification_preferences").select("*").eq("advisor_id", user.id).single(),
+      supabase.from("intake_templates").select("*").eq("advisor_id", user.id).order("created_at", { ascending: false }),
+    ]);
+
+    if (prof) setProfile(prof);
+    if (sub) setSubscription(sub);
+    setFamilyCount(count || 0);
+    if (prefs) setNotifPrefs(prefs);
+    if (intakes) setIntakeTemplates(intakes as IntakeTemplate[]);
+    setLoading(false);
+  }
 
   async function handleProfileSubmit(formData: FormData) {
     startTransition(async () => {
       const result = await updateProfile(formData);
       if (result.error) toast(result.error, "error");
-      else toast("Perfil actualizado");
+      else {
+        toast("Perfil actualizado");
+        await loadData();
+      }
     });
   }
 
@@ -193,7 +201,7 @@ export default function AjustesPage() {
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Email</label>
-            <input type="email" value={profile?.email || ""} disabled className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-400 cursor-not-allowed" />
+            <input type="email" value={authEmail || profile?.email || ""} disabled className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500 cursor-not-allowed" />
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Teléfono</label>

@@ -9,11 +9,13 @@ const PROTECTED_PATHS = [
   "/marca",
   "/ajustes",
   "/onboarding",
+  "/plan",
 ];
 
 const PAYWALL_EXEMPT = ["/plan", "/ajustes", "/api/stripe"];
 
 const AUTH_PATHS = ["/login", "/registro"];
+const RECOVERY_PATHS = ["/cambiar-password"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -54,6 +56,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  const isRecovery = RECOVERY_PATHS.some((p) => path.startsWith(p));
+  if (isRecovery) return supabaseResponse;
+
   if (user && isAuth) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
@@ -67,16 +72,20 @@ export async function middleware(request: NextRequest) {
       .eq("advisor_id", user.id)
       .single();
 
-    if (sub) {
-      const isActive = sub.status === "active";
-      const isTrialing = sub.status === "trialing";
-      const trialExpired = isTrialing && new Date(sub.trial_ends_at) < new Date();
+    if (!sub) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/plan";
+      return NextResponse.redirect(url);
+    }
 
-      if (!isActive && (!isTrialing || trialExpired)) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/plan";
-        return NextResponse.redirect(url);
-      }
+    const isActive = sub.status === "active";
+    const isTrialing = sub.status === "trialing";
+    const trialExpired = isTrialing && sub.trial_ends_at && new Date(sub.trial_ends_at) < new Date();
+
+    if (!isActive && (!isTrialing || trialExpired)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/plan";
+      return NextResponse.redirect(url);
     }
   }
 
@@ -95,5 +104,6 @@ export const config = {
     "/plan/:path*",
     "/login",
     "/registro",
+    "/cambiar-password",
   ],
 };

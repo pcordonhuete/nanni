@@ -14,7 +14,6 @@ export default function RegistroPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,27 +26,36 @@ export default function RegistroPage() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
+    try {
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
 
-    if (data.session) {
-      router.push("/onboarding");
-      router.refresh();
-    } else {
-      setError("No se pudo crear la sesión. Inténtalo de nuevo.");
+      if (data.session) {
+        router.push("/onboarding");
+        router.refresh();
+      } else if (data.user && !data.session) {
+        setError("Revisa tu email para confirmar tu cuenta antes de iniciar sesión.");
+        setLoading(false);
+      } else {
+        setError("No se pudo crear la sesión. Inténtalo de nuevo.");
+        setLoading(false);
+      }
+    } catch {
+      setError("Error de conexión. Inténtalo de nuevo.");
       setLoading(false);
     }
   }
@@ -159,11 +167,11 @@ export default function RegistroPage() {
 
         <p className="text-xs text-center text-gray-400">
           Al registrarte aceptas nuestros{" "}
-          <a href="#" className="text-nanni-600 hover:underline">
+          <a href="/terminos" target="_blank" className="text-nanni-600 hover:underline">
             términos
           </a>{" "}
           y{" "}
-          <a href="#" className="text-nanni-600 hover:underline">
+          <a href="/privacidad" target="_blank" className="text-nanni-600 hover:underline">
             política de privacidad
           </a>
         </p>

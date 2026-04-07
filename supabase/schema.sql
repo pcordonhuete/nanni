@@ -106,6 +106,8 @@ create table if not exists public.families (
   status text not null default 'active'
     check (status in ('active', 'paused', 'completed')),
   invite_token text unique not null default encode(gen_random_bytes(16), 'hex'),
+  parent_phone text,
+  parent_email text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -347,15 +349,16 @@ create policy "Users can manage own notifications"
 create table if not exists public.subscriptions (
   id uuid default gen_random_uuid() primary key,
   advisor_id uuid references public.profiles(id) on delete cascade not null unique,
-  plan text not null default 'starter'
-    check (plan in ('starter', 'pro', 'clinica')),
-  status text not null default 'active'
-    check (status in ('active', 'trialing', 'past_due', 'cancelled')),
+  plan text not null default 'trial'
+    check (plan in ('trial', 'basico', 'premium')),
+  status text not null default 'trialing'
+    check (status in ('active', 'trialing', 'past_due', 'cancelled', 'expired')),
   stripe_customer_id text,
   stripe_subscription_id text,
   current_period_start timestamptz,
   current_period_end timestamptz,
-  max_families integer not null default 3,
+  trial_ends_at timestamptz not null default (now() + interval '14 days'),
+  max_families integer not null default 999,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -370,8 +373,8 @@ create or replace function public.handle_new_subscription()
 returns trigger as $$
 begin
   if new.role = 'advisor' then
-    insert into public.subscriptions (advisor_id, plan, status, max_families)
-    values (new.id, 'starter', 'active', 3);
+    insert into public.subscriptions (advisor_id, plan, status, max_families, trial_ends_at)
+    values (new.id, 'trial', 'trialing', 999, now() + interval '14 days');
   end if;
   return new;
 end;

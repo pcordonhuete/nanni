@@ -47,6 +47,7 @@ const mobileNavItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/familias", label: "Familias", icon: Users },
   { href: "/analiticas", label: "Datos", icon: BarChart3 },
+  { href: "/marca", label: "Marca", icon: Palette },
   { href: "/ajustes", label: "Más", icon: MoreHorizontal },
 ];
 
@@ -104,7 +105,8 @@ export default function Navigation({
         <div className="px-3 mb-4">
           <button
             onClick={() => {
-              const event = new KeyboardEvent("keydown", { key: "k", metaKey: true });
+              const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+              const event = new KeyboardEvent("keydown", { key: "k", metaKey: isMac, ctrlKey: !isMac });
               window.dispatchEvent(event);
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-400 bg-gray-50 rounded-xl hover:bg-gray-100 transition"
