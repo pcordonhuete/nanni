@@ -20,6 +20,35 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  // Ensure profile + brand + subscription rows exist (trigger may not have fired)
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .single();
+
+  if (!existingProfile) {
+    const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuario";
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      email: user.email || "",
+      full_name: fullName,
+      role: "advisor",
+    }, { onConflict: "id" });
+
+    await supabase.from("brands").upsert({
+      advisor_id: user.id,
+      name: fullName,
+    }, { onConflict: "advisor_id" });
+
+    await supabase.from("subscriptions").upsert({
+      advisor_id: user.id,
+      plan: "trial",
+      status: "trialing",
+      max_families: 999,
+    }, { onConflict: "advisor_id" });
+  }
+
   const userName =
     user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuario";
   const userEmail = user.email || "";
