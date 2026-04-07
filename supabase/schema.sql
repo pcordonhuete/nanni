@@ -61,7 +61,7 @@ create table if not exists public.brands (
   subdomain text unique,
   custom_domain text,
   logo_url text,
-  primary_color text not null default '#7C3AED',
+  primary_color text not null default '#007A53',
   headline text,
   description text,
   calendly_url text,

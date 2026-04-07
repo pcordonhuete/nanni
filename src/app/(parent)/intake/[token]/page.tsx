@@ -11,7 +11,7 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
   const [template, setTemplate] = useState<IntakeTemplate | null>(null);
   const [familyName, setFamilyName] = useState("");
   const [brandName, setBrandName] = useState("Nanni");
-  const [primaryColor, setPrimaryColor] = useState("#7C3AED");
+  const [primaryColor, setPrimaryColor] = useState("#007A53");
   const [answers, setAnswers] = useState<Record<string, string | number | boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
 
       if (brand) {
         setBrandName(brand.name || "Nanni");
-        setPrimaryColor(brand.primary_color || "#7C3AED");
+        setPrimaryColor(brand.primary_color || "#007A53");
       }
       if (templates) setTemplate(templates as IntakeTemplate);
       setLoading(false);

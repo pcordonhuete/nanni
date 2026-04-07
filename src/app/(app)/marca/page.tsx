@@ -12,10 +12,10 @@ import {
 import type { Brand } from "@/lib/types";
 
 const colorPresets = [
-  { name: "Violeta", primary: "#7C3AED" },
+  { name: "Esmeralda", primary: "#007A53" },
   { name: "Azul", primary: "#2563EB" },
   { name: "Rosa", primary: "#DB2777" },
-  { name: "Verde", primary: "#059669" },
+  { name: "Violeta", primary: "#7C3AED" },
   { name: "Naranja", primary: "#EA580C" },
   { name: "Gris", primary: "#4B5563" },
 ];
@@ -232,11 +232,11 @@ export default function MarcaPage() {
 
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-gray-50 flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: brand?.primary_color || "#7C3AED" }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: brand?.primary_color || "#007A53" }}>
                     <Moon className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold" style={{ color: brand?.primary_color || "#7C3AED" }}>
+                    <p className="text-xs font-bold" style={{ color: brand?.primary_color || "#007A53" }}>
                       {brand?.name || "Tu Marca"}
                     </p>
                     <p className="text-[9px] text-gray-400">Asesora de sueño</p>
