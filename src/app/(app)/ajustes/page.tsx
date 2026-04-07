@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { updateProfile, updateNotificationPreferences, changePassword, deleteAccount, exportFamiliesCSV } from "@/lib/actions";
+import { updateNotificationPreferences, changePassword, deleteAccount, exportFamiliesCSV } from "@/lib/actions";
 import { useToast } from "@/components/ui/Toast";
 import {
   User, CreditCard, Bell, Download, Shield, LogOut,
@@ -42,6 +42,9 @@ export default function AjustesPage() {
   const { toast } = useToast();
 
   const [authEmail, setAuthEmail] = useState<string>("");
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -62,7 +65,11 @@ export default function AjustesPage() {
       supabase.from("intake_templates").select("*").eq("advisor_id", user.id).order("created_at", { ascending: false }),
     ]);
 
-    if (prof) setProfile(prof);
+    if (prof) {
+      setProfile(prof);
+      setEditName(prof.full_name || "");
+      setEditPhone(prof.phone || "");
+    }
     if (sub) setSubscription(sub);
     setFamilyCount(count || 0);
     if (prefs) setNotifPrefs(prefs);
@@ -70,15 +77,28 @@ export default function AjustesPage() {
     setLoading(false);
   }
 
-  async function handleProfileSubmit(formData: FormData) {
-    startTransition(async () => {
-      const result = await updateProfile(formData);
-      if (result.error) toast(result.error, "error");
-      else {
+  async function handleProfileSave() {
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast("No autenticado", "error"); setSaving(false); return; }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: editName, phone: editPhone || null })
+        .eq("id", user.id);
+
+      if (error) {
+        toast(error.message, "error");
+      } else {
         toast("Perfil actualizado");
-        await loadData();
+        setProfile((prev) => prev ? { ...prev, full_name: editName, phone: editPhone || null } : prev);
       }
-    });
+    } catch {
+      toast("Error al guardar", "error");
+    }
+    setSaving(false);
   }
 
   function handleNotifToggle(key: keyof Pick<NotificationPreferences, "new_record" | "family_inactive" | "insight" | "weekly_summary">) {
@@ -184,7 +204,7 @@ export default function AjustesPage() {
         <p className="text-gray-400 mt-1 text-sm">Gestiona tu cuenta y preferencias</p>
       </div>
 
-      <form action={handleProfileSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6">
         <div className="flex items-center gap-2 mb-5">
           <User className="w-5 h-5 text-nanni-600" />
           <h2 className="font-bold text-gray-900">Perfil</h2>
@@ -197,7 +217,7 @@ export default function AjustesPage() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Nombre completo</label>
-            <input name="full_name" type="text" defaultValue={profile?.full_name || ""} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent" />
+            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent" />
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Email</label>
@@ -205,13 +225,13 @@ export default function AjustesPage() {
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Teléfono</label>
-            <input name="phone" type="tel" defaultValue={profile?.phone || ""} placeholder="+34 612 345 678" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent" />
+            <input type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+34 612 345 678" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent" />
           </div>
         </div>
-        <button type="submit" disabled={isPending} className="mt-4 bg-nanni-600 text-white font-medium text-sm px-5 py-2.5 rounded-xl hover:bg-nanni-700 transition disabled:opacity-50">
-          {isPending ? "Guardando..." : "Guardar cambios"}
+        <button type="button" onClick={handleProfileSave} disabled={saving} className="mt-4 bg-nanni-600 text-white font-medium text-sm px-5 py-2.5 rounded-xl hover:bg-nanni-700 transition disabled:opacity-50">
+          {saving ? "Guardando..." : "Guardar cambios"}
         </button>
-      </form>
+      </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6">
         <div className="flex items-center gap-2 mb-5">
