@@ -53,7 +53,7 @@ export async function GET(
   const score = sleepScore(avgSleep, avgAwakenings, ageMonths);
   const { label: statusLabel } = statusFromScore(score);
 
-  const primaryColor = brand?.primary_color || "#007A53";
+  const primaryColor = brand?.primary_color || "#188d91";
   const brandName = brand?.name || "Nanni";
   const advisorName = profile?.full_name || "Asesora";
 

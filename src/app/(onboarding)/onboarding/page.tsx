@@ -126,9 +126,9 @@ export default function OnboardingPage() {
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1.5 block">Color principal</label>
                 <div className="flex gap-2">
-                  {["#007A53", "#2563EB", "#DB2777", "#7C3AED", "#EA580C"].map((c) => (
+                  {["#188d91", "#2563EB", "#DB2777", "#7C3AED", "#EA580C"].map((c) => (
                     <label key={c} className="cursor-pointer">
-                      <input type="radio" name="primary_color" value={c} className="sr-only peer" defaultChecked={c === "#007A53"} />
+                      <input type="radio" name="primary_color" value={c} className="sr-only peer" defaultChecked={c === "#188d91"} />
                       <div className="w-10 h-10 rounded-full border-2 border-gray-100 peer-checked:border-nanni-500 peer-checked:ring-2 peer-checked:ring-nanni-200 transition" style={{ backgroundColor: c }} />
                     </label>
                   ))}

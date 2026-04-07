@@ -51,7 +51,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
   const [showNamePrompt, setShowNamePrompt] = useState(!parentName);
 
   const router = useRouter();
-  const primaryColor = brand?.primary_color || "#007A53";
+  const primaryColor = brand?.primary_color || "#188d91";
   const brandName = brand?.name || "Nanni";
   const age = babyAgeLabel(family.baby_birth_date);
 

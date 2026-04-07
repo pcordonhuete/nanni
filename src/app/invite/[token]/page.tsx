@@ -32,7 +32,7 @@ export default async function InvitePage({
     .eq("id", family.advisor_id)
     .single();
 
-  const primaryColor = brand?.primary_color || "#007A53";
+  const primaryColor = brand?.primary_color || "#188d91";
   const brandName = brand?.name || "Nanni";
   const age = babyAgeLabel(family.baby_birth_date);
   const appUrl = parentAppUrl(token);
