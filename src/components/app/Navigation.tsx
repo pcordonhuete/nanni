@@ -22,6 +22,7 @@ interface NavigationProps {
   families: Family[];
   plan: SubscriptionPlan;
   trialDaysLeft?: number;
+  isDemo?: boolean;
 }
 
 const sidebarGroups = [
@@ -64,7 +65,7 @@ const planLabels: Record<SubscriptionPlan, string> = {
 
 export default function Navigation({
   userName, userEmail, userInitials,
-  notifications, unreadCount, families, plan, trialDaysLeft,
+  notifications, unreadCount, families, plan, trialDaysLeft, isDemo,
 }: NavigationProps) {
   const pathname = usePathname();
   const [showInvite, setShowInvite] = useState(false);
@@ -89,14 +90,16 @@ export default function Navigation({
             </div>
             <span className="text-lg font-bold text-gray-900">Nanni</span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-              plan === "trial"
+              isDemo
+                ? "bg-amber-100 text-amber-700"
+                : plan === "trial"
                 ? "bg-amber-100 text-amber-700"
                 : plan === "premium"
                 ? "bg-nanni-100 text-nanni-700"
                 : "bg-gray-100 text-gray-600"
             }`}>
-              {planLabels[plan]}
-              {trialDaysLeft !== undefined && ` · ${trialDaysLeft}d`}
+              {isDemo ? "Demo" : planLabels[plan]}
+              {!isDemo && trialDaysLeft !== undefined && ` · ${trialDaysLeft}d`}
             </span>
           </Link>
         </div>

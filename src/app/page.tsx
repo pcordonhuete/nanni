@@ -289,12 +289,12 @@ export default function LandingPage() {
                   Probar 14 días gratis
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a
-                  href="#como-funciona"
+                <Link
+                  href="/demo"
                   className="inline-flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-medium px-7 py-3.5 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition"
                 >
-                  Ver cómo funciona
-                </a>
+                  Ver demo en vivo
+                </Link>
               </div>
               <div className="mt-12 flex items-center gap-3 text-sm text-gray-400">
                 <span className="flex items-center gap-1.5">

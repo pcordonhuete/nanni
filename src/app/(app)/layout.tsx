@@ -69,6 +69,7 @@ export default async function AppLayout({
   const plan: SubscriptionPlan = (subscription?.plan as SubscriptionPlan) || "trial";
   const daysLeft = trialDaysLeft(subscription);
   const isTrialing = subscription?.status === "trialing" && daysLeft > 0;
+  const isDemo = userEmail === "demo@nanniapp.com";
 
   return (
     <ToastProvider>
@@ -82,9 +83,19 @@ export default async function AppLayout({
           families={families}
           plan={plan}
           trialDaysLeft={isTrialing ? daysLeft : undefined}
+          isDemo={isDemo}
         />
         <main className="lg:ml-64 pt-14 pb-20 lg:pt-0 lg:pb-0 min-h-screen">
-          {isTrialing && (
+          {isDemo && (
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center text-xs py-2.5 px-4 flex items-center justify-center gap-2">
+              <span className="font-bold">✨ Panel de demostración</span>
+              <span className="opacity-90">— Datos ficticios con 8 familias y 30 días de registros</span>
+              <a href="/registro" className="ml-2 underline font-bold hover:text-amber-100 transition">
+                Crear mi cuenta real →
+              </a>
+            </div>
+          )}
+          {isTrialing && !isDemo && (
             <div className="bg-gradient-to-r from-nanni-600 to-nanni-600 text-white text-center text-xs py-2 px-4">
               <span className="font-medium">
                 Te quedan {daysLeft} día{daysLeft !== 1 ? "s" : ""} de prueba Premium
