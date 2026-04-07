@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -34,7 +34,8 @@ export default function LoginPage() {
         );
         setLoading(false);
       } else {
-        router.push("/dashboard");
+        const role = data.user?.user_metadata?.role;
+        router.push(role === "parent" ? "/p" : "/dashboard");
         router.refresh();
       }
     } catch {

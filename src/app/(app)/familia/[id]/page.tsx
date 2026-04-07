@@ -47,8 +47,9 @@ function formatDurationMinutes(mins: number | null): string {
 function buildRecordDetail(rec: ActivityRecord): string {
   const dur = formatDurationMinutes(rec.duration_minutes);
   const det = rec.details as Record<string, unknown>;
+  const displayType = (det?._ui_type as string) || rec.type;
 
-  switch (rec.type) {
+  switch (displayType) {
     case "sleep": {
       const locLabels: Record<string, string> = { crib: "Cuna", cosleep: "Colecho", arms: "Brazos", stroller: "Carrito", car: "Coche" };
       const methodLabels: Record<string, string> = { self: "Solo/a", rocking: "Meciendo", feeding: "Pecho/biberón", white_noise: "Ruido blanco" };
@@ -121,11 +122,13 @@ function buildTimeline(records: ActivityRecord[], members: FamilyMember[]): Time
   const memberByProfile = new Map(members.map((m) => [m.profile_id, m.name]));
   const sorted = [...records].sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
   return sorted.map((rec) => {
-    const meta = RECORD_META[rec.type] || { label: rec.type };
+    const det = rec.details as Record<string, unknown>;
+    const displayType = (det?._ui_type as string) || rec.type;
+    const meta = RECORD_META[displayType] || RECORD_META[rec.type] || { label: rec.type };
     return {
       id: rec.id,
       time: formatTime(rec.started_at),
-      iconName: rec.type,
+      iconName: displayType,
       label: meta.label,
       detail: buildRecordDetail(rec),
       by: registrarLabel(rec, memberByProfile),

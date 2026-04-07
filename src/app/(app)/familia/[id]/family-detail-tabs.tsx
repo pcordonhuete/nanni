@@ -8,11 +8,11 @@ import {
   Phone, MessageSquare, Brain, Send, BarChart3, Copy, Check,
   Loader2, Sparkles, Target, ListOrdered, Plus, Info, BookOpen,
   X, Sun, Droplets, Baby, Activity, Smile, FileText,
-  ClipboardList, type LucideIcon,
+  ClipboardList, UtensilsCrossed, type LucideIcon,
 } from "lucide-react";
 
 const TIMELINE_ICONS: Record<string, LucideIcon> = {
-  sleep: Moon, wakeup: Sun, feeding: Droplets, note: FileText,
+  sleep: Moon, wakeup: Sun, feeding: UtensilsCrossed, note: FileText,
   wake: Sun, feed: Droplets, diaper: Baby, play: Activity, mood: Smile,
 };
 import {

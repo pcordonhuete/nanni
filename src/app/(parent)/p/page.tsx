@@ -1,23 +1,30 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getWeeklySleep } from "@/lib/db";
-import { ParentApp } from "./parent-app";
+import { ParentApp } from "./[token]/parent-app";
 
-export default async function ParentPage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
-  const { token } = await params;
+export default async function AuthenticatedParentPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: membership } = await supabase
+    .from("family_members")
+    .select("family_id, name")
+    .eq("profile_id", user.id)
+    .limit(1)
+    .single();
+
+  if (!membership) redirect("/login");
 
   const { data: family } = await supabase
     .from("families")
     .select("*")
-    .eq("invite_token", token)
+    .eq("id", membership.family_id)
     .single();
 
-  if (!family) notFound();
+  if (!family) redirect("/login");
 
   const { data: brand } = await supabase
     .from("brands")
@@ -67,7 +74,7 @@ export default async function ParentPage({
     <ParentApp
       family={family}
       brand={brand}
-      token={token}
+      token=""
       initialRecords={weekRecords || []}
       activePlan={activePlan}
       weekSummary={{
@@ -75,6 +82,7 @@ export default async function ParentPage({
         avgAwakenings: Math.round(weekAvgAwakenings * 10) / 10,
         daysWithData,
       }}
+      authenticatedParentName={membership.name}
     />
   );
 }

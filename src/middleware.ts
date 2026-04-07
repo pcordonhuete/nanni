@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PATHS = [
+const ADVISOR_PATHS = [
   "/dashboard",
   "/familias",
   "/familia",
@@ -46,26 +46,40 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
+  const isAdvisorPath = ADVISOR_PATHS.some((p) => path.startsWith(p));
   const isAuth = AUTH_PATHS.includes(path);
   const isPaywallExempt = PAYWALL_EXEMPT.some((p) => path.startsWith(p));
+  const isParentHome = path === "/p";
+  const role = user?.user_metadata?.role as string | undefined;
+  const isParent = role === "parent";
 
-  if (!user && isProtected) {
+  // Unauthenticated users on protected paths → login
+  if (!user && (isAdvisorPath || isParentHome)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
+  // Recovery paths - always allow
   const isRecovery = RECOVERY_PATHS.some((p) => path.startsWith(p));
   if (isRecovery) return supabaseResponse;
 
+  // Authenticated user on auth pages → redirect based on role
   if (user && isAuth) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = isParent ? "/p" : "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  if (user && isProtected && !isPaywallExempt) {
+  // Parents trying to access advisor paths → send to /p
+  if (user && isParent && isAdvisorPath) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/p";
+    return NextResponse.redirect(url);
+  }
+
+  // Advisors: subscription/paywall check
+  if (user && !isParent && isAdvisorPath && !isPaywallExempt) {
     try {
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -105,5 +119,6 @@ export const config = {
     "/login",
     "/registro",
     "/cambiar-password",
+    "/p",
   ],
 };

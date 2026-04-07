@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   Moon, Sun, UtensilsCrossed, FileText, X, Clock, Target,
   TrendingUp, ChevronDown, ChevronUp, Plus, Minus,
-  Smile, Meh, Frown,
+  Smile, Meh, Frown, CalendarDays,
 } from "lucide-react";
-import { createRecordFromParent } from "@/lib/actions";
-import { formatTime, babyAgeLabel, cn } from "@/lib/utils";
+import { createRecordFromParent, createRecord } from "@/lib/actions";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import { formatTime, formatDateLong, babyAgeLabel, cn } from "@/lib/utils";
 import type {
-  Family, Brand, ActivityRecord, RecordType, SleepPlan,
+  Family, Brand, ActivityRecord, RecordType, RecordDetails, SleepPlan,
   SleepPlanGoal, SleepPlanStep,
 } from "@/lib/types";
 
@@ -21,6 +22,7 @@ interface ParentAppProps {
   initialRecords: ActivityRecord[];
   activePlan: (SleepPlan & { goals: SleepPlanGoal[]; steps: SleepPlanStep[] }) | null;
   weekSummary: { avgSleep: number; avgAwakenings: number; daysWithData: number };
+  authenticatedParentName?: string;
 }
 
 type FormType = "sleep" | "feeding" | "wakeup" | "note";
@@ -97,9 +99,9 @@ function calcDurationMinutes(startTime: string, endTime: string, crossesMidnight
   return endMin - startMin;
 }
 
-function buildISOFromTime(time: string, dateOffset = 0): string {
+function buildISOFromTime(time: string, baseDate: Date = new Date(), dateOffset = 0): string {
   const [h, m] = time.split(":").map(Number);
-  const d = new Date();
+  const d = new Date(baseDate);
   d.setDate(d.getDate() + dateOffset);
   d.setHours(h, m, 0, 0);
   return d.toISOString();
@@ -197,28 +199,79 @@ function recordDetail(r: ActivityRecord): string {
   return r.duration_minutes ? `${r.duration_minutes} min` : "";
 }
 
+function getDisplayType(r: ActivityRecord): string {
+  const det = r.details as Record<string, unknown>;
+  return (det?._ui_type as string) || r.type;
+}
+
+function RecordCard({ record }: { record: ActivityRecord }) {
+  const displayType = getDisplayType(record);
+  const Icon = TYPE_ICONS[displayType] || FileText;
+  const detail = recordDetail(record);
+  return (
+    <div className={cn(
+      "flex items-start gap-3 bg-white rounded-xl p-3 border shadow-sm",
+      displayType === "sleep" ? "border-indigo-100" : "border-gray-100"
+    )}>
+      <div className={cn(
+        "w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+        displayType === "sleep" ? "bg-indigo-50 border border-indigo-100" :
+        displayType === "wakeup" || displayType === "wake" ? "bg-amber-50 border border-amber-100" :
+        displayType === "feeding" || displayType === "feed" ? "bg-sky-50 border border-sky-100" :
+        "bg-gray-50 border border-gray-100"
+      )}>
+        <Icon className={cn("w-4 h-4",
+          displayType === "sleep" ? "text-indigo-600" :
+          displayType === "wakeup" || displayType === "wake" ? "text-amber-600" :
+          displayType === "feeding" || displayType === "feed" ? "text-sky-600" :
+          "text-gray-500"
+        )} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-900">{TYPE_LABELS[displayType] || displayType}</p>
+          <span className="text-[10px] text-gray-400">{formatTime(record.started_at)}</span>
+        </div>
+        {detail && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{detail}</p>}
+      </div>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════
 // MAIN COMPONENT
 // ════════════════════════════════════════
 
-export function ParentApp({ family, brand, token, initialRecords, activePlan, weekSummary }: ParentAppProps) {
+export function ParentApp({ family, brand, token, initialRecords, activePlan, weekSummary, authenticatedParentName }: ParentAppProps) {
+  const isAuth = !!authenticatedParentName;
   const [records, setRecords] = useState<ActivityRecord[]>(initialRecords);
   const [showForm, setShowForm] = useState<FormType | null>(null);
   const [isPending, startTransition] = useTransition();
   const [activeSection, setActiveSection] = useState<"timeline" | "progress" | "plan">("timeline");
   const [showPlanSteps, setShowPlanSteps] = useState(false);
-  const [parentName, setParentName] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem(`nanni_parent_${token}`) || "";
-    return "";
-  });
-  const [showNamePrompt, setShowNamePrompt] = useState(!parentName);
+  const [parentName, setParentName] = useState(authenticatedParentName || "");
+  const [mounted, setMounted] = useState(isAuth);
+  const [selectedProgressDay, setSelectedProgressDay] = useState(6);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // Check for morning wakeup prompt
+  useEffect(() => {
+    if (isAuth) return;
+    const saved = localStorage.getItem(`nanni_parent_${token}`);
+    if (saved) setParentName(saved);
+    setMounted(true);
+  }, [token, isAuth]);
+
+  useEffect(() => { setRecords(initialRecords); }, [initialRecords]);
+
   const [showWakeupBanner, setShowWakeupBanner] = useState(false);
   useEffect(() => {
     const h = new Date().getHours();
-    const hasTodayWakeup = records.some((r) => r.type === "wakeup" || r.type === "wake");
-    if (h >= 5 && h < 12 && !hasTodayWakeup && parentName) {
+    const todayStr = new Date().toDateString();
+    const hasTodayWakeup = records.some((r) =>
+      (getDisplayType(r) === "wakeup" || r.type === "wake") &&
+      new Date(r.started_at).toDateString() === todayStr
+    );
+    if (h >= 5 && h < 12 && !hasTodayWakeup && (parentName || isAuth)) {
       setShowWakeupBanner(true);
     }
   }, [records, parentName]);
@@ -229,20 +282,61 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
   const age = babyAgeLabel(family.baby_birth_date);
   const darkSheet = isDarkHour();
 
+  // Derived: filter records by day
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayRecords = records
+    .filter((r) => new Date(r.started_at) >= todayStart)
+    .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
+
+  const progressDays: Date[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+    progressDays.push(d);
+  }
+  const selectedDate = progressDays[selectedProgressDay];
+  const selectedDateEnd = new Date(selectedDate); selectedDateEnd.setHours(23, 59, 59, 999);
+  const selectedDayRecords = records
+    .filter((r) => { const t = new Date(r.started_at); return t >= selectedDate && t <= selectedDateEnd; })
+    .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
+
+  const formTargetDate = activeSection === "progress" ? selectedDate : new Date();
+  const isFormPastDay = formTargetDate.toDateString() !== new Date().toDateString();
+
+  const showNamePrompt = mounted && !parentName && !isAuth;
+
   function saveName(name: string) {
     setParentName(name);
-    setShowNamePrompt(false);
-    if (typeof window !== "undefined") localStorage.setItem(`nanni_parent_${token}`, name);
+    if (token) localStorage.setItem(`nanni_parent_${token}`, name);
+  }
+
+  async function saveRecord(
+    type: RecordType,
+    startedAt: string,
+    endedAt: string | null,
+    durationMinutes: number | null,
+    details: Record<string, unknown>
+  ): Promise<{ error?: string }> {
+    const pName = authenticatedParentName || parentName;
+    const enrichedDetails = { ...details, recorded_by_name: pName };
+    if (isAuth) {
+      return createRecord(family.id, type, startedAt, endedAt, durationMinutes, enrichedDetails as RecordDetails);
+    }
+    return createRecordFromParent(token, type, startedAt, endedAt, durationMinutes, enrichedDetails as RecordDetails, pName);
+  }
+
+  if (!mounted) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen flex items-center justify-center">
+        <Moon className="w-6 h-6 text-gray-300 animate-pulse" />
+      </div>
+    );
   }
 
   // ─── Quick wakeup from banner ───
   function handleQuickWakeup(mood: "happy" | "neutral" | "cranky") {
     setShowWakeupBanner(false);
     startTransition(async () => {
-      await createRecordFromParent(
-        token, "wakeup", new Date().toISOString(), null, null,
-        { mood, recorded_by_name: parentName }, parentName
-      );
+      await saveRecord("wakeup", new Date().toISOString(), null, null, { mood });
       router.refresh();
     });
   }
@@ -288,7 +382,18 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
               <p className="text-[10px] text-gray-400">{family.baby_name} · {age}</p>
             </div>
           </div>
-          <p className="text-xs text-gray-400">{parentName}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-gray-400">{parentName}</p>
+            {isAuth && (
+              <button onClick={async () => {
+                const supabase = createSupabaseClient();
+                await supabase.auth.signOut();
+                window.location.href = "/login";
+              }} className="text-[10px] text-gray-300 hover:text-gray-500 transition">
+                Salir
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex border-b border-gray-100">
           {([
@@ -310,7 +415,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 space-y-3 pb-24">
+      <main className="flex-1 px-4 py-4 space-y-3 pb-36">
         {/* Morning wakeup banner */}
         {showWakeupBanner && activeSection === "timeline" && (
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
@@ -339,45 +444,14 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
             <h2 className="text-sm font-bold text-gray-900 mb-3">
               Hoy, {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
             </h2>
-            {records.length === 0 ? (
+            {todayRecords.length === 0 ? (
               <div className="text-center py-12">
                 <Moon className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                 <p className="text-sm text-gray-400">Aún no hay registros hoy.</p>
                 <p className="text-xs text-gray-400 mt-1">Toca los botones de abajo para añadir.</p>
               </div>
             ) : (
-              records.map((r) => {
-                const Icon = TYPE_ICONS[r.type] || FileText;
-                const detail = recordDetail(r);
-                return (
-                  <div key={r.id} className={cn(
-                    "flex items-start gap-3 bg-white rounded-xl p-3 border shadow-sm",
-                    r.type === "sleep" ? "border-indigo-100" : "border-gray-100"
-                  )}>
-                    <div className={cn(
-                      "w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                      r.type === "sleep" ? "bg-indigo-50 border border-indigo-100" :
-                      r.type === "wakeup" || r.type === "wake" ? "bg-amber-50 border border-amber-100" :
-                      r.type === "feeding" || r.type === "feed" ? "bg-sky-50 border border-sky-100" :
-                      "bg-gray-50 border border-gray-100"
-                    )}>
-                      <Icon className={cn("w-4 h-4",
-                        r.type === "sleep" ? "text-indigo-600" :
-                        r.type === "wakeup" || r.type === "wake" ? "text-amber-600" :
-                        r.type === "feeding" || r.type === "feed" ? "text-sky-600" :
-                        "text-gray-500"
-                      )} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-gray-900">{TYPE_LABELS[r.type] || r.type}</p>
-                        <span className="text-[10px] text-gray-400">{formatTime(r.started_at)}</span>
-                      </div>
-                      {detail && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{detail}</p>}
-                    </div>
-                  </div>
-                );
-              })
+              todayRecords.map((r) => <RecordCard key={r.id} record={r} />)
             )}
           </>
         )}
@@ -385,7 +459,9 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
         {/* PROGRESS TAB */}
         {activeSection === "progress" && (
           <div className="space-y-4">
-            <h2 className="text-sm font-bold text-gray-900">Resumen de esta semana</h2>
+            <h2 className="text-sm font-bold text-gray-900">Progreso semanal</h2>
+
+            {/* Summary cards */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
                 <p className="text-lg font-bold" style={{ color: primaryColor }}>{weekSummary.avgSleep.toFixed(1)}h</p>
@@ -400,6 +476,69 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
                 <p className="text-[10px] text-gray-400">Días registro</p>
               </div>
             </div>
+
+            {/* Day selector pills */}
+            <div className="flex gap-1.5">
+              {progressDays.map((day, i) => {
+                const DAY_NAMES = ["D", "L", "M", "X", "J", "V", "S"];
+                const isSelected = selectedProgressDay === i;
+                const isToday = i === progressDays.length - 1;
+                const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+                const count = records.filter((r) => {
+                  const t = new Date(r.started_at);
+                  return t >= day && t <= dayEnd;
+                }).length;
+                return (
+                  <button key={i} onClick={() => setSelectedProgressDay(i)}
+                    className={cn(
+                      "flex-1 flex flex-col items-center py-2 rounded-xl transition border-2",
+                      isSelected ? "bg-white shadow-sm" : "bg-white border-transparent",
+                      isToday && !isSelected && "border-gray-200"
+                    )}
+                    style={isSelected ? { borderColor: primaryColor } : undefined}
+                  >
+                    <span className={cn("text-[10px] font-medium", isSelected ? "" : "text-gray-400")}
+                      style={isSelected ? { color: primaryColor } : undefined}>
+                      {DAY_NAMES[day.getDay()]}
+                    </span>
+                    <span className={cn("text-sm font-bold", isSelected ? "text-gray-900" : "text-gray-600")}>
+                      {day.getDate()}
+                    </span>
+                    {count > 0 && (
+                      <div className="w-1.5 h-1.5 rounded-full mt-0.5"
+                        style={{ backgroundColor: isSelected ? primaryColor : "#d1d5db" }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected day header */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 capitalize">
+                {selectedProgressDay === progressDays.length - 1
+                  ? "Hoy"
+                  : formatDateLong(selectedDate)}
+              </h3>
+              <span className="text-xs text-gray-400">
+                {selectedDayRecords.length} {selectedDayRecords.length === 1 ? "registro" : "registros"}
+              </span>
+            </div>
+
+            {/* Selected day records */}
+            {selectedDayRecords.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-2xl">
+                <CalendarDays className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">No hay registros este día</p>
+                <p className="text-xs text-gray-400 mt-1">Usa los botones de abajo para añadir</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedDayRecords.map((r) => <RecordCard key={r.id} record={r} />)}
+              </div>
+            )}
+
+            {/* Active plan */}
             {activePlan && (
               <div className="bg-white rounded-xl p-4 border border-gray-100">
                 <div className="flex items-center gap-2 mb-2">
@@ -424,6 +563,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
                 )}
               </div>
             )}
+
             <div className="bg-gradient-to-br from-nanni-50 to-nanni-50 rounded-xl p-4 border border-nanni-100">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="w-4 h-4 text-nanni-600" />
@@ -482,10 +622,15 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
 
       {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-md mx-auto px-4 py-3">
+        <div className="max-w-md mx-auto px-4 py-2">
+          {isFormPastDay && activeSection === "progress" && (
+            <p className="text-[10px] text-center text-gray-400 mb-1.5 capitalize">
+              Registrando para {formatDateLong(formTargetDate)}
+            </p>
+          )}
           <div className="flex gap-2">
             {QUICK_BUTTONS.map((btn) => (
-              <button key={btn.type} onClick={() => setShowForm(btn.type)}
+              <button key={btn.type} onClick={() => { setFormError(null); setShowForm(btn.type); }}
                 className={`flex-1 ${btn.color} rounded-xl py-2.5 flex flex-col items-center gap-1 active:scale-95 transition`}>
                 <btn.icon className="w-4 h-4" />
                 <span className="text-[9px] font-medium">{btn.label}</span>
@@ -503,15 +648,18 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
           primaryColor={primaryColor}
           isPending={isPending}
           babyName={family.baby_name}
-          onClose={() => setShowForm(null)}
+          targetDate={formTargetDate}
+          error={formError}
+          onClose={() => { setShowForm(null); setFormError(null); }}
           onSubmit={(type, startedAt, endedAt, durationMinutes, details) => {
+            setFormError(null);
             startTransition(async () => {
-              const result = await createRecordFromParent(
-                token, type, startedAt, endedAt, durationMinutes,
-                { ...details, recorded_by_name: parentName }, parentName
-              );
-              if (!result.error) {
+              const result = await saveRecord(type, startedAt, endedAt, durationMinutes, details);
+              if (result.error) {
+                setFormError(result.error);
+              } else {
                 setShowForm(null);
+                setFormError(null);
                 router.refresh();
               }
             });
@@ -527,7 +675,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
 // ════════════════════════════════════════
 
 function FormSheet({
-  type, dark, primaryColor, isPending, babyName, onClose,
+  type, dark, primaryColor, isPending, babyName, targetDate, error, onClose,
   onSubmit,
 }: {
   type: FormType;
@@ -535,16 +683,29 @@ function FormSheet({
   primaryColor: string;
   isPending: boolean;
   babyName: string;
+  targetDate: Date;
+  error: string | null;
   onClose: () => void;
   onSubmit: (type: FormType, startedAt: string, endedAt: string | null, durationMinutes: number | null, details: Record<string, unknown>) => void;
 }) {
+  const isToday = targetDate.toDateString() === new Date().toDateString();
+
+  function defaultTime(ft: FormType): string {
+    if (isToday) return nowTimeStr();
+    if (ft === "sleep") return "21:00";
+    if (ft === "wakeup") return "07:00";
+    if (ft === "feeding") return "20:00";
+    return "12:00";
+  }
+
   // Sleep state
   const [sleepType, setSleepType] = useState<"night" | "nap">(() => {
+    if (!isToday) return "night";
     const h = new Date().getHours();
     return h >= 19 || h < 7 ? "night" : "nap";
   });
-  const [startTime, setStartTime] = useState(nowTimeStr);
-  const [endTime, setEndTime] = useState(nowTimeStr);
+  const [startTime, setStartTime] = useState(() => defaultTime("sleep"));
+  const [endTime, setEndTime] = useState(() => isToday ? nowTimeStr() : "07:00");
   const [awakenings, setAwakenings] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [location, setLocation] = useState<string>("");
@@ -553,13 +714,13 @@ function FormSheet({
   const [sleepNotes, setSleepNotes] = useState("");
 
   // Wakeup state
-  const [wakeupTime, setWakeupTime] = useState(nowTimeStr);
+  const [wakeupTime, setWakeupTime] = useState(() => defaultTime("wakeup"));
   const [wakeupMood, setWakeupMood] = useState<"happy" | "neutral" | "cranky">("neutral");
   const [neededHelp, setNeededHelp] = useState(false);
   const [wakeupNotes, setWakeupNotes] = useState("");
 
   // Feeding state
-  const [feedTime, setFeedTime] = useState(nowTimeStr);
+  const [feedTime, setFeedTime] = useState(() => defaultTime("feeding"));
   const [feedMethod, setFeedMethod] = useState<string>("solids");
   const [feedDescription, setFeedDescription] = useState("");
   const [feedAmount, setFeedAmount] = useState<string>("normal");
@@ -574,7 +735,8 @@ function FormSheet({
 
   function handleSubmit() {
     if (type === "sleep") {
-      const startedAt = buildISOFromTime(startTime, sleepType === "night" && new Date().getHours() < 12 ? -1 : 0);
+      const offset = isToday && sleepType === "night" && new Date().getHours() < 12 ? -1 : 0;
+      const startedAt = buildISOFromTime(startTime, targetDate, offset);
       const dur = calcDurationMinutes(startTime, endTime, sleepType === "night");
       const endedAt = new Date(new Date(startedAt).getTime() + dur * 60000).toISOString();
       const details: Record<string, unknown> = {
@@ -588,7 +750,7 @@ function FormSheet({
       onSubmit("sleep", startedAt, endedAt, dur, details);
 
     } else if (type === "wakeup") {
-      const startedAt = buildISOFromTime(wakeupTime);
+      const startedAt = buildISOFromTime(wakeupTime, targetDate);
       onSubmit("wakeup", startedAt, null, null, {
         mood: wakeupMood,
         needed_help: neededHelp || undefined,
@@ -596,7 +758,7 @@ function FormSheet({
       });
 
     } else if (type === "feeding") {
-      const startedAt = buildISOFromTime(feedTime);
+      const startedAt = buildISOFromTime(feedTime, targetDate);
       onSubmit("feeding", startedAt, null, null, {
         method: feedMethod,
         description: feedDescription || undefined,
@@ -606,7 +768,8 @@ function FormSheet({
 
     } else if (type === "note") {
       if (!noteText.trim() && noteTags.length === 0) return;
-      onSubmit("note", new Date().toISOString(), null, null, {
+      const noteDate = isToday ? new Date() : (() => { const d = new Date(targetDate); d.setHours(12, 0, 0, 0); return d; })();
+      onSubmit("note", noteDate.toISOString(), null, null, {
         text: noteText || undefined,
         tags: noteTags.length > 0 ? noteTags : undefined,
       });
@@ -626,12 +789,17 @@ function FormSheet({
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div className={cn("relative rounded-t-3xl sm:rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]", bg)}>
         <div className={cn("flex items-center justify-between p-4 border-b", dark ? "border-gray-800" : "border-gray-100")}>
-          <h3 className={cn("font-bold", text)}>
-            {type === "sleep" && "Registrar sueño"}
-            {type === "wakeup" && "Despertar matutino"}
-            {type === "feeding" && "Registrar cena"}
-            {type === "note" && "Añadir nota"}
-          </h3>
+          <div>
+            <h3 className={cn("font-bold", text)}>
+              {type === "sleep" && "Registrar sueño"}
+              {type === "wakeup" && "Despertar matutino"}
+              {type === "feeding" && "Registrar cena"}
+              {type === "note" && "Añadir nota"}
+            </h3>
+            {!isToday && (
+              <p className={cn("text-xs mt-0.5 capitalize", textSub)}>{formatDateLong(targetDate)}</p>
+            )}
+          </div>
           <button onClick={onClose} className={cn("p-1", textMuted)}><X className="w-5 h-5" /></button>
         </div>
 
@@ -862,6 +1030,13 @@ function FormSheet({
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-400" />
               </div>
             </>
+          )}
+
+          {/* Error display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-600">
+              Error al guardar: {error}
+            </div>
           )}
 
           {/* Submit button */}

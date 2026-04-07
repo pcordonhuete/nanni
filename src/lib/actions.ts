@@ -93,16 +93,19 @@ export async function createRecord(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Map UI types to valid DB types (DB constraint only allows legacy names)
+  const dbType = type === "feeding" ? "feed" : type === "wakeup" ? "wake" : type;
+
   const { data, error } = await supabase
     .from("activity_records")
     .insert({
       family_id: familyId,
       recorded_by: user?.id || null,
-      type,
+      type: dbType,
       started_at: startedAt,
       ended_at: endedAt,
       duration_minutes: durationMinutes,
-      details,
+      details: { ...(details as Record<string, unknown>), _ui_type: type },
     })
     .select()
     .single();
@@ -155,16 +158,19 @@ export async function createRecordFromParent(
 
   if (!family) return { error: "Familia no encontrada" };
 
+  // Map UI types to valid DB types (DB constraint only allows legacy names)
+  const dbType = type === "feeding" ? "feed" : type === "wakeup" ? "wake" : type;
+
   const { error } = await supabase
     .from("activity_records")
     .insert({
       family_id: family.id,
       recorded_by: null,
-      type,
+      type: dbType,
       started_at: startedAt,
       ended_at: endedAt,
       duration_minutes: durationMinutes,
-      details: { ...details, recorded_by_name: parentName },
+      details: { ...details, recorded_by_name: parentName, _ui_type: type },
     });
 
   if (error) return { error: error.message };
@@ -430,6 +436,36 @@ export async function acceptInvite(
     }, { onConflict: "family_id,profile_id" });
   }
 
+  return { success: true, familyId: family.id };
+}
+
+export async function joinFamilyByToken(
+  token: string,
+  name: string,
+  relationship: Relationship
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const { data: family } = await supabase
+    .from("families")
+    .select("id")
+    .eq("invite_token", token)
+    .single();
+
+  if (!family) return { error: "Invitación no válida" };
+
+  const { error } = await supabase
+    .from("family_members")
+    .upsert({
+      family_id: family.id,
+      profile_id: user.id,
+      name,
+      relationship,
+    }, { onConflict: "family_id,profile_id" });
+
+  if (error) return { error: error.message };
   return { success: true, familyId: family.id };
 }
 
