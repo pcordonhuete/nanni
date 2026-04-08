@@ -212,7 +212,9 @@ function getDisplayType(r: ActivityRecord): string {
 
 function RecordCard({ record }: { record: ActivityRecord }) {
   const displayType = getDisplayType(record);
-  const Icon = TYPE_ICONS[displayType] || FileText;
+  const det = record.details as Record<string, unknown>;
+  const isNapSleep = displayType === "sleep" && det?.sleep_type === "nap";
+  const Icon = isNapSleep ? Sun : (TYPE_ICONS[displayType] || FileText);
   const detail = recordDetail(record);
   return (
     <div className={cn(
@@ -221,12 +223,14 @@ function RecordCard({ record }: { record: ActivityRecord }) {
     )}>
       <div className={cn(
         "w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+        isNapSleep ? "bg-amber-50 border border-amber-100" :
         displayType === "sleep" ? "bg-indigo-50 border border-indigo-100" :
         displayType === "wakeup" || displayType === "wake" ? "bg-amber-50 border border-amber-100" :
         displayType === "feeding" || displayType === "feed" ? "bg-sky-50 border border-sky-100" :
         "bg-gray-50 border border-gray-100"
       )}>
         <Icon className={cn("w-4 h-4",
+          isNapSleep ? "text-amber-600" :
           displayType === "sleep" ? "text-indigo-600" :
           displayType === "wakeup" || displayType === "wake" ? "text-amber-600" :
           displayType === "feeding" || displayType === "feed" ? "text-sky-600" :
