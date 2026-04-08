@@ -8,8 +8,10 @@ import {
   Phone, MessageSquare, Brain, Send, BarChart3, Copy, Check,
   Loader2, Sparkles, Target, ListOrdered, Plus, Info, BookOpen,
   X, Sun, Droplets, Baby, Activity, Smile, FileText,
-  ClipboardList, UtensilsCrossed, type LucideIcon,
+  ClipboardList, UtensilsCrossed, Clock, Frown, Meh,
+  type LucideIcon,
 } from "lucide-react";
+import type { AgeBenchmark } from "@/lib/utils";
 
 const TIMELINE_ICONS: Record<string, LucideIcon> = {
   sleep: Moon, wakeup: Sun, feeding: UtensilsCrossed, note: FileText,
@@ -25,7 +27,7 @@ import { inviteUrl, cn, whatsappUrl, scoreExplanation, getAgeBenchmark } from "@
 import type {
   ActivityRecord, WeeklySleepData, Insight, AdvisorNote, SleepPlan,
   SleepPlanGoal, SleepPlanStep, InsightType, RecordType,
-  SleepPlanTemplate,
+  SleepPlanTemplate, FamilyDeepAnalytics,
 } from "@/lib/types";
 
 export type PlanWithDetails = SleepPlan & {
@@ -43,7 +45,7 @@ export type TimelineEntry = {
   type: RecordType;
 };
 
-const TABS = ["Hoy", "Semana", "Gráficas", "IA", "Plan", "Notas"] as const;
+const TABS = ["Hoy", "Semana", "Gráficas", "Análisis", "IA", "Plan", "Notas"] as const;
 type TabId = (typeof TABS)[number];
 
 const DATE_RANGES = [
@@ -90,6 +92,8 @@ type Props = {
   parentEmail: string | null;
   templates: SleepPlanTemplate[];
   advisorName: string;
+  deepAnalytics: FamilyDeepAnalytics;
+  scoreTrend: { date: string; score: number }[];
   createNoteAction: (formData: FormData) => Promise<void>;
 };
 
@@ -429,6 +433,10 @@ export function FamilyDetailTabs(props: Props) {
         </div>
       )}
 
+      {activeTab === "Análisis" && (
+        <AnalisisTab analytics={props.deepAnalytics} scoreTrend={props.scoreTrend} benchmark={benchmark} />
+      )}
+
       {activeTab === "IA" && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -610,6 +618,402 @@ export function FamilyDetailTabs(props: Props) {
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ─── Análisis Tab ───
+
+const METHOD_LABELS: Record<string, string> = { self: "Solo/a", rocking: "Meciendo", feeding: "Pecho/biberón", white_noise: "Ruido blanco", other: "Otro" };
+const METHOD_COLORS: Record<string, string> = { self: "bg-emerald-400", rocking: "bg-blue-400", feeding: "bg-nanni-400", white_noise: "bg-amber-400", other: "bg-gray-300" };
+const LOCATION_LABELS: Record<string, string> = { crib: "Cuna", cosleep: "Colecho", arms: "Brazos", stroller: "Carrito", car: "Coche", other: "Otro" };
+const FEED_METHOD_LABELS: Record<string, string> = { breast: "Pecho", bottle: "Biberón", solids: "Sólidos", mixed: "Mixto" };
+const FEED_METHOD_COLORS: Record<string, string> = { breast: "bg-pink-400", bottle: "bg-blue-400", solids: "bg-amber-400", mixed: "bg-nanni-400" };
+const EVENT_TAG_LABELS: Record<string, string> = { teething: "🦷 Dientes", vaccine: "💉 Vacuna", fever: "🤒 Fiebre", travel: "✈️ Viaje", routine_change: "🔄 Cambio rutina" };
+
+function DonutChart({ data, colors, labels, size = 120 }: { data: { [key: string]: number }; colors: Record<string, string>; labels: Record<string, string>; size?: number }) {
+  const entries = Object.entries(data).filter(([k]) => k !== "total" && data[k] > 0);
+  const total = entries.reduce((a, [, v]) => a + v, 0);
+  if (total === 0) return <p className="text-xs text-gray-400 text-center py-4">Sin datos</p>;
+
+  const r = size / 2;
+  const strokeW = size * 0.2;
+  const innerR = r - strokeW / 2;
+  const circum = 2 * Math.PI * innerR;
+  let offset = 0;
+
+  return (
+    <div className="flex items-center gap-4">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+        {entries.map(([key, val]) => {
+          const pct = val / total;
+          const dashLen = pct * circum;
+          const seg = (
+            <circle key={key} cx={r} cy={r} r={innerR} fill="none" strokeWidth={strokeW} strokeDasharray={`${dashLen} ${circum - dashLen}`} strokeDashoffset={-offset}
+              className={colors[key]?.replace("bg-", "stroke-") || "stroke-gray-300"} transform={`rotate(-90 ${r} ${r})`} />
+          );
+          offset += dashLen;
+          return seg;
+        })}
+        <text x={r} y={r - 4} textAnchor="middle" className="fill-gray-900 text-lg font-bold">{total}</text>
+        <text x={r} y={r + 10} textAnchor="middle" className="fill-gray-400 text-[9px]">registros</text>
+      </svg>
+      <div className="space-y-1.5 flex-1 min-w-0">
+        {entries.map(([key, val]) => (
+          <div key={key} className="flex items-center gap-2">
+            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${colors[key] || "bg-gray-300"}`} />
+            <span className="text-xs text-gray-700 flex-1 truncate">{labels[key] || key}</span>
+            <span className="text-xs font-semibold text-gray-900">{Math.round((val / total) * 100)}%</span>
+            <span className="text-[10px] text-gray-400">({val})</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HorizontalBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500 w-16 shrink-0 truncate">{label}</span>
+      <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(pct, pct > 0 ? 3 : 0)}%` }} />
+      </div>
+      <span className="text-xs font-semibold text-gray-900 w-8 text-right">{value}</span>
+    </div>
+  );
+}
+
+function AnalisisTab({ analytics, scoreTrend, benchmark }: { analytics: FamilyDeepAnalytics; scoreTrend: { date: string; score: number }[]; benchmark: AgeBenchmark }) {
+  const sm = analytics.sleepMethods;
+  const aq = analytics.awakeningQuality;
+  const wm = analytics.wakeupMood;
+  const lat = analytics.latency;
+  const fd = analytics.feeding;
+  const CHART_H = 80;
+  const trendMax = 10;
+
+  return (
+    <div className="space-y-6">
+      {/* Score trend */}
+      {scoreTrend.length > 1 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-bold text-gray-900 mb-1">Evolución del score</h2>
+          <p className="text-xs text-gray-400 mb-4">Últimos 14 días (ventana móvil de 7 días)</p>
+          <div className="relative h-20">
+            {[0, 5, 10].map((v) => (
+              <div key={v} className="absolute w-full border-t border-gray-50" style={{ bottom: `${(v / trendMax) * 100}%` }}>
+                <span className="absolute -left-0 -top-2 text-[9px] text-gray-300">{v}</span>
+              </div>
+            ))}
+            <svg viewBox={`0 0 ${scoreTrend.length * 20} ${CHART_H}`} className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+              <polyline fill="none" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" strokeLinejoin="round"
+                points={scoreTrend.map((t, i) => `${i * 20 + 10},${CHART_H - (t.score / trendMax) * CHART_H}`).join(" ")} />
+              {scoreTrend.map((t, i) => (
+                <circle key={i} cx={i * 20 + 10} cy={CHART_H - (t.score / trendMax) * CHART_H} r="3" fill="white" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" />
+              ))}
+            </svg>
+          </div>
+          <div className="flex justify-between mt-1">
+            {scoreTrend.filter((_, i) => i % 3 === 0 || i === scoreTrend.length - 1).map((t) => (
+              <span key={t.date} className="text-[9px] text-gray-400">
+                {new Date(t.date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Sleep method */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-1">Cómo se duerme</h3>
+          <p className="text-xs text-gray-400 mb-4">Método para conciliar el sueño (14 días)</p>
+          <DonutChart data={sm as unknown as { [key: string]: number }} colors={METHOD_COLORS} labels={METHOD_LABELS} />
+        </div>
+
+        {/* Sleep location */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-1">Dónde duerme</h3>
+          <p className="text-xs text-gray-400 mb-4">Ubicación del sueño (14 días)</p>
+          {analytics.sleepLocations.total === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos</p>
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(analytics.sleepLocations).filter(([k, v]) => k !== "total" && v > 0).sort(([, a], [, b]) => b - a).map(([key, val]) => (
+                <HorizontalBar key={key} label={LOCATION_LABELS[key] || key} value={val} max={analytics.sleepLocations.total} color="bg-nanni-400" />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Latency */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-nanni-600" />
+            <h3 className="font-bold text-gray-900">Latencia de sueño</h3>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">Tiempo medio para dormirse</p>
+          {lat.entries === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos de latencia</p>
+          ) : (
+            <div className="text-center">
+              <div className="text-4xl font-bold text-gray-900">{lat.current}<span className="text-lg text-gray-400">min</span></div>
+              {lat.previous > 0 && (
+                <div className={`flex items-center justify-center gap-1 mt-2 text-sm font-medium ${lat.current <= lat.previous ? "text-emerald-600" : "text-red-500"}`}>
+                  {lat.current <= lat.previous ? <TrendingDown className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+                  {lat.current <= lat.previous ? "Mejoró" : "Empeoró"} vs periodo anterior ({lat.previous}min)
+                </div>
+              )}
+              <p className="text-[10px] text-gray-400 mt-2">{lat.entries} registros con latencia</p>
+            </div>
+          )}
+        </div>
+
+        {/* Awakening quality */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <h3 className="font-bold text-gray-900">Calidad de despertares</h3>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">Con llanto vs sin llanto</p>
+          {aq.total === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos de despertares</p>
+          ) : (
+            <div>
+              <div className="flex h-8 rounded-xl overflow-hidden mb-4">
+                {aq.withCrying > 0 && (
+                  <div className="bg-red-400 flex items-center justify-center text-white text-[10px] font-medium px-2" style={{ width: `${(aq.withCrying / aq.total) * 100}%` }}>
+                    {aq.withCrying > 0 ? `${Math.round((aq.withCrying / aq.total) * 100)}% llanto` : ""}
+                  </div>
+                )}
+                {aq.withoutCrying > 0 && (
+                  <div className="bg-emerald-400 flex items-center justify-center text-white text-[10px] font-medium px-2" style={{ width: `${(aq.withoutCrying / aq.total) * 100}%` }}>
+                    {aq.withoutCrying > 0 ? `${Math.round((aq.withoutCrying / aq.total) * 100)}% tranquilo` : ""}
+                  </div>
+                )}
+                {(aq.total - aq.withCrying - aq.withoutCrying) > 0 && (
+                  <div className="bg-gray-200 flex items-center justify-center text-gray-600 text-[10px] font-medium px-2 flex-1">
+                    Sin dato
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-red-50 rounded-xl p-2">
+                  <p className="text-lg font-bold text-red-600">{aq.withCrying}</p>
+                  <p className="text-[10px] text-gray-500">Con llanto</p>
+                </div>
+                <div className="bg-emerald-50 rounded-xl p-2">
+                  <p className="text-lg font-bold text-emerald-600">{aq.withoutCrying}</p>
+                  <p className="text-[10px] text-gray-500">Sin llanto</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-2">
+                  <p className="text-lg font-bold text-gray-600">{aq.total}</p>
+                  <p className="text-[10px] text-gray-500">Total</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Wakeup mood */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-1">Humor al despertar</h3>
+          <p className="text-xs text-gray-400 mb-4">Cómo despierta por las mañanas</p>
+          {wm.total === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos de humor matutino</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {([
+                { key: "happy", emoji: "😊", label: "Contento", color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                { key: "neutral", emoji: "😐", label: "Neutro", color: "bg-amber-50 border-amber-200 text-amber-700" },
+                { key: "cranky", emoji: "😫", label: "Irritable", color: "bg-red-50 border-red-200 text-red-700" },
+              ] as const).map((mood) => {
+                const val = wm[mood.key];
+                const pct = wm.total > 0 ? Math.round((val / wm.total) * 100) : 0;
+                return (
+                  <div key={mood.key} className={`rounded-xl border p-3 text-center ${mood.color}`}>
+                    <div className="text-2xl mb-1">{mood.emoji}</div>
+                    <div className="text-lg font-bold">{pct}%</div>
+                    <div className="text-[10px]">{mood.label} ({val})</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Feeding */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <UtensilsCrossed className="w-4 h-4 text-sky-600" />
+            <h3 className="font-bold text-gray-900">Alimentación</h3>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">{fd.avgPerDay} tomas/día de media</p>
+          {fd.methods.total === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos de alimentación</p>
+          ) : (
+            <DonutChart data={fd.methods as unknown as { [key: string]: number }} colors={FEED_METHOD_COLORS} labels={FEED_METHOD_LABELS} size={100} />
+          )}
+        </div>
+      </div>
+
+      {/* Feeding by hour */}
+      {fd.methods.total > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-1">Horario de tomas</h3>
+          <p className="text-xs text-gray-400 mb-4">Distribución por hora del día</p>
+          {(() => {
+            const maxCount = Math.max(1, ...fd.byHour.map((h) => h.count));
+            const hours = fd.byHour.filter((h) => h.count > 0 || (h.hour >= 6 && h.hour <= 22));
+            return (
+              <div className="flex items-end gap-1 h-24">
+                {hours.map((h) => (
+                  <div key={h.hour} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                    {h.count > 0 && <span className="text-[8px] text-gray-400">{h.count}</span>}
+                    <div className={`w-full rounded-t-sm ${h.count > 0 ? "bg-sky-400" : "bg-gray-100"}`}
+                      style={{ height: `${Math.max(h.count > 0 ? 4 : 2, (h.count / maxCount) * 80)}px` }} />
+                    <span className="text-[8px] text-gray-400">{h.hour}h</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Feeding amounts */}
+      {fd.amounts.total > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-1">Cantidad por toma</h3>
+          <p className="text-xs text-gray-400 mb-4">Distribución del apetito</p>
+          <div className="flex h-8 rounded-xl overflow-hidden">
+            {fd.amounts.little > 0 && (
+              <div className="bg-amber-300 flex items-center justify-center text-amber-900 text-[10px] font-medium px-2" style={{ width: `${(fd.amounts.little / fd.amounts.total) * 100}%` }}>
+                Poco {Math.round((fd.amounts.little / fd.amounts.total) * 100)}%
+              </div>
+            )}
+            {fd.amounts.normal > 0 && (
+              <div className="bg-emerald-400 flex items-center justify-center text-white text-[10px] font-medium px-2" style={{ width: `${(fd.amounts.normal / fd.amounts.total) * 100}%` }}>
+                Normal {Math.round((fd.amounts.normal / fd.amounts.total) * 100)}%
+              </div>
+            )}
+            {fd.amounts.lots > 0 && (
+              <div className="bg-blue-400 flex items-center justify-center text-white text-[10px] font-medium px-2" style={{ width: `${(fd.amounts.lots / fd.amounts.total) * 100}%` }}>
+                Mucho {Math.round((fd.amounts.lots / fd.amounts.total) * 100)}%
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Event correlations */}
+      {analytics.eventCorrelations.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="font-bold text-gray-900 mb-1">Impacto de eventos en el sueño</h3>
+          <p className="text-xs text-gray-400 mb-4">Cómo afectan los eventos registrados a la calidad del sueño</p>
+          <div className="space-y-3">
+            {analytics.eventCorrelations.map((ev) => (
+              <div key={ev.tag} className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-semibold text-sm text-gray-900">{EVENT_TAG_LABELS[ev.tag] || ev.tag}</span>
+                  <span className="text-[10px] text-gray-400">{ev.count} evento{ev.count > 1 ? "s" : ""}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
+                    <p className="text-[10px] text-gray-400 mb-1">Sueño (antes → después)</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {ev.avgSleepBefore}h → {ev.avgSleepAfter}h
+                      <span className={`ml-1 text-xs ${ev.sleepDelta >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                        ({ev.sleepDelta > 0 ? "+" : ""}{ev.sleepDelta}h)
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
+                    <p className="text-[10px] text-gray-400 mb-1">Despertares (antes → después)</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {ev.avgAwakeningsBefore} → {ev.avgAwakeningsAfter}
+                      <span className={`ml-1 text-xs ${ev.awakeningsDelta <= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                        ({ev.awakeningsDelta > 0 ? "+" : ""}{ev.awakeningsDelta})
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Plan progress */}
+      {analytics.planProgress.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Target className="w-4 h-4 text-nanni-600" />
+            <h3 className="font-bold text-gray-900">Progreso de planes</h3>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">Score antes y después de cada intervención</p>
+          <div className="space-y-4">
+            {analytics.planProgress.map((plan) => {
+              const goalsProgress = plan.goalsTotal > 0 ? Math.round((plan.goalsAchieved / plan.goalsTotal) * 100) : 0;
+              const stepsProgress = plan.stepsTotal > 0 ? Math.round((plan.stepsCompleted / plan.stepsTotal) * 100) : 0;
+              return (
+                <div key={plan.planId} className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-900">{plan.planTitle}</h4>
+                      <p className="text-[10px] text-gray-400">
+                        Iniciado {new Date(plan.startedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                        {" · "}
+                        <span className={cn("font-medium capitalize", plan.planStatus === "active" ? "text-emerald-600" : plan.planStatus === "completed" ? "text-gray-600" : "text-amber-600")}>
+                          {plan.planStatus === "active" ? "Activo" : plan.planStatus === "completed" ? "Completado" : "Borrador"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className={`text-center px-3 py-1.5 rounded-xl ${plan.scoreDelta >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
+                      <p className={`text-lg font-bold ${plan.scoreDelta >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                        {plan.scoreDelta > 0 ? "+" : ""}{plan.scoreDelta.toFixed(1)}
+                      </p>
+                      <p className="text-[9px] text-gray-400">delta score</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
+                      <p className="text-[10px] text-gray-400">Score antes</p>
+                      <p className="text-lg font-bold text-gray-500">{plan.scoreBefore.toFixed(1)}</p>
+                    </div>
+                    <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
+                      <p className="text-[10px] text-gray-400">Score ahora</p>
+                      <p className="text-lg font-bold text-gray-900">{plan.scoreNow.toFixed(1)}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-gray-500">Objetivos</span>
+                        <span className="font-medium text-gray-900">{plan.goalsAchieved}/{plan.goalsTotal}</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${goalsProgress}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-gray-500">Pasos</span>
+                        <span className="font-medium text-gray-900">{plan.stepsCompleted}/{plan.stepsTotal}</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-nanni-400 rounded-full transition-all" style={{ width: `${stepsProgress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

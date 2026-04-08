@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import {
   getFamilyWithStats, getTodayRecords, getWeeklySleep, getInsights,
   getNotes, getPlans, getPlanWithDetails, getSleepPlanTemplates,
+  getFamilyDeepAnalytics, getFamilyScoreTrend,
 } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { createNote } from "@/lib/actions";
@@ -9,7 +10,7 @@ import { babyAgeLabel, formatTime, statusFromScore, babyAgeMonths } from "@/lib/
 import {
   FamilyDetailTabs, type PlanWithDetails, type TimelineEntry,
 } from "./family-detail-tabs";
-import type { ActivityRecord, FamilyMember } from "@/lib/types";
+import type { ActivityRecord, FamilyMember, FamilyDeepAnalytics } from "@/lib/types";
 import {
   Moon, Sun, Droplets, Baby, Activity, Smile, FileText, UtensilsCrossed,
 } from "lucide-react";
@@ -169,13 +170,15 @@ export default async function FamiliaDetailPage({ params }: { params: Promise<{ 
 
   const advisorName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Asesora";
 
-  const [todayRecords, weeklySleep, insights, notes, plansRaw, templates] = await Promise.all([
+  const [todayRecords, weeklySleep, insights, notes, plansRaw, templates, deepAnalytics, scoreTrend] = await Promise.all([
     getTodayRecords(id),
     getWeeklySleep(id),
     getInsights(stats.advisor_id, { familyId: id }),
     getNotes(id),
     getPlans(id),
     getSleepPlanTemplates(stats.advisor_id),
+    getFamilyDeepAnalytics(id, 14),
+    getFamilyScoreTrend(id, 14),
   ]);
 
   const planDetails = await Promise.all(plansRaw.map((p) => getPlanWithDetails(p.id)));
@@ -217,6 +220,8 @@ export default async function FamiliaDetailPage({ params }: { params: Promise<{ 
       parentEmail={stats.parent_email}
       templates={templates}
       advisorName={advisorName}
+      deepAnalytics={deepAnalytics}
+      scoreTrend={scoreTrend}
       createNoteAction={createNoteFormAction}
     />
   );

@@ -351,6 +351,120 @@ export interface WeeklySleepData {
   total: number;
 }
 
+// ─── Advanced analytics types ───
+
+export interface PortfolioFamilyHealth {
+  family: Family;
+  ageMonths: number;
+  score: number;
+  prevScore: number;
+  scoreDelta: number;
+  trend: "improving" | "stable" | "worsening";
+  avgSleepHours: number;
+  avgAwakenings: number;
+  lastRecordAt: string | null;
+  lastRecordAgoHours: number;
+  attentionReason: string | null;
+  hasActivePlan: boolean;
+}
+
+export interface SleepMethodStats {
+  self: number;
+  rocking: number;
+  feeding: number;
+  white_noise: number;
+  other: number;
+  total: number;
+}
+
+export interface SleepLocationStats {
+  crib: number;
+  cosleep: number;
+  arms: number;
+  stroller: number;
+  car: number;
+  other: number;
+  total: number;
+}
+
+export interface AwakeningQualityStats {
+  withCrying: number;
+  withoutCrying: number;
+  total: number;
+}
+
+export interface WakeupMoodStats {
+  happy: number;
+  neutral: number;
+  cranky: number;
+  total: number;
+}
+
+export interface LatencyStats {
+  current: number;
+  previous: number;
+  entries: number;
+}
+
+export interface FeedingMethodStats {
+  breast: number;
+  bottle: number;
+  solids: number;
+  mixed: number;
+  total: number;
+}
+
+export interface FeedingAmountStats {
+  little: number;
+  normal: number;
+  lots: number;
+  total: number;
+}
+
+export interface FeedingAnalytics {
+  methods: FeedingMethodStats;
+  amounts: FeedingAmountStats;
+  avgPerDay: number;
+  byHour: { hour: number; count: number }[];
+}
+
+export interface EventSleepCorrelation {
+  tag: string;
+  label: string;
+  count: number;
+  avgSleepBefore: number;
+  avgSleepAfter: number;
+  avgAwakeningsBefore: number;
+  avgAwakeningsAfter: number;
+  sleepDelta: number;
+  awakeningsDelta: number;
+}
+
+export interface PlanProgressData {
+  planId: string;
+  planTitle: string;
+  planStatus: PlanStatus;
+  startedAt: string;
+  scoreBefore: number;
+  scoreNow: number;
+  scoreDelta: number;
+  goalsTotal: number;
+  goalsAchieved: number;
+  stepsTotal: number;
+  stepsCompleted: number;
+}
+
+export interface FamilyDeepAnalytics {
+  sleepMethods: SleepMethodStats;
+  sleepLocations: SleepLocationStats;
+  awakeningQuality: AwakeningQualityStats;
+  wakeupMood: WakeupMoodStats;
+  latency: LatencyStats;
+  feeding: FeedingAnalytics;
+  eventCorrelations: EventSleepCorrelation[];
+  planProgress: PlanProgressData[];
+}
+
 // ─── Plan limits per subscription ───
 
 export const PLAN_LIMITS: Record<
