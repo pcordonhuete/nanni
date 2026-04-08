@@ -106,6 +106,18 @@ function buildISOFromTime(time: string, baseDate: Date = new Date(), dateOffset 
   return d.toISOString();
 }
 
+function localDateKeyFromDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function displayDateFromKey(key: string): string {
+  const d = new Date(`${key}T12:00:00`);
+  return formatDateLong(d);
+}
+
 // ─── Record label helpers ───
 const TYPE_LABELS: Record<string, string> = {
   sleep: "Sueño", feeding: "Cena", wakeup: "Despertar", note: "Nota",
@@ -148,6 +160,8 @@ function sleepDetailLine(r: ActivityRecord): string {
   const wakeupMood = d?.wakeup_mood as string | undefined;
   const moodEmoji: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", cranky: "😫 Malhumorado" };
   if (wakeupMood && moodEmoji[wakeupMood]) parts.push(moodEmoji[wakeupMood]);
+  const nightDate = d?.night_date as string | undefined;
+  if (st === "night" && nightDate) parts.push(`Cuenta para ${displayDateFromKey(nightDate)}`);
   const loc = d?.location as string | undefined;
   const locLabels: Record<string, string> = { crib: "Cuna", cosleep: "Colecho", arms: "Brazos", stroller: "Carrito", car: "Coche" };
   if (loc && locLabels[loc]) parts.push(locLabels[loc]);
@@ -208,6 +222,20 @@ function recordDetail(r: ActivityRecord): string {
 function getDisplayType(r: ActivityRecord): string {
   const det = r.details as Record<string, unknown>;
   return (det?._ui_type as string) || r.type;
+}
+
+function dayKeyForRecord(r: ActivityRecord): string {
+  const d = r.details as Record<string, unknown>;
+  const displayType = getDisplayType(r);
+  if (displayType === "sleep") {
+    const sleepType = d?.sleep_type as string | undefined;
+    if (sleepType === "night") {
+      const tagged = d?.night_date as string | undefined;
+      if (tagged) return tagged;
+      if (r.ended_at) return localDateKeyFromDate(new Date(r.ended_at));
+    }
+  }
+  return localDateKeyFromDate(new Date(r.started_at));
 }
 
 function RecordCard({ record }: { record: ActivityRecord }) {
@@ -276,10 +304,10 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
   const [showWakeupBanner, setShowWakeupBanner] = useState(false);
   useEffect(() => {
     const h = new Date().getHours();
-    const todayStr = new Date().toDateString();
+    const todayKey = localDateKeyFromDate(new Date());
     const hasTodaySleep = records.some((r) =>
       r.type === "sleep" &&
-      new Date(r.started_at).toDateString() === todayStr
+      dayKeyForRecord(r) === todayKey
     );
     if (h >= 5 && h < 12 && !hasTodaySleep && (parentName || isAuth)) {
       setShowWakeupBanner(true);
@@ -293,9 +321,9 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
   const darkSheet = isDarkHour();
 
   // Derived: filter records by day
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayKey = localDateKeyFromDate(new Date());
   const todayRecords = records
-    .filter((r) => new Date(r.started_at) >= todayStart)
+    .filter((r) => dayKeyForRecord(r) === todayKey)
     .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
 
   const progressDays: Date[] = [];
@@ -304,9 +332,9 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
     progressDays.push(d);
   }
   const selectedDate = progressDays[selectedProgressDay];
-  const selectedDateEnd = new Date(selectedDate); selectedDateEnd.setHours(23, 59, 59, 999);
+  const selectedDayKey = localDateKeyFromDate(selectedDate);
   const selectedDayRecords = records
-    .filter((r) => { const t = new Date(r.started_at); return t >= selectedDate && t <= selectedDateEnd; })
+    .filter((r) => dayKeyForRecord(r) === selectedDayKey)
     .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
 
   const formTargetDate = activeSection === "progress" ? selectedDate : new Date();
@@ -484,10 +512,9 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
                 const DAY_NAMES = ["D", "L", "M", "X", "J", "V", "S"];
                 const isSelected = selectedProgressDay === i;
                 const isToday = i === progressDays.length - 1;
-                const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+                const dayKey = localDateKeyFromDate(day);
                 const count = records.filter((r) => {
-                  const t = new Date(r.started_at);
-                  return t >= day && t <= dayEnd;
+                  return dayKeyForRecord(r) === dayKey;
                 }).length;
                 return (
                   <button key={i} onClick={() => setSelectedProgressDay(i)}
@@ -735,6 +762,18 @@ function FormSheet({
   const durationMin = type === "sleep"
     ? calcDurationMinutes(startTime, endTime, sleepType === "night")
     : null;
+  const sleepPreview = (() => {
+    if (type !== "sleep" || sleepType !== "night") return null;
+    const dur = calcDurationMinutes(startTime, endTime, true);
+    const offset = isToday && new Date().getHours() < 12 ? -1 : 0;
+    const previewStart = buildISOFromTime(startTime, targetDate, offset);
+    const previewEnd = new Date(new Date(previewStart).getTime() + dur * 60000).toISOString();
+    const key = localDateKeyFromDate(new Date(previewEnd));
+    return {
+      dayLabel: displayDateFromKey(key),
+      rangeLabel: `${formatTime(previewStart)} → ${formatTime(previewEnd)}`,
+    };
+  })();
 
   function handleSubmit() {
     if (type === "sleep") {
@@ -746,6 +785,11 @@ function FormSheet({
         sleep_type: sleepType,
         awakenings,
       };
+      if (sleepType === "night") {
+        const endKey = localDateKeyFromDate(new Date(endedAt));
+        details.night_date = endKey;
+        details.night_label = `Noche que termina ${displayDateFromKey(endKey)}`;
+      }
       if (awakenings > 0 && awakeningCrying !== null) details.awakening_crying = awakeningCrying;
       if (sleepType === "night") details.wakeup_mood = wakeupMoodInSleep;
       if (location) details.location = location;
@@ -845,6 +889,13 @@ function FormSheet({
                   dark ? "bg-indigo-900/30 text-indigo-300" : "bg-indigo-50 text-indigo-700")}>
                   <Clock className="w-4 h-4 inline mr-1.5" />
                   {Math.floor(durationMin / 60)}h {durationMin % 60 > 0 ? `${durationMin % 60}min` : ""} ({durationMin} min total)
+                </div>
+              )}
+              {sleepPreview && (
+                <div className={cn("rounded-xl px-3 py-2 text-xs border",
+                  dark ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-amber-50 border-amber-100 text-amber-800")}>
+                  <p className="font-semibold">Esta noche cuenta para: {sleepPreview.dayLabel}</p>
+                  <p className="mt-0.5 opacity-80">Tramo: {sleepPreview.rangeLabel}</p>
                 </div>
               )}
 

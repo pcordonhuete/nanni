@@ -218,43 +218,48 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
   const result: WeeklySleepData[] = [];
 
   const supabase = await createClient();
+  const rangeStart = new Date();
+  rangeStart.setHours(0, 0, 0, 0);
+  rangeStart.setDate(rangeStart.getDate() - 6);
+  const rangeEnd = new Date();
+  rangeEnd.setHours(23, 59, 59, 999);
+  const queryStart = new Date(rangeStart);
+  queryStart.setDate(queryStart.getDate() - 1);
+
+  const { data: sleepRecs } = await supabase
+    .from("activity_records")
+    .select("started_at, ended_at, duration_minutes, details")
+    .eq("family_id", familyId)
+    .eq("type", "sleep")
+    .gte("started_at", queryStart.toISOString())
+    .lte("started_at", rangeEnd.toISOString());
+
+  const { data: wakeRecs } = await supabase
+    .from("activity_records")
+    .select("id, started_at")
+    .eq("family_id", familyId)
+    .eq("type", "wake")
+    .gte("started_at", rangeStart.toISOString())
+    .lte("started_at", rangeEnd.toISOString());
 
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const { data: sleepRecs } = await supabase
-      .from("activity_records")
-      .select("started_at, duration_minutes, details")
-      .eq("family_id", familyId)
-      .eq("type", "sleep")
-      .gte("started_at", dayStart.toISOString())
-      .lte("started_at", dayEnd.toISOString());
-
-    // Legacy: count standalone wake records
-    const { data: wakeRecs } = await supabase
-      .from("activity_records")
-      .select("id")
-      .eq("family_id", familyId)
-      .eq("type", "wake")
-      .gte("started_at", dayStart.toISOString())
-      .lte("started_at", dayEnd.toISOString());
+    const dayKey = localDateKeyFromDate(dayStart);
 
     let nightHours = 0;
     let napHours = 0;
     let embeddedAwakenings = 0;
     if (sleepRecs) {
       for (const rec of sleepRecs) {
+        const recDayKey = sleepDayKey(rec);
+        if (recDayKey !== dayKey) continue;
         const mins = rec.duration_minutes || 0;
         const details = rec.details as Record<string, unknown> | null;
         const sleepType = details?.sleep_type as string | undefined;
-        const isNight = sleepType
-          ? sleepType === "night"
-          : new Date(rec.started_at).getHours() >= 19 || new Date(rec.started_at).getHours() < 7;
+        const isNight = sleepType ? sleepType === "night" : new Date(rec.started_at).getHours() >= 19 || new Date(rec.started_at).getHours() < 7;
 
         if (isNight) {
           nightHours += mins / 60;
@@ -265,7 +270,8 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
       }
     }
 
-    const totalAwakenings = embeddedAwakenings + (wakeRecs?.length || 0);
+    const wakeCount = wakeRecs?.filter((w) => localDateKey(w.started_at) === dayKey).length || 0;
+    const totalAwakenings = embeddedAwakenings + wakeCount;
 
     result.push({
       day: days[date.getDay()],
@@ -453,6 +459,21 @@ function localDateKeyFromDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function sleepDayKey(rec: {
+  started_at: string;
+  ended_at?: string | null;
+  details?: Record<string, unknown> | null;
+}): string {
+  const details = rec.details || {};
+  const sleepType = details?.sleep_type as string | undefined;
+  if (sleepType === "night") {
+    const tagged = details?.night_date as string | undefined;
+    if (tagged) return tagged;
+    if (rec.ended_at) return localDateKey(rec.ended_at);
+  }
+  return localDateKey(rec.started_at);
+}
+
 function addSleepToDay(
   target: Map<string, { night: number; nap: number; wakes: number; anyRecord: boolean }>,
   familyId: string,
@@ -496,7 +517,14 @@ function markAnyRecord(
 }
 
 function buildDayMap(
-  records: { family_id: string; type: string; started_at: string; duration_minutes: number | null }[],
+  records: {
+    family_id: string;
+    type: string;
+    started_at: string;
+    ended_at?: string | null;
+    duration_minutes: number | null;
+    details?: Record<string, unknown> | null;
+  }[],
   dayKeys: string[]
 ): Map<string, Map<string, { night: number; nap: number; wakes: number; anyRecord: boolean }>> {
   const byDay = new Map<string, Map<string, { night: number; nap: number; wakes: number; anyRecord: boolean }>>();
@@ -507,15 +535,13 @@ function buildDayMap(
   const keySet = new Set(dayKeys);
 
   for (const rec of records) {
-    const dk = localDateKey(rec.started_at);
-    if (!keySet.has(dk)) continue;
-
-    const dayMap = byDay.get(dk)!;
-
     if (rec.type === "sleep") {
+      const dk = sleepDayKey(rec);
+      if (!keySet.has(dk)) continue;
+      const dayMap = byDay.get(dk)!;
       const mins = rec.duration_minutes || 0;
       const hours = mins / 60;
-      const details = (rec as unknown as { details?: Record<string, unknown> }).details;
+      const details = rec.details;
       const sleepType = details?.sleep_type as string | undefined;
       const hour = new Date(rec.started_at).getHours();
       const isNight = sleepType ? sleepType === "night" : (hour >= 19 || hour < 7);
@@ -526,7 +552,13 @@ function buildDayMap(
       } else {
         addSleepToDay(dayMap, rec.family_id, 0, hours);
       }
-    } else if (rec.type === "wake") {
+      continue;
+    }
+
+    const dk = localDateKey(rec.started_at);
+    if (!keySet.has(dk)) continue;
+    const dayMap = byDay.get(dk)!;
+    if (rec.type === "wake") {
       addWakeToDay(dayMap, rec.family_id);
     } else {
       markAnyRecord(dayMap, rec.family_id);
@@ -538,7 +570,14 @@ function buildDayMap(
 
 function aggregateOverviewAndRankings(
   families: Family[],
-  records: { family_id: string; type: string; started_at: string; duration_minutes: number | null }[],
+  records: {
+    family_id: string;
+    type: string;
+    started_at: string;
+    ended_at?: string | null;
+    duration_minutes: number | null;
+    details?: Record<string, unknown> | null;
+  }[],
   rangeStart: Date,
   rangeEnd: Date,
   totalDays: number
@@ -716,14 +755,14 @@ export async function getAdvisorAnalytics(
 
   const { data: recordsCurrent } = await supabase
     .from("activity_records")
-    .select("family_id, type, started_at, duration_minutes")
+    .select("family_id, type, started_at, ended_at, duration_minutes, details")
     .in("family_id", familyIds)
     .gte("started_at", start.toISOString())
     .lte("started_at", end.toISOString());
 
   const { data: recordsPrev } = await supabase
     .from("activity_records")
-    .select("family_id, type, started_at, duration_minutes")
+    .select("family_id, type, started_at, ended_at, duration_minutes, details")
     .in("family_id", familyIds)
     .gte("started_at", prevStart.toISOString())
     .lte("started_at", prevEnd.toISOString());
@@ -862,36 +901,44 @@ export async function getWeeklySleepForRange(
   const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   const result: WeeklySleepData[] = [];
   const supabase = await createClient();
+  const rangeStart = new Date(startDate);
+  rangeStart.setDate(rangeStart.getDate() - (numDays - 1));
+  rangeStart.setHours(0, 0, 0, 0);
+  const rangeEnd = new Date(startDate);
+  rangeEnd.setHours(23, 59, 59, 999);
+  const queryStart = new Date(rangeStart);
+  queryStart.setDate(queryStart.getDate() - 1);
+
+  const { data: sleepRecs } = await supabase
+    .from("activity_records")
+    .select("started_at, ended_at, duration_minutes, details")
+    .eq("family_id", familyId)
+    .eq("type", "sleep")
+    .gte("started_at", queryStart.toISOString())
+    .lte("started_at", rangeEnd.toISOString());
+
+  const { data: wakeRecs } = await supabase
+    .from("activity_records")
+    .select("id, started_at")
+    .eq("family_id", familyId)
+    .eq("type", "wake")
+    .gte("started_at", rangeStart.toISOString())
+    .lte("started_at", rangeEnd.toISOString());
 
   for (let i = numDays - 1; i >= 0; i--) {
     const date = new Date(startDate);
     date.setDate(date.getDate() - i);
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const { data: sleepRecs } = await supabase
-      .from("activity_records")
-      .select("started_at, duration_minutes, details")
-      .eq("family_id", familyId)
-      .eq("type", "sleep")
-      .gte("started_at", dayStart.toISOString())
-      .lte("started_at", dayEnd.toISOString());
-
-    const { data: wakeRecs } = await supabase
-      .from("activity_records")
-      .select("id")
-      .eq("family_id", familyId)
-      .eq("type", "wake")
-      .gte("started_at", dayStart.toISOString())
-      .lte("started_at", dayEnd.toISOString());
+    const dayKey = localDateKeyFromDate(dayStart);
 
     let nightHours = 0;
     let napHours = 0;
     let embeddedAwakenings = 0;
     if (sleepRecs) {
       for (const rec of sleepRecs) {
+        const recDayKey = sleepDayKey(rec);
+        if (recDayKey !== dayKey) continue;
         const mins = rec.duration_minutes || 0;
         const details = rec.details as Record<string, unknown> | null;
         const sleepType = details?.sleep_type as string | undefined;
@@ -908,7 +955,8 @@ export async function getWeeklySleepForRange(
       }
     }
 
-    const totalAwakenings = embeddedAwakenings + (wakeRecs?.length || 0);
+    const wakeCount = wakeRecs?.filter((w) => localDateKey(w.started_at) === dayKey).length || 0;
+    const totalAwakenings = embeddedAwakenings + wakeCount;
 
     result.push({
       day: days[date.getDay()],
