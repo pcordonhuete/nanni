@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound, redirect } from "next/navigation";
-import { babyAgeLabel } from "@/lib/utils";
-import { Moon } from "lucide-react";
-import { InviteAuth } from "./invite-auth";
+import { notFound } from "next/navigation";
+import { babyAgeLabel, parentAppUrl } from "@/lib/utils";
+import { Moon, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default async function InvitePage({
   params,
@@ -11,19 +11,6 @@ export default async function InvitePage({
 }) {
   const { token } = await params;
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // If already authenticated as parent, join + redirect to /p
-  if (user) {
-    const role = user.user_metadata?.role;
-    if (role === "parent") {
-      const { joinFamilyByToken } = await import("@/lib/actions");
-      await joinFamilyByToken(token, user.user_metadata?.full_name || "Padre", "mother");
-      redirect("/p");
-    }
-    // If advisor, just show the page (they might be testing)
-  }
 
   const { data: family } = await supabase
     .from("families")
@@ -48,6 +35,7 @@ export default async function InvitePage({
   const primaryColor = brand?.primary_color || "#188d91";
   const brandName = brand?.name || "Nanni";
   const age = babyAgeLabel(family.baby_birth_date);
+  const appUrl = parentAppUrl(token);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -67,17 +55,15 @@ export default async function InvitePage({
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <p className="text-gray-500 text-sm mb-2">Te han invitado a registrar el diario de</p>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">{family.baby_name}</h2>
-            <p className="text-sm text-gray-400">{age}</p>
-          </div>
+        <div className="p-6 text-center">
+          <p className="text-gray-500 text-sm mb-2">Te han invitado a registrar el diario de</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{family.baby_name}</h2>
+          <p className="text-sm text-gray-400 mb-6">{age}</p>
 
           <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left space-y-3">
             {[
               "Registra sueño, tomas y rutinas en segundos",
-              "Accede con tu cuenta desde cualquier dispositivo",
+              "Funciona sin conexión a internet",
               "Tu asesora recibe los datos automáticamente",
             ].map((text) => (
               <div key={text} className="flex items-start gap-2.5">
@@ -91,7 +77,18 @@ export default async function InvitePage({
             ))}
           </div>
 
-          <InviteAuth token={token} babyName={family.baby_name} primaryColor={primaryColor} />
+          <Link
+            href={appUrl}
+            className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-xl transition text-sm"
+            style={{ backgroundColor: primaryColor }}
+          >
+            Empezar a registrar
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          <p className="text-[11px] text-gray-400 mt-4">
+            Puedes instalar esta página como app en tu móvil para acceder más rápido.
+          </p>
         </div>
       </div>
     </div>

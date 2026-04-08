@@ -7,11 +7,10 @@ import {
   TrendingUp, ChevronDown, ChevronUp, Plus, Minus,
   Smile, Meh, Frown, CalendarDays,
 } from "lucide-react";
-import { createRecordFromParent, createRecord } from "@/lib/actions";
-import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import { createRecordFromParent } from "@/lib/actions";
 import { formatTime, formatDateLong, babyAgeLabel, cn } from "@/lib/utils";
 import type {
-  Family, Brand, ActivityRecord, RecordType, RecordDetails, SleepPlan,
+  Family, Brand, ActivityRecord, RecordType, SleepPlan,
   SleepPlanGoal, SleepPlanStep,
 } from "@/lib/types";
 
@@ -22,7 +21,6 @@ interface ParentAppProps {
   initialRecords: ActivityRecord[];
   activePlan: (SleepPlan & { goals: SleepPlanGoal[]; steps: SleepPlanStep[] }) | null;
   weekSummary: { avgSleep: number; avgAwakenings: number; daysWithData: number };
-  authenticatedParentName?: string;
 }
 
 type FormType = "sleep" | "feeding" | "wakeup" | "note";
@@ -280,24 +278,22 @@ function RecordCard({ record }: { record: ActivityRecord }) {
 // MAIN COMPONENT
 // ════════════════════════════════════════
 
-export function ParentApp({ family, brand, token, initialRecords, activePlan, weekSummary, authenticatedParentName }: ParentAppProps) {
-  const isAuth = !!authenticatedParentName;
+export function ParentApp({ family, brand, token, initialRecords, activePlan, weekSummary }: ParentAppProps) {
   const [records, setRecords] = useState<ActivityRecord[]>(initialRecords);
   const [showForm, setShowForm] = useState<FormType | null>(null);
   const [isPending, startTransition] = useTransition();
   const [activeSection, setActiveSection] = useState<"timeline" | "progress" | "plan">("timeline");
   const [showPlanSteps, setShowPlanSteps] = useState(false);
-  const [parentName, setParentName] = useState(authenticatedParentName || "");
-  const [mounted, setMounted] = useState(isAuth);
+  const [parentName, setParentName] = useState("");
+  const [mounted, setMounted] = useState(false);
   const [selectedProgressDay, setSelectedProgressDay] = useState(6);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAuth) return;
     const saved = localStorage.getItem(`nanni_parent_${token}`);
     if (saved) setParentName(saved);
     setMounted(true);
-  }, [token, isAuth]);
+  }, [token]);
 
   useEffect(() => { setRecords(initialRecords); }, [initialRecords]);
 
@@ -309,7 +305,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
       r.type === "sleep" &&
       dayKeyForRecord(r) === todayKey
     );
-    if (h >= 5 && h < 12 && !hasTodaySleep && (parentName || isAuth)) {
+    if (h >= 5 && h < 12 && !hasTodaySleep && parentName) {
       setShowWakeupBanner(true);
     }
   }, [records, parentName]);
@@ -340,7 +336,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
   const formTargetDate = activeSection === "progress" ? selectedDate : new Date();
   const isFormPastDay = formTargetDate.toDateString() !== new Date().toDateString();
 
-  const showNamePrompt = mounted && !parentName && !isAuth;
+  const showNamePrompt = mounted && !parentName;
 
   function saveName(name: string) {
     setParentName(name);
@@ -354,12 +350,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
     durationMinutes: number | null,
     details: Record<string, unknown>
   ): Promise<{ error?: string }> {
-    const pName = authenticatedParentName || parentName;
-    const enrichedDetails = { ...details, recorded_by_name: pName };
-    if (isAuth) {
-      return createRecord(family.id, type, startedAt, endedAt, durationMinutes, enrichedDetails as RecordDetails);
-    }
-    return createRecordFromParent(token, type, startedAt, endedAt, durationMinutes, enrichedDetails as RecordDetails, pName);
+    return createRecordFromParent(token, type, startedAt, endedAt, durationMinutes, details, parentName);
   }
 
   if (!mounted) {
@@ -418,18 +409,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
               <p className="text-[10px] text-gray-400">{family.baby_name} · {age}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-gray-400">{parentName}</p>
-            {isAuth && (
-              <button onClick={async () => {
-                const supabase = createSupabaseClient();
-                await supabase.auth.signOut();
-                window.location.href = "/login";
-              }} className="text-[10px] text-gray-300 hover:text-gray-500 transition">
-                Salir
-              </button>
-            )}
-          </div>
+          <p className="text-xs text-gray-400">{parentName}</p>
         </div>
         <div className="flex border-b border-gray-100">
           {([

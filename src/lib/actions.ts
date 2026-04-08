@@ -439,36 +439,6 @@ export async function acceptInvite(
   return { success: true, familyId: family.id };
 }
 
-export async function joinFamilyByToken(
-  token: string,
-  name: string,
-  relationship: Relationship
-) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
-
-  const { data: family } = await supabase
-    .from("families")
-    .select("id")
-    .eq("invite_token", token)
-    .single();
-
-  if (!family) return { error: "Invitación no válida" };
-
-  const { error } = await supabase
-    .from("family_members")
-    .upsert({
-      family_id: family.id,
-      profile_id: user.id,
-      name,
-      relationship,
-    }, { onConflict: "family_id,profile_id" });
-
-  if (error) return { error: error.message };
-  return { success: true, familyId: family.id };
-}
-
 // ─── Notification Preferences ───
 
 export async function updateNotificationPreferences(formData: FormData) {

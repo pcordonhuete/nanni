@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const ADVISOR_PATHS = [
+const PROTECTED_PATHS = [
   "/dashboard",
   "/familias",
   "/familia",
@@ -46,15 +46,11 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAdvisorPath = ADVISOR_PATHS.some((p) => path.startsWith(p));
+  const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
   const isAuth = AUTH_PATHS.includes(path);
   const isPaywallExempt = PAYWALL_EXEMPT.some((p) => path.startsWith(p));
-  const isParentHome = path === "/p";
-  const role = user?.user_metadata?.role as string | undefined;
-  const isParent = role === "parent";
 
-  // Unauthenticated users on protected paths → login
-  if (!user && (isAdvisorPath || isParentHome)) {
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -64,22 +60,13 @@ export async function middleware(request: NextRequest) {
   const isRecovery = RECOVERY_PATHS.some((p) => path.startsWith(p));
   if (isRecovery) return supabaseResponse;
 
-  // Authenticated user on auth pages → redirect based on role
   if (user && isAuth) {
     const url = request.nextUrl.clone();
-    url.pathname = isParent ? "/p" : "/dashboard";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // Parents trying to access advisor paths → send to /p
-  if (user && isParent && isAdvisorPath) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/p";
-    return NextResponse.redirect(url);
-  }
-
-  // Advisors: subscription/paywall check
-  if (user && !isParent && isAdvisorPath && !isPaywallExempt) {
+  if (user && isProtected && !isPaywallExempt) {
     try {
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -119,6 +106,5 @@ export const config = {
     "/login",
     "/registro",
     "/cambiar-password",
-    "/p",
   ],
 };
