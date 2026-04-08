@@ -29,7 +29,6 @@ type FormType = "sleep" | "feeding" | "wakeup" | "note";
 
 const QUICK_BUTTONS: { type: FormType; label: string; icon: typeof Moon; color: string }[] = [
   { type: "sleep", label: "Sueño", icon: Moon, color: "bg-indigo-100 text-indigo-600" },
-  { type: "wakeup", label: "Despertar", icon: Sun, color: "bg-amber-100 text-amber-600" },
   { type: "feeding", label: "Cena", icon: UtensilsCrossed, color: "bg-sky-100 text-sky-600" },
   { type: "note", label: "Nota", icon: FileText, color: "bg-gray-100 text-gray-600" },
 ];
@@ -141,7 +140,14 @@ function sleepDetailLine(r: ActivityRecord): string {
   }
   if (r.ended_at) parts.push(`→ ${formatTime(r.ended_at)}`);
   const aw = d?.awakenings as number | undefined;
-  if (typeof aw === "number" && aw > 0) parts.push(`${aw} despertares`);
+  if (typeof aw === "number" && aw > 0) {
+    const crying = d?.awakening_crying as boolean | undefined;
+    const cryingStr = crying === true ? " 😢" : crying === false ? " 😌" : "";
+    parts.push(`${aw} despertares${cryingStr}`);
+  }
+  const wakeupMood = d?.wakeup_mood as string | undefined;
+  const moodEmoji: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", cranky: "😫 Malhumorado" };
+  if (wakeupMood && moodEmoji[wakeupMood]) parts.push(moodEmoji[wakeupMood]);
   const loc = d?.location as string | undefined;
   const locLabels: Record<string, string> = { crib: "Cuna", cosleep: "Colecho", arms: "Brazos", stroller: "Carrito", car: "Coche" };
   if (loc && locLabels[loc]) parts.push(locLabels[loc]);
@@ -267,11 +273,11 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
   useEffect(() => {
     const h = new Date().getHours();
     const todayStr = new Date().toDateString();
-    const hasTodayWakeup = records.some((r) =>
-      (getDisplayType(r) === "wakeup" || r.type === "wake") &&
+    const hasTodaySleep = records.some((r) =>
+      r.type === "sleep" &&
       new Date(r.started_at).toDateString() === todayStr
     );
-    if (h >= 5 && h < 12 && !hasTodayWakeup && (parentName || isAuth)) {
+    if (h >= 5 && h < 12 && !hasTodaySleep && (parentName || isAuth)) {
       setShowWakeupBanner(true);
     }
   }, [records, parentName]);
@@ -332,13 +338,11 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
     );
   }
 
-  // ─── Quick wakeup from banner ───
-  function handleQuickWakeup(mood: "happy" | "neutral" | "cranky") {
+  // ─── Open sleep form from morning banner ───
+  function handleOpenSleepFromBanner() {
     setShowWakeupBanner(false);
-    startTransition(async () => {
-      await saveRecord("wakeup", new Date().toISOString(), null, null, { mood });
-      router.refresh();
-    });
+    setFormError(null);
+    setShowForm("sleep");
   }
 
   // ─── Name prompt ───
@@ -415,26 +419,19 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 space-y-3 pb-36">
-        {/* Morning wakeup banner */}
+      <main className="flex-1 px-4 py-4 space-y-3 pb-48">
+        {/* Morning sleep banner */}
         {showWakeupBanner && activeSection === "timeline" && (
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-            <p className="text-sm font-semibold text-amber-900 mb-2">
-              Buenos días, ¿cómo se ha despertado {family.baby_name}?
-            </p>
-            <div className="flex gap-2">
-              {(["happy", "neutral", "cranky"] as const).map((mood) => {
-                const mi = MOOD_ICONS[mood];
-                const Icon = mi.icon;
-                return (
-                  <button key={mood} onClick={() => handleQuickWakeup(mood)} disabled={isPending}
-                    className={cn("flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition", mi.color)}>
-                    <Icon className="w-7 h-7" />
-                    <span className="text-[10px] font-medium">{mi.label}</span>
-                  </button>
-                );
-              })}
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">¡Buenos días!</p>
+              <p className="text-xs text-amber-700 mt-0.5">Registra el sueño nocturno de {family.baby_name}</p>
             </div>
+            <button onClick={handleOpenSleepFromBanner}
+              className="shrink-0 flex items-center gap-1.5 bg-amber-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition active:scale-95">
+              <Moon className="w-3.5 h-3.5" />
+              Registrar sueño
+            </button>
           </div>
         )}
 
@@ -707,13 +704,15 @@ function FormSheet({
   const [startTime, setStartTime] = useState(() => defaultTime("sleep"));
   const [endTime, setEndTime] = useState(() => isToday ? nowTimeStr() : "07:00");
   const [awakenings, setAwakenings] = useState(0);
+  const [awakeningCrying, setAwakeningCrying] = useState<boolean | null>(null);
+  const [wakeupMoodInSleep, setWakeupMoodInSleep] = useState<"happy" | "neutral" | "cranky">("neutral");
   const [showDetails, setShowDetails] = useState(false);
   const [location, setLocation] = useState<string>("");
   const [fellAsleepMethod, setFellAsleepMethod] = useState<string>("");
   const [latency, setLatency] = useState<number | null>(null);
   const [sleepNotes, setSleepNotes] = useState("");
 
-  // Wakeup state
+  // Wakeup state (standalone form, kept for backwards compat)
   const [wakeupTime, setWakeupTime] = useState(() => defaultTime("wakeup"));
   const [wakeupMood, setWakeupMood] = useState<"happy" | "neutral" | "cranky">("neutral");
   const [neededHelp, setNeededHelp] = useState(false);
@@ -743,6 +742,8 @@ function FormSheet({
         sleep_type: sleepType,
         awakenings,
       };
+      if (awakenings > 0 && awakeningCrying !== null) details.awakening_crying = awakeningCrying;
+      if (sleepType === "night") details.wakeup_mood = wakeupMoodInSleep;
       if (location) details.location = location;
       if (fellAsleepMethod) details.fell_asleep_method = fellAsleepMethod;
       if (latency !== null) details.latency_minutes = latency;
@@ -844,10 +845,10 @@ function FormSheet({
               )}
 
               {/* Awakenings stepper */}
-              <div>
-                <label className={cn("text-sm font-medium mb-1.5 block", textSub)}>Despertares</label>
+              <div className="space-y-3">
+                <label className={cn("text-sm font-medium block", textSub)}>Despertares nocturnos</label>
                 <div className="flex items-center gap-4">
-                  <button type="button" onClick={() => setAwakenings(Math.max(0, awakenings - 1))}
+                  <button type="button" onClick={() => { setAwakenings(Math.max(0, awakenings - 1)); if (awakenings <= 1) setAwakeningCrying(null); }}
                     className={cn("w-10 h-10 rounded-full border-2 flex items-center justify-center transition", chipBase, "hover:border-indigo-400")}>
                     <Minus className="w-4 h-4" />
                   </button>
@@ -857,7 +858,43 @@ function FormSheet({
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
+                {awakenings > 0 && (
+                  <div>
+                    <label className={cn("text-xs font-medium mb-1.5 block", textMuted)}>¿Se despertó llorando?</label>
+                    <div className="flex gap-2">
+                      {([{ v: true, label: "Sí, llorando", emoji: "😢" }, { v: false, label: "No, sin llanto", emoji: "😌" }] as const).map(({ v, label, emoji }) => (
+                        <button key={String(v)} type="button"
+                          onClick={() => setAwakeningCrying(awakeningCrying === v ? null : v)}
+                          className={cn("flex-1 py-2 text-xs font-medium rounded-xl border-2 transition",
+                            awakeningCrying === v ? chipActive : chipBase)}>
+                          {emoji} {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Morning wakeup mood (night sleep only) */}
+              {sleepType === "night" && (
+                <div>
+                  <label className={cn("text-sm font-medium mb-2 block", textSub)}>¿Cómo se despertó por la mañana?</label>
+                  <div className="flex gap-2">
+                    {(["happy", "neutral", "cranky"] as const).map((mood) => {
+                      const mi = MOOD_ICONS[mood];
+                      const Icon = mi.icon;
+                      return (
+                        <button key={mood} type="button" onClick={() => setWakeupMoodInSleep(mood)}
+                          className={cn("flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 transition",
+                            wakeupMoodInSleep === mood ? mi.color : chipBase)}>
+                          <Icon className="w-6 h-6" />
+                          <span className="text-[10px] font-medium">{mi.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Collapsible details */}
               <button type="button" onClick={() => setShowDetails(!showDetails)}
