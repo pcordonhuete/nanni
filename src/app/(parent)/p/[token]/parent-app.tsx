@@ -17,6 +17,7 @@ import type {
 interface ParentAppProps {
   family: Family;
   brand: Brand | null;
+  advisorName?: string | null;
   token: string;
   initialRecords: ActivityRecord[];
   activePlan: (SleepPlan & { goals: SleepPlanGoal[]; steps: SleepPlanStep[] }) | null;
@@ -278,7 +279,7 @@ function RecordCard({ record }: { record: ActivityRecord }) {
 // MAIN COMPONENT
 // ════════════════════════════════════════
 
-export function ParentApp({ family, brand, token, initialRecords, activePlan, weekSummary }: ParentAppProps) {
+export function ParentApp({ family, brand, advisorName, token, initialRecords, activePlan, weekSummary }: ParentAppProps) {
   const [records, setRecords] = useState<ActivityRecord[]>(initialRecords);
   const [showForm, setShowForm] = useState<FormType | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -312,7 +313,7 @@ export function ParentApp({ family, brand, token, initialRecords, activePlan, we
 
   const router = useRouter();
   const primaryColor = brand?.primary_color || "#188d91";
-  const brandName = brand?.name || "Nanni";
+  const brandName = advisorName || brand?.name || "Nanni";
   const age = babyAgeLabel(family.baby_birth_date);
   const darkSheet = isDarkHour();
 

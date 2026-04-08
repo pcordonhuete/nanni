@@ -25,6 +25,12 @@ export default async function ParentPage({
     .eq("advisor_id", family.advisor_id)
     .single();
 
+  const { data: advisor } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", family.advisor_id)
+    .single();
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const weekStart = new Date(today);
@@ -67,6 +73,7 @@ export default async function ParentPage({
     <ParentApp
       family={family}
       brand={brand}
+      advisorName={advisor?.full_name || null}
       token={token}
       initialRecords={weekRecords || []}
       activePlan={activePlan}
