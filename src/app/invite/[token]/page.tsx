@@ -33,7 +33,7 @@ export default async function InvitePage({
     .single();
 
   const primaryColor = brand?.primary_color || "#188d91";
-  const brandName = brand?.name || "Nanni";
+  const brandName = advisor?.full_name || brand?.name || "Nanni";
   const age = babyAgeLabel(family.baby_birth_date);
   const appUrl = parentAppUrl(token);
 

@@ -11,6 +11,7 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
   const [template, setTemplate] = useState<IntakeTemplate | null>(null);
   const [familyName, setFamilyName] = useState("");
   const [brandName, setBrandName] = useState("Nanni");
+  const [advisorName, setAdvisorName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#188d91");
   const [answers, setAnswers] = useState<Record<string, string | number | boolean>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -33,8 +34,9 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
       if (!family) { setLoading(false); return; }
       setFamilyName(family.baby_name);
 
-      const [{ data: brand }, { data: templates }] = await Promise.all([
+      const [{ data: brand }, { data: advisor }, { data: templates }] = await Promise.all([
         supabase.from("brands").select("name, primary_color").eq("advisor_id", family.advisor_id).single(),
+        supabase.from("profiles").select("full_name").eq("id", family.advisor_id).single(),
         supabase.from("intake_templates").select("*").eq("advisor_id", family.advisor_id).eq("is_active", true).limit(1).single(),
       ]);
 
@@ -42,6 +44,7 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
         setBrandName(brand.name || "Nanni");
         setPrimaryColor(brand.primary_color || "#188d91");
       }
+      if (advisor?.full_name) setAdvisorName(advisor.full_name);
       if (templates) setTemplate(templates as IntakeTemplate);
       setLoading(false);
     }
@@ -91,6 +94,7 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
   }
 
   const questions: IntakeQuestion[] = template.questions || [];
+  const displayName = advisorName || brandName || "Nanni";
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -101,7 +105,7 @@ export default function IntakePage({ params }: { params: Promise<{ token: string
           </div>
           <h1 className="text-xl font-bold text-gray-900">{template.title}</h1>
           {template.description && <p className="text-sm text-gray-500 mt-2">{template.description}</p>}
-          <p className="text-xs text-gray-400 mt-1">{brandName} · {familyName}</p>
+          <p className="text-xs text-gray-400 mt-1">{displayName} · {familyName}</p>
         </div>
 
         <div className="space-y-4">
