@@ -64,6 +64,15 @@ function insightStyles(type: InsightType) {
   }
 }
 
+function parseRange(raw: string): { min: number; max: number } | null {
+  const m = raw.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const min = Number(m[1]);
+  const max = Number(m[2]);
+  if (Number.isNaN(min) || Number.isNaN(max)) return null;
+  return { min, max };
+}
+
 type Props = {
   familyId: string;
   advisorId: string;
@@ -166,6 +175,26 @@ export function FamilyDetailTabs(props: Props) {
   const avgNight = props.weeklySleep.length > 0 ? props.weeklySleep.reduce((a, d) => a + d.night_hours, 0) / props.weeklySleep.length : 0;
   const avgNap = props.weeklySleep.length > 0 ? props.weeklySleep.reduce((a, d) => a + d.nap_hours, 0) / props.weeklySleep.length : 0;
   const estWake = Math.max(0, 24 - avgNight - avgNap);
+  const totalRange = parseRange(benchmark.totalSleep);
+  const nightRange = parseRange(benchmark.nightSleep);
+  const napRange = parseRange(benchmark.napSleep);
+  const napsRange = parseRange(benchmark.naps);
+  const daysWithSleep = props.weeklySleep.filter((d) => d.total > 0);
+  const rulesAlerts: { level: "alta" | "media"; text: string }[] = [];
+  if (daysWithSleep.length > 0) {
+    const lowNightDays = nightRange ? daysWithSleep.filter((d) => d.night_hours > 0 && d.night_hours < nightRange.min).length : 0;
+    const lowTotalDays = totalRange ? daysWithSleep.filter((d) => d.total > 0 && d.total < totalRange.min).length : 0;
+    const lowNapDays = napRange ? daysWithSleep.filter((d) => d.nap_hours > 0 && d.nap_hours < napRange.min).length : 0;
+    const highWakeDays = daysWithSleep.filter((d) => d.awakenings > benchmark.maxAwakenings).length;
+    const napCountOutDays = napsRange
+      ? daysWithSleep.filter((d) => d.nap_count > 0 && (d.nap_count < napsRange.min || d.nap_count > napsRange.max)).length
+      : 0;
+    if (highWakeDays >= 2) rulesAlerts.push({ level: "alta", text: `${highWakeDays} noches con despertares por encima del máximo recomendado (${benchmark.maxAwakenings}).` });
+    if (lowTotalDays >= 2) rulesAlerts.push({ level: "alta", text: `${lowTotalDays} días con sueño total por debajo de ${totalRange?.min}h.` });
+    if (lowNightDays >= 2) rulesAlerts.push({ level: "media", text: `${lowNightDays} noches por debajo del rango nocturno recomendado (${benchmark.nightSleep}).` });
+    if (lowNapDays >= 3) rulesAlerts.push({ level: "media", text: `${lowNapDays} días con siestas por debajo del rango recomendado (${benchmark.napSleep}).` });
+    if (napCountOutDays >= 3) rulesAlerts.push({ level: "media", text: `${napCountOutDays} días con número de siestas fuera de rango (${benchmark.naps}).` });
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -418,9 +447,9 @@ export function FamilyDetailTabs(props: Props) {
                     <p className="text-xs text-gray-500">Días con registro</p>
                   </div>
                 </div>
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4">
-                  <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Referencia para {benchmark.label}</p>
-                  <p className="text-xs text-blue-800">Sueño esperado: {benchmark.totalSleep} · Despertares máx: {benchmark.maxAwakenings} · Ventana vigilia: {benchmark.wakeWindow}</p>
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 mb-4">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Datos reportados por la familia</p>
+                  <p className="text-xs text-gray-500">Esta vista muestra solo registros documentados por los padres (sin interpretación automática).</p>
                 </div>
                 <div className="space-y-3">
                   {props.weeklySleep.map((day) => (
@@ -564,6 +593,38 @@ export function FamilyDetailTabs(props: Props) {
 
       {activeTab === "IA" && (
         <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              Alertas por reglas (edad {benchmark.label})
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Interpretación automática basada en ventanas de sueño recomendadas. La vista Semana permanece como dato bruto.
+            </p>
+            {rulesAlerts.length === 0 ? (
+              <div className="mt-3 bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                <p className="text-xs text-emerald-700 font-medium">Sin alertas activas por reglas en los últimos días con datos.</p>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {rulesAlerts.map((alert, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "rounded-xl p-3 border",
+                      alert.level === "alta" ? "bg-red-50 border-red-100" : "bg-amber-50 border-amber-100"
+                    )}
+                  >
+                    <p className={cn("text-xs font-semibold mb-0.5", alert.level === "alta" ? "text-red-700" : "text-amber-700")}>
+                      Prioridad {alert.level}
+                    </p>
+                    <p className="text-xs text-gray-700">{alert.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h3 className="font-bold text-gray-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-nanni-600" /> Generar insights con IA</h3>
