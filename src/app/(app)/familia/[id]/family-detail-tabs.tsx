@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import {
   ArrowLeft, Moon, AlertTriangle, Star, TrendingUp, TrendingDown,
-  Phone, MessageSquare, Brain, Send, BarChart3, Copy, Check,
+  Phone, MessageSquare, Brain, Send, Copy, Check,
   Loader2, Sparkles, Target, ListOrdered, Plus, Info, BookOpen,
   X, Sun, Droplets, Baby, Activity, Smile, FileText, Pencil,
   ClipboardList, UtensilsCrossed, Clock, Frown, Meh,
@@ -47,12 +47,6 @@ export type TimelineEntry = {
 
 const TABS = ["Diario", "Sueño", "Hábitos", "IA & Plan", "Notas"] as const;
 type TabId = (typeof TABS)[number];
-
-const DATE_RANGES = [
-  { label: "7 días", days: 7 },
-  { label: "14 días", days: 14 },
-  { label: "30 días", days: 30 },
-] as const;
 
 function insightStyles(type: InsightType) {
   switch (type) {
@@ -126,7 +120,6 @@ export function FamilyDetailTabs(props: Props) {
   const [contactPhone, setContactPhone] = useState(props.parentPhone || "");
   const [contactEmail, setContactEmail] = useState(props.parentEmail || "");
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [selectedRange, setSelectedRange] = useState(7);
 
   const url = inviteUrl(props.inviteToken);
   const benchmark = getAgeBenchmark(props.ageMonths);
@@ -168,13 +161,6 @@ export function FamilyDetailTabs(props: Props) {
   const sleepTodayLabel = `${props.totalSleepToday.toFixed(1)}h`;
   const awakeningsLabel = String(props.awakeningsLastNight);
 
-  const weekAvgSleep = props.weeklySleep.length > 0 ? props.weeklySleep.reduce((a, d) => a + d.total, 0) / props.weeklySleep.length : 0;
-  const weekAvgWake = props.weeklySleep.length > 0 ? props.weeklySleep.reduce((a, d) => a + d.awakenings, 0) / props.weeklySleep.length : 0;
-  const maxSleepStack = Math.max(...props.weeklySleep.map((d) => d.night_hours + d.nap_hours), 16, 1);
-  const maxAwakeBar = Math.max(...props.weeklySleep.map((d) => d.awakenings), 6, 1);
-  const avgNight = props.weeklySleep.length > 0 ? props.weeklySleep.reduce((a, d) => a + d.night_hours, 0) / props.weeklySleep.length : 0;
-  const avgNap = props.weeklySleep.length > 0 ? props.weeklySleep.reduce((a, d) => a + d.nap_hours, 0) / props.weeklySleep.length : 0;
-  const estWake = Math.max(0, 24 - avgNight - avgNap);
   const totalRange = parseRange(benchmark.totalSleep);
   const nightRange = parseRange(benchmark.nightSleep);
   const napRange = parseRange(benchmark.napSleep);
@@ -417,187 +403,7 @@ export function FamilyDetailTabs(props: Props) {
       )}
 
       {activeTab === "Sueño" && (
-        <div className="space-y-6">
-          {/* Score trend */}
-          {props.scoreTrend.length > 1 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-1">
-                <Star className="w-4 h-4 text-nanni-600" />
-                <h2 className="font-bold text-gray-900">Evolución del score</h2>
-              </div>
-              <p className="text-xs text-gray-400 mb-4">Últimos 14 días (ventana móvil 7d)</p>
-              <div className="relative h-20">
-                {[0, 5, 10].map((v) => (
-                  <div key={v} className="absolute w-full border-t border-gray-50" style={{ bottom: `${(v / 10) * 100}%` }}>
-                    <span className="absolute -left-0 -top-2 text-[9px] text-gray-300">{v}</span>
-                  </div>
-                ))}
-                <svg viewBox={`0 0 ${props.scoreTrend.length * 20} 80`} className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                  <polyline fill="none" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" strokeLinejoin="round"
-                    points={props.scoreTrend.map((t, i) => `${i * 20 + 10},${80 - (t.score / 10) * 80}`).join(" ")} />
-                  {props.scoreTrend.map((t, i) => (
-                    <circle key={i} cx={i * 20 + 10} cy={80 - (t.score / 10) * 80} r="3" fill="white" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" />
-                  ))}
-                </svg>
-              </div>
-              <div className="flex justify-between mt-1">
-                {props.scoreTrend.filter((_, i) => i % 3 === 0 || i === props.scoreTrend.length - 1).map((t) => (
-                  <span key={t.date} className="text-[9px] text-gray-400">
-                    {new Date(t.date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* KPIs + day-by-day */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-gray-900">Resumen semanal</h2>
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
-                {DATE_RANGES.map((range) => (
-                  <button key={range.days} onClick={() => setSelectedRange(range.days)} className={cn("text-[10px] font-medium px-2.5 py-1 rounded-md transition", selectedRange === range.days ? "bg-white text-nanni-600 shadow-sm" : "text-gray-500 hover:text-gray-700")}>
-                    {range.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {props.weeklySleep.length === 0 ? (
-              <p className="text-sm text-gray-500">No hay datos de sueño esta semana.</p>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="text-center p-3 bg-nanni-50 rounded-xl">
-                    <p className="text-2xl font-bold text-nanni-700">{weekAvgSleep.toFixed(1)}h</p>
-                    <p className="text-xs text-gray-500">Media sueño/día</p>
-                  </div>
-                  <div className="text-center p-3 bg-amber-50 rounded-xl">
-                    <p className="text-2xl font-bold text-amber-700">{weekAvgWake.toFixed(1)}</p>
-                    <p className="text-xs text-gray-500">Media despertares</p>
-                  </div>
-                  <div className="text-center p-3 bg-emerald-50 rounded-xl">
-                    <p className="text-2xl font-bold text-emerald-700">{props.daysWithData}/7</p>
-                    <p className="text-xs text-gray-500">Días con registro</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {props.weeklySleep.map((day) => (
-                    <div key={day.date} className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-gray-400 w-8">{day.day}</span>
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Noche</span>
-                          <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${Math.min(100, (day.night_hours / 14) * 100)}%`, minWidth: day.night_hours > 0 ? 4 : 0 }} />
-                          </div>
-                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.night_hours.toFixed(1)}h</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Despert.</span>
-                          <div className="flex-1 flex items-center gap-1 min-h-[10px]">
-                            {day.awakenings > 0 ? (
-                              Array.from({ length: Math.min(day.awakenings, 8) }).map((_, i) => (
-                                <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              ))
-                            ) : (
-                              <span className="text-[10px] text-gray-300">—</span>
-                            )}
-                            {day.awakenings > 8 && <span className="text-[9px] text-amber-500 font-medium">+{day.awakenings - 8}</span>}
-                          </div>
-                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.awakenings}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Siestas</span>
-                          <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min(100, (day.nap_hours / 6) * 100)}%`, minWidth: day.nap_hours > 0 ? 4 : 0 }} />
-                          </div>
-                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_hours.toFixed(1)}h</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Nº siestas</span>
-                          <div className="flex items-center gap-1.5 h-3">
-                            {Array.from({ length: Math.max(4, day.nap_count || 0) }).map((_, i) => (
-                              <div key={i} className={cn("w-[2px] h-3 rounded-full", i < day.nap_count ? "bg-cyan-500" : "bg-gray-200")} />
-                            ))}
-                          </div>
-                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_count}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 flex-wrap">
-                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-indigo-400 rounded-sm" /><span className="text-[10px] text-gray-400">Noche</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-cyan-400 rounded-sm" /><span className="text-[10px] text-gray-400">Siestas</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-[2px] h-3 bg-cyan-500 rounded-full" /><span className="text-[10px] text-gray-400">Nº siestas</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /><span className="text-[10px] text-gray-400">Despertares</span></div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Charts: sleep hours + awakenings side by side */}
-          {props.weeklySleep.length > 0 && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <BarChart3 className="w-4 h-4 text-nanni-600" />
-                  <h2 className="font-bold text-gray-900">Horas de sueño</h2>
-                </div>
-                <p className="text-xs text-gray-400 mb-4">Noche (oscuro) + Siestas (claro)</p>
-                <div className="flex items-end gap-2 h-40">
-                  {props.weeklySleep.map((d) => (
-                    <div key={d.date} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                      <span className="text-[9px] text-gray-400">{d.total.toFixed(1)}h</span>
-                      <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: `${(d.total / maxSleepStack) * 140}px`, minHeight: d.total > 0 ? 8 : 0 }}>
-                        <div className="bg-indigo-400 rounded-t-md w-full" style={{ flex: d.night_hours || 0.01, minHeight: d.night_hours > 0 ? 4 : 0 }} />
-                        <div className="bg-cyan-400 rounded-b-md w-full" style={{ flex: d.nap_hours || 0.01, minHeight: d.nap_hours > 0 ? 4 : 0 }} />
-                      </div>
-                      <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h2 className="font-bold text-gray-900 mb-1">Despertares nocturnos</h2>
-                <p className="text-xs text-gray-400 mb-4">Máx. recomendado: {benchmark.maxAwakenings}</p>
-                <div className="flex items-end gap-2 h-40">
-                  {props.weeklySleep.map((d) => (
-                    <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[9px] text-gray-400">{d.awakenings}</span>
-                      <div className={cn("w-full rounded-t-md", d.awakenings > benchmark.maxAwakenings + 1 ? "bg-red-400" : d.awakenings > benchmark.maxAwakenings ? "bg-amber-400" : "bg-emerald-400")}
-                        style={{ height: `${(d.awakenings / maxAwakeBar) * 140}px`, minHeight: d.awakenings > 0 ? 4 : 2 }} />
-                      <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Distribution bar */}
-          {props.weeklySleep.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h2 className="font-bold text-gray-900 mb-1">Distribución media del día</h2>
-              <p className="text-xs text-gray-400 mb-4">Noche, siestas y vigilia estimada</p>
-              <div className="flex h-10 rounded-xl overflow-hidden text-[10px]">
-                <div className="bg-indigo-400 flex items-center justify-center text-white font-medium px-2" style={{ width: `${Math.min(100, (avgNight / 24) * 100)}%`, minWidth: avgNight > 0 ? "3rem" : 0 }}>
-                  {avgNight >= 1 ? `Noche ${avgNight.toFixed(1)}h` : ""}
-                </div>
-                <div className="bg-cyan-400 flex items-center justify-center text-white font-medium px-2" style={{ width: `${Math.min(100, (avgNap / 24) * 100)}%`, minWidth: avgNap > 0 ? "2.5rem" : 0 }}>
-                  {avgNap >= 0.5 ? `Siesta ${avgNap.toFixed(1)}h` : ""}
-                </div>
-                <div className="bg-amber-200 flex items-center justify-center text-amber-900 font-medium px-2 flex-1 min-w-[20%]">
-                  Vigilia ~{estWake.toFixed(1)}h
-                </div>
-              </div>
-              <div className="mt-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
-                <p className="text-[10px] text-gray-500">Referencia {benchmark.label}: Noche {benchmark.nightSleep} · Siestas {benchmark.naps} ({benchmark.napSleep}) · Vigilia {benchmark.wakeWindow}</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <SuenoTab allSleepData={props.weeklySleep} benchmark={benchmark} />
       )}
 
       {activeTab === "Hábitos" && (
@@ -866,7 +672,338 @@ export function FamilyDetailTabs(props: Props) {
   );
 }
 
-// ─── Análisis Tab ───
+// ─── Sueño Tab ───
+
+const CHART_BAR_H = 180;
+const RANGE_OPTIONS = [
+  { label: "7 días", days: 7 },
+  { label: "14 días", days: 14 },
+  { label: "30 días", days: 30 },
+] as const;
+
+function fullWeekdayEs(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const w = d.toLocaleDateString("es-ES", { weekday: "long" });
+  return w.charAt(0).toUpperCase() + w.slice(1);
+}
+
+function chartDayLabel(dateStr: string, rangeDays: number): string {
+  const d = new Date(dateStr + "T12:00:00");
+  if (rangeDays <= 14) return fullWeekdayEs(dateStr);
+  const s = d.toLocaleDateString("es-ES", { weekday: "short" });
+  const t = s.replace(/\.$/, "").trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function fmtHoursWithMinutes(hours: number): string {
+  const mins = Math.round(hours * 60);
+  return `${hours.toFixed(1)}h (${mins} min)`;
+}
+
+function SuenoTab({
+  allSleepData, benchmark,
+}: {
+  allSleepData: WeeklySleepData[];
+  benchmark: AgeBenchmark;
+}) {
+  const [rangeDays, setRangeDays] = useState(7);
+  const weeklySleep = allSleepData.slice(-rangeDays);
+
+  const totalRange = parseRange(benchmark.totalSleep);
+  const nightRange = parseRange(benchmark.nightSleep);
+  const daysWithData = weeklySleep.filter((d) => d.total > 0 || d.awakenings > 0).length;
+  const weekAvgSleep = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.total, 0) / weeklySleep.length : 0;
+  const weekAvgWake = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length : 0;
+  const avgNight = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.night_hours, 0) / weeklySleep.length : 0;
+  const avgNap = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.nap_hours, 0) / weeklySleep.length : 0;
+  const maxSleepStack = Math.max(...weeklySleep.map((d) => d.night_hours + d.nap_hours), 16, 1);
+  const maxAwakeBar = Math.max(...weeklySleep.map((d) => d.awakenings), 6, 1);
+  const recommendedLine = totalRange && totalRange.min > 0 ? totalRange.min : null;
+
+  const fmtDate = (dateStr: string) => {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  };
+
+  if (allSleepData.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+        <Moon className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+        <p className="text-sm text-gray-500">No hay datos de sueño todavía.</p>
+        <p className="text-xs text-gray-400 mt-1">Los datos aparecerán cuando los padres registren actividad.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Range selector + KPI strip */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="font-bold text-gray-900 text-xl tracking-tight">Sueño</h2>
+        <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5 w-fit">
+          {RANGE_OPTIONS.map((r) => (
+            <button
+              key={r.days}
+              type="button"
+              onClick={() => setRangeDays(r.days)}
+              className={cn(
+                "text-sm font-medium px-4 py-2 rounded-lg transition min-w-[5.5rem]",
+                rangeDays === r.days ? "bg-white text-nanni-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-indigo-600 tabular-nums">{weekAvgSleep.toFixed(1)}<span className="text-base font-medium text-gray-400">h</span></p>
+          <p className="text-xs text-gray-500 mt-1.5">Media sueño</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-amber-600 tabular-nums">{weekAvgWake.toFixed(1)}</p>
+          <p className="text-xs text-gray-500 mt-1.5">Media despertares</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-cyan-600 tabular-nums">{avgNap.toFixed(1)}<span className="text-base font-medium text-gray-400">h</span></p>
+          <p className="text-xs text-gray-500 mt-1.5">Media siestas</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-emerald-600 tabular-nums">{daysWithData}<span className="text-base font-medium text-gray-400">/{rangeDays}</span></p>
+          <p className="text-xs text-gray-500 mt-1.5">Días con datos</p>
+        </div>
+      </div>
+
+      {/* Unified chart */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6">
+          <p className="text-sm text-gray-500">Sueño nocturno, siestas y despertares por día</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-600">
+            <div className="flex items-center gap-2"><div className="w-[2px] h-3.5 bg-cyan-500 rounded-full shrink-0" /><span>Nº siestas</span></div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-cyan-400 rounded-sm shrink-0" /><span>Siesta</span></div>
+            <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-indigo-500 rounded-sm shrink-0" /><span>Noche</span></div>
+            <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-amber-400 border-2 border-amber-200 shrink-0" /><span>Despertares</span></div>
+          </div>
+        </div>
+
+        <div className="relative pl-8 pr-8">
+          <div className="absolute left-0 top-0 h-[180px] w-7 flex flex-col justify-between text-right pr-1">
+            {[maxSleepStack, Math.round(maxSleepStack * 0.66), Math.round(maxSleepStack * 0.33), 0].map((v) => (
+              <span key={`l${v}`} className="text-[10px] text-gray-400 tabular-nums leading-none">{v}h</span>
+            ))}
+          </div>
+          <div className="absolute right-0 top-0 h-[180px] w-7 flex flex-col justify-between text-left pl-1">
+            {[maxAwakeBar, Math.round(maxAwakeBar / 2), 0].map((v) => (
+              <span key={`r${v}`} className="text-[10px] text-amber-400/90 tabular-nums leading-none">{v}</span>
+            ))}
+          </div>
+
+          <div className="mx-0">
+            {recommendedLine && (
+              <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: `${(recommendedLine / maxSleepStack) * CHART_BAR_H}px` }}>
+                <div className="w-full border-t-2 border-dashed border-emerald-300/60" />
+                <span className="absolute -top-4 right-0 text-[10px] text-emerald-600 font-semibold bg-white/95 px-1.5 py-0.5 rounded">Mín. {recommendedLine}h</span>
+              </div>
+            )}
+
+            <div className={cn("flex items-end", rangeDays <= 14 ? "gap-2 sm:gap-3" : "gap-1 sm:gap-1.5")} style={{ height: `${CHART_BAR_H}px` }}>
+              {weeklySleep.map((d, idx) => {
+                const hasData = d.total > 0 || d.awakenings > 0;
+                const nightPx = (d.night_hours / maxSleepStack) * CHART_BAR_H;
+                const napPx = (d.nap_hours / maxSleepStack) * CHART_BAR_H;
+                const isLow = totalRange && d.total > 0 && d.total < totalRange.min;
+                const highWake = d.awakenings > benchmark.maxAwakenings;
+                const showDayLabel = rangeDays <= 14 || idx % 2 === 0 || idx === weeklySleep.length - 1;
+
+                return (
+                  <div key={d.date} className="flex-1 flex flex-col items-center gap-0.5 min-w-0 relative group">
+                    <div className="absolute -top-[4.25rem] left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded-xl px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg max-w-[min(18rem,85vw)] text-center leading-snug">
+                      <p className="font-semibold">{fullWeekdayEs(d.date)} · {fmtDate(d.date)}</p>
+                      {hasData ? (
+                        <p className="text-[11px] text-gray-200 mt-1">Siesta {d.nap_hours.toFixed(1)}h ({d.nap_count}) · Noche {d.night_hours.toFixed(1)}h · {d.awakenings} despert.</p>
+                      ) : (
+                        <p className="text-[11px] text-gray-300 mt-1">Sin registro</p>
+                      )}
+                    </div>
+
+                    {/* Nap count ticks — above bar, near nap section */}
+                    {rangeDays <= 14 && (
+                      <div className="flex items-center justify-center gap-[2px] h-3 mb-0.5">
+                        {d.nap_count > 0 ? (
+                          Array.from({ length: d.nap_count }).map((_, i) => (
+                            <div key={i} className="w-[2px] h-2.5 bg-cyan-500 rounded-full" />
+                          ))
+                        ) : hasData ? (
+                          <span className="text-[7px] text-gray-300">0</span>
+                        ) : null}
+                      </div>
+                    )}
+
+                    {/* Stacked bar: nap (cyan) on top, night (indigo) on bottom */}
+                    {hasData ? (
+                      <div className={cn("w-full rounded-lg overflow-hidden flex flex-col justify-end", isLow && "ring-2 ring-red-300 ring-offset-1")} style={{ height: `${Math.max(nightPx + napPx, 4)}px` }}>
+                        <div className="bg-cyan-400 w-full" style={{ height: `${napPx}px`, minHeight: d.nap_hours > 0 ? 3 : 0 }} />
+                        <div className="bg-indigo-500 w-full" style={{ height: `${nightPx}px`, minHeight: d.night_hours > 0 ? 3 : 0 }} />
+                      </div>
+                    ) : (
+                      <div className="w-full rounded-lg bg-gray-100 flex items-center justify-center" style={{ height: "20px" }}>
+                        <span className="text-[7px] text-gray-300">—</span>
+                      </div>
+                    )}
+
+                    {/* Awakening badge — below bar, near night section */}
+                    {d.awakenings > 0 && (
+                      <div className="mt-0.5">
+                        <div className={cn(
+                          "rounded-full flex items-center justify-center font-bold border-2",
+                          rangeDays <= 14 ? "w-5 h-5 text-[9px]" : "w-4 h-4 text-[7px]",
+                          highWake ? "bg-red-100 text-red-600 border-red-300" : "bg-amber-100 text-amber-700 border-amber-300"
+                        )}>
+                          {d.awakenings}
+                        </div>
+                      </div>
+                    )}
+
+                    {showDayLabel && (
+                      <span
+                        className={cn(
+                          "font-medium text-center leading-tight mt-1 px-0.5",
+                          rangeDays <= 7 ? "text-[10px] sm:text-xs" : rangeDays <= 14 ? "text-[9px] sm:text-[11px]" : "text-[8px] sm:text-[10px]",
+                          hasData ? "text-gray-700" : "text-gray-300"
+                        )}
+                      >
+                        {chartDayLabel(d.date, rangeDays)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detalle diario */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="font-bold text-gray-900 text-base">Detalle diario</h3>
+          <span className="text-sm text-gray-500">{daysWithData} días con registro de {rangeDays}</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="bg-gray-50/90 border-b border-gray-100">
+                <th className="text-left pl-6 pr-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500 w-[11rem]">Día</th>
+                <th className="text-right px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Noche</th>
+                <th className="text-right px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Despert.</th>
+                <th className="text-right px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Siestas</th>
+                <th className="text-center px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Nº siestas</th>
+                <th className="text-right pl-4 pr-6 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-800">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weeklySleep.map((d, idx) => {
+                const hasData = d.total > 0 || d.awakenings > 0;
+                const isLowTotal = totalRange && d.total > 0 && d.total < totalRange.min;
+                const isLowNight = nightRange && d.night_hours > 0 && d.night_hours < nightRange.min;
+                const isHighWake = d.awakenings > benchmark.maxAwakenings;
+
+                return (
+                  <tr
+                    key={d.date}
+                    className={cn(
+                      "transition-colors",
+                      idx % 2 === 1 ? "bg-gray-50/50" : "bg-white",
+                      "hover:bg-nanni-50/40",
+                      !hasData && "text-gray-400"
+                    )}
+                  >
+                    <td className="pl-6 pr-4 py-3.5 align-middle">
+                      <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                        <span className="font-semibold text-gray-900">{fullWeekdayEs(d.date)}</span>
+                        <span className="text-sm text-gray-500 tabular-nums">{fmtDate(d.date)}</span>
+                      </span>
+                    </td>
+                    <td className={cn("text-right px-4 py-3.5 font-mono tabular-nums text-[14px] leading-snug", isLowNight ? "text-red-600 font-semibold" : hasData ? "text-gray-800" : "")}>
+                      {hasData ? fmtHoursWithMinutes(d.night_hours) : "—"}
+                    </td>
+                    <td className={cn("text-right px-4 py-3.5 font-mono tabular-nums text-[15px]", isHighWake ? "text-red-600 font-semibold" : hasData ? "text-gray-800" : "")}>
+                      {hasData ? d.awakenings : "—"}
+                    </td>
+                    <td className={cn("text-right px-4 py-3.5 font-mono tabular-nums text-[14px] leading-snug", hasData ? "text-gray-800" : "")}>
+                      {hasData ? fmtHoursWithMinutes(d.nap_hours) : "—"}
+                    </td>
+                    <td className="text-center px-4 py-3.5">
+                      {hasData ? (
+                        <span className="inline-flex items-center justify-center gap-1">
+                          {Array.from({ length: d.nap_count }).map((_, i) => (
+                            <span key={i} className="inline-block w-1 h-3.5 bg-cyan-500 rounded-full" />
+                          ))}
+                          {d.nap_count === 0 && <span className="text-gray-400 font-mono">0</span>}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className={cn("text-right pl-4 pr-6 py-3.5 font-mono tabular-nums text-[14px] font-semibold leading-snug", isLowTotal ? "text-red-600" : hasData ? "text-gray-900" : "text-gray-300")}>
+                      {hasData ? fmtHoursWithMinutes(d.total) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50 border-t-2 border-gray-200">
+                <td className="pl-6 pr-4 py-3.5 font-semibold text-gray-900">Media</td>
+                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-800 leading-snug">{fmtHoursWithMinutes(avgNight)}</td>
+                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[15px] font-semibold text-gray-800">{weekAvgWake.toFixed(1)}</td>
+                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-800 leading-snug">{fmtHoursWithMinutes(avgNap)}</td>
+                <td className="text-center px-4 py-3.5 font-mono tabular-nums text-[15px] font-semibold text-gray-800">
+                  {weeklySleep.length > 0 ? (weeklySleep.reduce((a, d) => a + d.nap_count, 0) / weeklySleep.length).toFixed(1) : "—"}
+                </td>
+                <td className="text-right pl-4 pr-6 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-900 leading-snug">{fmtHoursWithMinutes(weekAvgSleep)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* Benchmark reference card */}
+      <div className="bg-gradient-to-r from-nanni-50 to-indigo-50 rounded-2xl border border-nanni-100 p-6 md:p-7">
+        <h3 className="font-bold text-gray-900 text-base mb-4 flex items-center gap-2.5">
+          <Info className="w-5 h-5 text-nanni-600 shrink-0" />
+          Referencia por edad: {benchmark.label}
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="bg-white/90 rounded-xl p-4 text-center shadow-sm border border-white/60">
+            <p className="text-xs font-medium text-gray-500 mb-2">Sueño nocturno</p>
+            <p className="text-base font-bold text-indigo-700">{benchmark.nightSleep}</p>
+          </div>
+          <div className="bg-white/90 rounded-xl p-4 text-center shadow-sm border border-white/60">
+            <p className="text-xs font-medium text-gray-500 mb-2">Siestas</p>
+            <p className="text-base font-bold text-cyan-700">{benchmark.naps} ({benchmark.napSleep})</p>
+          </div>
+          <div className="bg-white/90 rounded-xl p-4 text-center shadow-sm border border-white/60">
+            <p className="text-xs font-medium text-gray-500 mb-2">Sueño total</p>
+            <p className="text-base font-bold text-nanni-700">{benchmark.totalSleep}</p>
+          </div>
+          <div className="bg-white/90 rounded-xl p-4 text-center shadow-sm border border-white/60">
+            <p className="text-xs font-medium text-gray-500 mb-2">Máx. despertares</p>
+            <p className="text-base font-bold text-amber-700">{benchmark.maxAwakenings}</p>
+          </div>
+          <div className="bg-white/90 rounded-xl p-4 text-center shadow-sm border border-white/60">
+            <p className="text-xs font-medium text-gray-500 mb-2">Ventana vigilia</p>
+            <p className="text-base font-bold text-gray-800">{benchmark.wakeWindow}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 mt-5 pt-5 border-t border-nanni-200/40">
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-500 shrink-0" /><span className="text-sm text-gray-700">Valor por debajo del rango</span></div>
+          <div className="flex items-center gap-2"><div className="w-6 h-[2px] border-t-2 border-dashed border-emerald-500 shrink-0" /><span className="text-sm text-gray-700">Mínimo recomendado en gráfico</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const METHOD_LABELS: Record<string, string> = { self: "Solo/a", rocking: "Meciendo", feeding: "Pecho/biberón", white_noise: "Ruido blanco", other: "Otro" };
 const METHOD_COLORS: Record<string, string> = { self: "bg-emerald-400", rocking: "bg-blue-400", feeding: "bg-nanni-400", white_noise: "bg-amber-400", other: "bg-gray-300" };

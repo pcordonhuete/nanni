@@ -225,14 +225,14 @@ export async function getDashboardStats(advisorId: string): Promise<DashboardSta
   };
 }
 
-export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[]> {
-  const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+export async function getWeeklySleep(familyId: string, numDays = 7): Promise<WeeklySleepData[]> {
+  const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   const result: WeeklySleepData[] = [];
 
   const supabase = await createClient();
   const rangeStart = new Date();
   rangeStart.setHours(0, 0, 0, 0);
-  rangeStart.setDate(rangeStart.getDate() - 6);
+  rangeStart.setDate(rangeStart.getDate() - (numDays - 1));
   const rangeEnd = new Date();
   rangeEnd.setHours(23, 59, 59, 999);
   const queryStart = new Date(rangeStart);
@@ -254,7 +254,7 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
     .gte("started_at", rangeStart.toISOString())
     .lte("started_at", rangeEnd.toISOString());
 
-  for (let i = 6; i >= 0; i--) {
+  for (let i = numDays - 1; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const dayStart = new Date(date);
@@ -288,8 +288,8 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
     const totalAwakenings = embeddedAwakenings + wakeCount;
 
     result.push({
-      day: days[date.getDay()],
-      date: dayStart.toISOString(),
+      day: dayNames[date.getDay()],
+      date: localDateKeyFromDate(dayStart),
       night_hours: Math.round(nightHours * 10) / 10,
       nap_hours: Math.round(napHours * 10) / 10,
       nap_count: napCount,

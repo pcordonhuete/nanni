@@ -172,7 +172,7 @@ export default async function FamiliaDetailPage({ params }: { params: Promise<{ 
 
   const [todayRecords, weeklySleep, insights, notes, plansRaw, templates, deepAnalytics, scoreTrend] = await Promise.all([
     getTodayRecords(id),
-    getWeeklySleep(id),
+    getWeeklySleep(id, 30),
     getInsights(stats.advisor_id, { familyId: id }),
     getNotes(id),
     getPlans(id),
