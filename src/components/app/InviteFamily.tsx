@@ -35,7 +35,8 @@ export function InviteFamily({ open, onClose }: InviteFamilyProps) {
         return;
       }
       if (result.data) {
-        setBabyName(result.data.baby_name);
+        const fullName = [result.data.baby_name, result.data.baby_last_name].filter(Boolean).join(" ");
+        setBabyName(fullName);
         setInviteToken(result.data.invite_token);
         setStep("share");
         toast("Familia creada correctamente");
@@ -81,12 +82,34 @@ export function InviteFamily({ open, onClose }: InviteFamilyProps) {
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Apellidos del bebé
+            </label>
+            <input
+              name="baby_last_name"
+              type="text"
+              placeholder="Ej: García López"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">
               Fecha de nacimiento
             </label>
             <input
               name="baby_birth_date"
               type="date"
               required
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Ciudad
+            </label>
+            <input
+              name="city"
+              type="text"
+              placeholder="Ej: Palma"
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent"
             />
           </div>

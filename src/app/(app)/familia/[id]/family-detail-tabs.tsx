@@ -72,6 +72,7 @@ type Props = {
   ageLabel: string;
   ageMonths: number;
   parentsLabel: string;
+  city: string | null;
   sinceLabel: string;
   statusLabel: string;
   statusColorClass: string;
@@ -165,7 +166,14 @@ export function FamilyDetailTabs(props: Props) {
                   <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 capitalize">{props.familyStatus}</span>
                 )}
               </div>
-              <p className="text-gray-400 text-sm mt-0.5">{props.ageLabel} · {props.parentsLabel} · Desde {props.sinceLabel}</p>
+              <p className="text-gray-400 text-sm mt-0.5">
+                {props.ageLabel}
+                {props.city ? ` · ${props.city}` : ""}
+                {" · "}
+                {props.parentsLabel}
+                {" · Desde "}
+                {props.sinceLabel}
+              </p>
             </div>
           </div>
           <div className="sm:ml-auto flex gap-2">

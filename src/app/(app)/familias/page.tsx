@@ -8,17 +8,29 @@ import {
   Pause, Play, Archive, Trash2, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { babyAgeLabel, timeAgo, cn } from "@/lib/utils";
+import { babyAgeLabel, timeAgo, cn, sleepScore, babyAgeMonths, statusFromScore } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FamilyCardSkeleton } from "@/components/ui/Skeleton";
 import { InviteFamily } from "@/components/app/InviteFamily";
 import { bulkUpdateFamilyStatus } from "@/lib/actions";
 import { useToast } from "@/components/ui/Toast";
-import type { Family, ActivityRecord } from "@/lib/types";
+import type { Family } from "@/lib/types";
 
 interface FamilyRow extends Family {
   last_record_at: string | null;
   record_count: number;
+  score: number;
+  score_delta: number;
+  trend: "up" | "down" | "stable";
+  status_label: string;
+  avg_sleep_hours: number;
+  avg_awakenings: number;
+  attention_reason: string | null;
+  has_active_plan: boolean;
+}
+
+function fullBabyName(f: Pick<Family, "baby_name" | "baby_last_name">): string {
+  return [f.baby_name, f.baby_last_name].filter(Boolean).join(" ");
 }
 
 const statusIcons: Record<string, typeof TrendingUp> = {
@@ -92,25 +104,91 @@ export default function FamiliasPage() {
         .order("created_at", { ascending: false });
 
       if (fams) {
+        const now = new Date();
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - 7);
+        weekStart.setHours(0, 0, 0, 0);
+        const prevStart = new Date(weekStart);
+        prevStart.setDate(prevStart.getDate() - 7);
+
         const enriched: FamilyRow[] = await Promise.all(
           fams.map(async (f: Family) => {
-            const { data: lastRec } = await supabase
-              .from("activity_records")
-              .select("created_at")
-              .eq("family_id", f.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .single();
+            const [{ data: lastRec }, { count }, { data: currRecs }, { data: prevRecs }, { data: activePlan }] = await Promise.all([
+              supabase
+                .from("activity_records")
+                .select("created_at")
+                .eq("family_id", f.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .single(),
+              supabase
+                .from("activity_records")
+                .select("*", { count: "exact", head: true })
+                .eq("family_id", f.id),
+              supabase
+                .from("activity_records")
+                .select("type, duration_minutes, details")
+                .eq("family_id", f.id)
+                .gte("started_at", weekStart.toISOString()),
+              supabase
+                .from("activity_records")
+                .select("type, duration_minutes, details")
+                .eq("family_id", f.id)
+                .gte("started_at", prevStart.toISOString())
+                .lt("started_at", weekStart.toISOString()),
+              supabase
+                .from("sleep_plans")
+                .select("id")
+                .eq("family_id", f.id)
+                .eq("status", "active")
+                .limit(1)
+                .single(),
+            ]);
 
-            const { count } = await supabase
-              .from("activity_records")
-              .select("*", { count: "exact", head: true })
-              .eq("family_id", f.id);
+            const calcMetrics = (records: { type: string; duration_minutes: number | null; details: Record<string, unknown> | null }[] | null) => {
+              let sleepH = 0;
+              let wakes = 0;
+              for (const r of records || []) {
+                if (r.type === "sleep") {
+                  sleepH += (r.duration_minutes || 0) / 60;
+                  const aw = r.details?.awakenings;
+                  if (typeof aw === "number") wakes += aw;
+                }
+                if (r.type === "wake" || r.type === "wakeup") wakes += 1;
+              }
+              return {
+                avgSleep: Math.round((sleepH / 7) * 10) / 10,
+                avgWakes: Math.round((wakes / 7) * 10) / 10,
+              };
+            };
+
+            const current = calcMetrics(currRecs as { type: string; duration_minutes: number | null; details: Record<string, unknown> | null }[] | null);
+            const previous = calcMetrics(prevRecs as { type: string; duration_minutes: number | null; details: Record<string, unknown> | null }[] | null);
+            const ageMonths = babyAgeMonths(f.baby_birth_date);
+            const score = sleepScore(current.avgSleep, current.avgWakes, ageMonths);
+            const prevScore = sleepScore(previous.avgSleep, previous.avgWakes, ageMonths);
+            const scoreDelta = Math.round((score - prevScore) * 10) / 10;
+            const trend: FamilyRow["trend"] = scoreDelta >= 0.5 ? "up" : scoreDelta <= -0.5 ? "down" : "stable";
+            const { label: statusLabel } = statusFromScore(score);
+            const lastRecordAt = lastRec?.created_at || null;
+            const hoursSinceLast = lastRecordAt ? (Date.now() - new Date(lastRecordAt).getTime()) / 3600000 : 9999;
+            const attentionReason =
+              hoursSinceLast > 48 ? `Sin registrar hace ${Math.round(hoursSinceLast / 24)}d` :
+              score < 4 ? "Score crítico" :
+              trend === "down" ? "Tendencia negativa" : null;
 
             return {
               ...f,
-              last_record_at: lastRec?.created_at || null,
+              last_record_at: lastRecordAt,
               record_count: count || 0,
+              score,
+              score_delta: scoreDelta,
+              trend,
+              status_label: statusLabel,
+              avg_sleep_hours: current.avgSleep,
+              avg_awakenings: current.avgWakes,
+              attention_reason: attentionReason,
+              has_active_plan: !!activePlan?.id,
             };
           })
         );
@@ -122,7 +200,7 @@ export default function FamiliasPage() {
   }, []);
 
   const filtered = families.filter((f) => {
-    const matchesSearch = f.baby_name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = fullBabyName(f).toLowerCase().includes(search.toLowerCase());
     const matchesFilter = activeFilter === "all" || f.status === activeFilter;
     return matchesSearch && matchesFilter;
   });
@@ -155,7 +233,7 @@ export default function FamiliasPage() {
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por nombre del bebé..."
+              placeholder="Buscar por nombre y apellidos..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent placeholder:text-gray-400"
@@ -267,16 +345,18 @@ export default function FamiliasPage() {
                       {family.baby_name[0]}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{family.baby_name}</p>
-                      <p className="text-[11px] text-gray-400">{age}</p>
+                      <p className="font-semibold text-gray-900">{fullBabyName(family)}</p>
+                      <p className="text-[11px] text-gray-400">
+                        {age}{family.city ? ` · ${family.city}` : ""}
+                      </p>
                     </div>
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-nanni-500 transition" />
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <p className="text-xs font-bold text-gray-900">{family.record_count}</p>
-                    <p className="text-[9px] text-gray-400">Registros</p>
+                    <p className="text-xs font-bold text-gray-900">{family.score.toFixed(1)}</p>
+                    <p className="text-[9px] text-gray-400">Score</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-2 text-center">
                     <p className="text-xs font-bold text-gray-900">
@@ -285,8 +365,28 @@ export default function FamiliasPage() {
                     <p className="text-[9px] text-gray-400">Último</p>
                   </div>
                 </div>
+                <div className="mb-3 text-[11px]">
+                  <p className="text-gray-500">
+                    {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despert.
+                    {family.score_delta !== 0 ? (
+                      <span className={cn("ml-1 font-medium", family.score_delta > 0 ? "text-emerald-600" : "text-red-500")}>
+                        ({family.score_delta > 0 ? "+" : ""}{family.score_delta})
+                      </span>
+                    ) : (
+                      <span className="ml-1 text-gray-400">(estable)</span>
+                    )}
+                  </p>
+                  {family.attention_reason ? (
+                    <p className="text-amber-600 font-medium mt-0.5">{family.attention_reason}</p>
+                  ) : family.has_active_plan ? (
+                    <p className="text-nanni-600 font-medium mt-0.5">Plan activo</p>
+                  ) : null}
+                </div>
                 <span className={cn("text-[10px] font-semibold px-2.5 py-1 rounded-full", statusColors[family.status] || statusColors.active)}>
                   {family.status === "active" ? "Activa" : family.status === "paused" ? "Pausada" : "Completada"}
+                </span>
+                <span className="ml-2 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
+                  {family.status_label}
                 </span>
               </Link>
               </div>
@@ -308,12 +408,17 @@ export default function FamiliasPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900">{family.baby_name}</p>
-                    <span className="text-xs text-gray-400">{age}</span>
+                    <p className="text-sm font-semibold text-gray-900">{fullBabyName(family)}</p>
+                    <span className="text-xs text-gray-400">
+                      {age}{family.city ? ` · ${family.city}` : ""}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-400">
-                    {family.record_count} registros · Último: {family.last_record_at ? timeAgo(family.last_record_at) : "ninguno"}
+                    Score {family.score.toFixed(1)} · {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despert. · Último: {family.last_record_at ? timeAgo(family.last_record_at) : "ninguno"}
                   </p>
+                  {family.attention_reason && (
+                    <p className="text-[11px] text-amber-600 font-medium mt-0.5">{family.attention_reason}</p>
+                  )}
                 </div>
                 <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-nanni-500 transition shrink-0" />
               </Link>

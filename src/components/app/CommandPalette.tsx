@@ -46,9 +46,9 @@ export function CommandPalette({ families }: CommandPaletteProps) {
   const results = useMemo(() => {
     const q = query.toLowerCase();
     const familyResults = families
-      .filter((f) => f.baby_name.toLowerCase().includes(q))
+      .filter((f) => [f.baby_name, f.baby_last_name].filter(Boolean).join(" ").toLowerCase().includes(q))
       .map((f) => ({
-        label: f.baby_name,
+        label: [f.baby_name, f.baby_last_name].filter(Boolean).join(" "),
         href: `/familia/${f.id}`,
         icon: Moon,
         type: "family" as const,

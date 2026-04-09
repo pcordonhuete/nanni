@@ -189,17 +189,19 @@ export default async function FamiliaDetailPage({ params }: { params: Promise<{ 
   const { label: statusLabel, color: statusColorClass } = statusFromScore(stats.score);
   const daysWithData = weeklySleep.filter((d) => d.total > 0 || d.awakenings > 0).length;
   const babyInitial = stats.baby_name.trim().charAt(0).toUpperCase() || "?";
+  const babyFullName = [stats.baby_name, stats.baby_last_name].filter(Boolean).join(" ");
   const sinceLabel = new Date(stats.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 
   return (
     <FamilyDetailTabs
       familyId={stats.id}
       advisorId={stats.advisor_id}
-      babyName={stats.baby_name}
+      babyName={babyFullName}
       babyInitial={babyInitial}
       ageLabel={babyAgeLabel(stats.baby_birth_date)}
       ageMonths={babyAgeMonths(stats.baby_birth_date)}
       parentsLabel={parentsLabel(stats.members)}
+      city={stats.city}
       sinceLabel={sinceLabel}
       statusLabel={statusLabel}
       statusColorClass={statusColorClass}

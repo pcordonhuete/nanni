@@ -102,7 +102,9 @@ create table if not exists public.families (
   id uuid default gen_random_uuid() primary key,
   advisor_id uuid references public.profiles(id) on delete cascade not null,
   baby_name text not null,
+  baby_last_name text,
   baby_birth_date date not null,
+  city text,
   status text not null default 'active'
     check (status in ('active', 'paused', 'completed')),
   invite_token text unique not null default encode(gen_random_bytes(16), 'hex'),

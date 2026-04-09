@@ -12,13 +12,21 @@ export async function createFamily(formData: FormData) {
   if (!user) return { error: "No autenticado" };
 
   const babyName = formData.get("baby_name") as string;
+  const babyLastName = (formData.get("baby_last_name") as string) || "";
   const birthDate = formData.get("baby_birth_date") as string;
+  const city = (formData.get("city") as string) || "";
 
   if (!babyName || !birthDate) return { error: "Nombre y fecha son obligatorios" };
 
   const { data, error } = await supabase
     .from("families")
-    .insert({ advisor_id: user.id, baby_name: babyName, baby_birth_date: birthDate })
+    .insert({
+      advisor_id: user.id,
+      baby_name: babyName,
+      baby_last_name: babyLastName.trim() || null,
+      baby_birth_date: birthDate,
+      city: city.trim() || null,
+    })
     .select()
     .single();
 
@@ -31,11 +39,15 @@ export async function createFamily(formData: FormData) {
 
 export async function updateFamily(familyId: string, formData: FormData) {
   const supabase = await createClient();
-  const updates: Record<string, string> = {};
+  const updates: Record<string, string | null> = {};
 
   const babyName = formData.get("baby_name") as string;
+  const babyLastName = formData.get("baby_last_name") as string;
+  const city = formData.get("city") as string;
   const status = formData.get("status") as string;
   if (babyName) updates.baby_name = babyName;
+  if (babyLastName !== null) updates.baby_last_name = babyLastName || null;
+  if (city !== null) updates.city = city || null;
   if (status) updates.status = status;
 
   const { error } = await supabase
@@ -718,9 +730,11 @@ export async function exportFamiliesCSV() {
 
   if (!families || families.length === 0) return { error: "No hay datos para exportar" };
 
-  const headers = ["Nombre", "Fecha nacimiento", "Estado", "Teléfono", "Email", "Creado"];
+  const headers = ["Nombre", "Apellidos", "Ciudad", "Fecha nacimiento", "Estado", "Teléfono", "Email", "Creado"];
   const rows = families.map((f) => [
     f.baby_name,
+    f.baby_last_name || "",
+    f.city || "",
     f.baby_birth_date,
     f.status,
     f.parent_phone || "",

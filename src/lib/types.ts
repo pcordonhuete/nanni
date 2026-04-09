@@ -68,7 +68,9 @@ export interface Family {
   id: string;
   advisor_id: string;
   baby_name: string;
+  baby_last_name: string | null;
   baby_birth_date: string;
+  city: string | null;
   status: FamilyStatus;
   invite_token: string;
   parent_phone: string | null;
