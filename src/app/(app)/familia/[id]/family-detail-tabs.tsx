@@ -468,6 +468,19 @@ export function FamilyDetailTabs(props: Props) {
                           <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.night_hours.toFixed(1)}h</span>
                         </div>
                         <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Despert.</span>
+                          <div className="flex-1 flex items-center gap-1 min-h-[10px]">
+                            {day.awakenings > 0 ? (
+                              Array.from({ length: day.awakenings }).map((_, i) => (
+                                <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              ))
+                            ) : (
+                              <span className="text-[10px] text-gray-300">—</span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.awakenings}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span className="text-[10px] text-gray-400 w-14 shrink-0">Siestas</span>
                           <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
                             <div
@@ -491,19 +504,6 @@ export function FamilyDetailTabs(props: Props) {
                           </div>
                           <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_count}</span>
                         </div>
-                      </div>
-                      <div className="w-20 shrink-0 text-right">
-                        <p className="text-[10px] text-gray-400">Despertares</p>
-                        <div className="flex items-center justify-end gap-1 min-h-[10px] mt-0.5">
-                          {day.awakenings > 0 ? (
-                            Array.from({ length: day.awakenings }).map((_, i) => (
-                              <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            ))
-                          ) : (
-                            <span className="text-[10px] text-gray-300">—</span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-gray-600 mt-0.5">{day.awakenings}</p>
                       </div>
                     </div>
                   ))}
