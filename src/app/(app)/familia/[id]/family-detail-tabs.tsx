@@ -7,7 +7,7 @@ import {
   ArrowLeft, Moon, AlertTriangle, Star, TrendingUp, TrendingDown,
   Phone, MessageSquare, Brain, Send, BarChart3, Copy, Check,
   Loader2, Sparkles, Target, ListOrdered, Plus, Info, BookOpen,
-  X, Sun, Droplets, Baby, Activity, Smile, FileText,
+  X, Sun, Droplets, Baby, Activity, Smile, FileText, Pencil,
   ClipboardList, UtensilsCrossed, Clock, Frown, Meh,
   type LucideIcon,
 } from "lucide-react";
@@ -20,7 +20,7 @@ const TIMELINE_ICONS: Record<string, LucideIcon> = {
 import {
   createPlan, addPlanGoal, addPlanStep, toggleGoal, toggleStep,
   updatePlanStatus, createPlanFromTemplate,
-  updateFamilyContact,
+  updateFamilyContact, updateFamily,
 } from "@/lib/actions";
 import { generateInsights } from "@/lib/ai";
 import { inviteUrl, cn, whatsappUrl, scoreExplanation, getAgeBenchmark } from "@/lib/utils";
@@ -68,6 +68,8 @@ type Props = {
   familyId: string;
   advisorId: string;
   babyName: string;
+  initialBabyName: string;
+  initialBabyLastName: string | null;
   babyInitial: string;
   ageLabel: string;
   ageMonths: number;
@@ -107,6 +109,11 @@ export function FamilyDetailTabs(props: Props) {
   const [pendingToggle, startToggle] = useTransition();
   const [showScoreInfo, setShowScoreInfo] = useState(false);
   const [showContactEdit, setShowContactEdit] = useState(false);
+  const [showFamilyEdit, setShowFamilyEdit] = useState(false);
+  const [editBabyName, setEditBabyName] = useState(props.initialBabyName);
+  const [editBabyLastName, setEditBabyLastName] = useState(props.initialBabyLastName || "");
+  const [editCity, setEditCity] = useState(props.city || "");
+  const [editStatus, setEditStatus] = useState(props.familyStatus);
   const [contactPhone, setContactPhone] = useState(props.parentPhone || "");
   const [contactEmail, setContactEmail] = useState(props.parentEmail || "");
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
@@ -132,6 +139,19 @@ export function FamilyDetailTabs(props: Props) {
     startToggle(async () => {
       await updateFamilyContact(props.familyId, contactPhone || null, contactEmail || null);
       setShowContactEdit(false);
+      router.refresh();
+    });
+  };
+
+  const handleSaveFamily = () => {
+    startToggle(async () => {
+      const fd = new FormData();
+      fd.set("baby_name", editBabyName.trim());
+      fd.set("baby_last_name", editBabyLastName.trim());
+      fd.set("city", editCity.trim());
+      fd.set("status", editStatus);
+      await updateFamily(props.familyId, fd);
+      setShowFamilyEdit(false);
       router.refresh();
     });
   };
@@ -177,6 +197,13 @@ export function FamilyDetailTabs(props: Props) {
             </div>
           </div>
           <div className="sm:ml-auto flex gap-2">
+            <button
+              onClick={() => setShowFamilyEdit(true)}
+              className="bg-white border border-gray-200 text-gray-600 text-sm font-medium px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 transition"
+            >
+              <Pencil className="w-4 h-4" />
+              <span className="hidden sm:inline">Editar</span>
+            </button>
             {props.parentPhone ? (
               <>
                 <a href={`tel:${props.parentPhone}`} className="bg-white border border-gray-200 text-gray-600 text-sm font-medium px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 transition">
@@ -208,6 +235,53 @@ export function FamilyDetailTabs(props: Props) {
           <div className="flex gap-2">
             <button onClick={handleSaveContact} className="bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-nanni-700 transition">Guardar</button>
             <button onClick={() => setShowContactEdit(false)} className="text-sm text-gray-500 px-4 py-2">Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {showFamilyEdit && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <h3 className="font-bold text-gray-900 text-sm">Editar perfil de la familia</h3>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <input
+              value={editBabyName}
+              onChange={(e) => setEditBabyName(e.target.value)}
+              placeholder="Nombre del bebé"
+              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
+            />
+            <input
+              value={editBabyLastName}
+              onChange={(e) => setEditBabyLastName(e.target.value)}
+              placeholder="Apellidos del bebé"
+              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
+            />
+            <input
+              value={editCity}
+              onChange={(e) => setEditCity(e.target.value)}
+              placeholder="Ciudad"
+              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
+            />
+            <select
+              value={editStatus}
+              onChange={(e) => setEditStatus(e.target.value)}
+              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500"
+            >
+              <option value="active">Activa</option>
+              <option value="paused">Pausada</option>
+              <option value="completed">Completada</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveFamily}
+              disabled={pendingToggle || !editBabyName.trim()}
+              className="bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-nanni-700 transition disabled:opacity-50"
+            >
+              Guardar cambios
+            </button>
+            <button onClick={() => setShowFamilyEdit(false)} className="text-sm text-gray-500 px-4 py-2">
+              Cancelar
+            </button>
           </div>
         </div>
       )}

@@ -197,6 +197,8 @@ export default async function FamiliaDetailPage({ params }: { params: Promise<{ 
       familyId={stats.id}
       advisorId={stats.advisor_id}
       babyName={babyFullName}
+      initialBabyName={stats.baby_name}
+      initialBabyLastName={stats.baby_last_name}
       babyInitial={babyInitial}
       ageLabel={babyAgeLabel(stats.baby_birth_date)}
       ageMonths={babyAgeMonths(stats.baby_birth_date)}
