@@ -45,7 +45,7 @@ export type TimelineEntry = {
   type: RecordType;
 };
 
-const TABS = ["Hoy", "Semana", "Gráficas", "Análisis", "IA", "Plan", "Notas"] as const;
+const TABS = ["Diario", "Sueño", "Hábitos", "IA & Plan", "Notas"] as const;
 type TabId = (typeof TABS)[number];
 
 const DATE_RANGES = [
@@ -111,7 +111,7 @@ type Props = {
 
 export function FamilyDetailTabs(props: Props) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("Hoy");
+  const [activeTab, setActiveTab] = useState<TabId>("Diario");
   const [copied, setCopied] = useState(false);
   const [insightError, setInsightError] = useState<string | null>(null);
   const [pendingInsight, startInsight] = useTransition();
@@ -383,7 +383,7 @@ export function FamilyDetailTabs(props: Props) {
         ))}
       </div>
 
-      {activeTab === "Hoy" && (
+      {activeTab === "Diario" && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div className="p-4 md:p-5 border-b border-gray-50 flex items-center justify-between">
@@ -416,8 +416,41 @@ export function FamilyDetailTabs(props: Props) {
         </div>
       )}
 
-      {activeTab === "Semana" && (
+      {activeTab === "Sueño" && (
         <div className="space-y-6">
+          {/* Score trend */}
+          {props.scoreTrend.length > 1 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="w-4 h-4 text-nanni-600" />
+                <h2 className="font-bold text-gray-900">Evolución del score</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-4">Últimos 14 días (ventana móvil 7d)</p>
+              <div className="relative h-20">
+                {[0, 5, 10].map((v) => (
+                  <div key={v} className="absolute w-full border-t border-gray-50" style={{ bottom: `${(v / 10) * 100}%` }}>
+                    <span className="absolute -left-0 -top-2 text-[9px] text-gray-300">{v}</span>
+                  </div>
+                ))}
+                <svg viewBox={`0 0 ${props.scoreTrend.length * 20} 80`} className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                  <polyline fill="none" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" strokeLinejoin="round"
+                    points={props.scoreTrend.map((t, i) => `${i * 20 + 10},${80 - (t.score / 10) * 80}`).join(" ")} />
+                  {props.scoreTrend.map((t, i) => (
+                    <circle key={i} cx={i * 20 + 10} cy={80 - (t.score / 10) * 80} r="3" fill="white" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" />
+                  ))}
+                </svg>
+              </div>
+              <div className="flex justify-between mt-1">
+                {props.scoreTrend.filter((_, i) => i % 3 === 0 || i === props.scoreTrend.length - 1).map((t) => (
+                  <span key={t.date} className="text-[9px] text-gray-400">
+                    {new Date(t.date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* KPIs + day-by-day */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-gray-900">Resumen semanal</h2>
@@ -447,10 +480,6 @@ export function FamilyDetailTabs(props: Props) {
                     <p className="text-xs text-gray-500">Días con registro</p>
                   </div>
                 </div>
-                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 mb-4">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Datos reportados por la familia</p>
-                  <p className="text-xs text-gray-500">Esta vista muestra solo registros documentados por los padres (sin interpretación automática).</p>
-                </div>
                 <div className="space-y-3">
                   {props.weeklySleep.map((day) => (
                     <div key={day.date} className="flex items-center gap-3">
@@ -459,11 +488,7 @@ export function FamilyDetailTabs(props: Props) {
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-gray-400 w-14 shrink-0">Noche</span>
                           <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-indigo-400 rounded-full"
-                              style={{ width: `${Math.min(100, (day.night_hours / 14) * 100)}%`, minWidth: day.night_hours > 0 ? 4 : 0 }}
-                              title={`Noche: ${day.night_hours}h`}
-                            />
+                            <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${Math.min(100, (day.night_hours / 14) * 100)}%`, minWidth: day.night_hours > 0 ? 4 : 0 }} />
                           </div>
                           <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.night_hours.toFixed(1)}h</span>
                         </div>
@@ -471,23 +496,20 @@ export function FamilyDetailTabs(props: Props) {
                           <span className="text-[10px] text-gray-400 w-14 shrink-0">Despert.</span>
                           <div className="flex-1 flex items-center gap-1 min-h-[10px]">
                             {day.awakenings > 0 ? (
-                              Array.from({ length: day.awakenings }).map((_, i) => (
+                              Array.from({ length: Math.min(day.awakenings, 8) }).map((_, i) => (
                                 <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                               ))
                             ) : (
                               <span className="text-[10px] text-gray-300">—</span>
                             )}
+                            {day.awakenings > 8 && <span className="text-[9px] text-amber-500 font-medium">+{day.awakenings - 8}</span>}
                           </div>
                           <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.awakenings}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-gray-400 w-14 shrink-0">Siestas</span>
                           <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-cyan-400 rounded-full"
-                              style={{ width: `${Math.min(100, (day.nap_hours / 6) * 100)}%`, minWidth: day.nap_hours > 0 ? 4 : 0 }}
-                              title={`Siestas: ${day.nap_hours}h`}
-                            />
+                            <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min(100, (day.nap_hours / 6) * 100)}%`, minWidth: day.nap_hours > 0 ? 4 : 0 }} />
                           </div>
                           <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_hours.toFixed(1)}h</span>
                         </div>
@@ -495,11 +517,7 @@ export function FamilyDetailTabs(props: Props) {
                           <span className="text-[10px] text-gray-400 w-14 shrink-0">Nº siestas</span>
                           <div className="flex items-center gap-1.5 h-3">
                             {Array.from({ length: Math.max(4, day.nap_count || 0) }).map((_, i) => (
-                              <div
-                                key={i}
-                                className={cn("w-[2px] h-3 rounded-full", i < day.nap_count ? "bg-cyan-500" : "bg-gray-200")}
-                                title={`${day.nap_count} siestas`}
-                              />
+                              <div key={i} className={cn("w-[2px] h-3 rounded-full", i < day.nap_count ? "bg-cyan-500" : "bg-gray-200")} />
                             ))}
                           </div>
                           <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_count}</span>
@@ -509,115 +527,101 @@ export function FamilyDetailTabs(props: Props) {
                   ))}
                 </div>
                 <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 flex-wrap">
-                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-indigo-400 rounded-sm" /><span className="text-[10px] text-gray-400">Horas sueño nocturno</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-cyan-400 rounded-sm" /><span className="text-[10px] text-gray-400">Horas de siesta</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-[2px] h-3 bg-cyan-500 rounded-full" /><span className="text-[10px] text-gray-400">Nº de siestas</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /><span className="text-[10px] text-gray-400">Despertares nocturnos</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-indigo-400 rounded-sm" /><span className="text-[10px] text-gray-400">Noche</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-cyan-400 rounded-sm" /><span className="text-[10px] text-gray-400">Siestas</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-[2px] h-3 bg-cyan-500 rounded-full" /><span className="text-[10px] text-gray-400">Nº siestas</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /><span className="text-[10px] text-gray-400">Despertares</span></div>
                 </div>
               </>
             )}
           </div>
-        </div>
-      )}
 
-      {activeTab === "Gráficas" && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-1">
-              <BarChart3 className="w-4 h-4 text-nanni-600" />
-              <h2 className="font-bold text-gray-900">Horas de sueño</h2>
-            </div>
-            <p className="text-xs text-gray-400 mb-4">Últimos 7 días</p>
-            {props.weeklySleep.length === 0 ? (
-              <p className="text-sm text-gray-500 py-8 text-center">Sin datos para graficar.</p>
-            ) : (
-              <div className="flex items-end gap-2 h-40">
-                {props.weeklySleep.map((d) => (
-                  <div key={d.date} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                    <span className="text-[9px] text-gray-400">{d.total.toFixed(1)}h</span>
-                    <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: `${(d.total / maxSleepStack) * 140}px`, minHeight: d.total > 0 ? 8 : 0 }}>
-                      <div className="bg-nanni-400 rounded-t-md w-full" style={{ flex: d.night_hours || 0.01, minHeight: d.night_hours > 0 ? 4 : 0 }} />
-                      <div className="bg-nanni-300 rounded-b-md w-full" style={{ flex: d.nap_hours || 0.01, minHeight: d.nap_hours > 0 ? 4 : 0 }} />
+          {/* Charts: sleep hours + awakenings side by side */}
+          {props.weeklySleep.length > 0 && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <BarChart3 className="w-4 h-4 text-nanni-600" />
+                  <h2 className="font-bold text-gray-900">Horas de sueño</h2>
+                </div>
+                <p className="text-xs text-gray-400 mb-4">Noche (oscuro) + Siestas (claro)</p>
+                <div className="flex items-end gap-2 h-40">
+                  {props.weeklySleep.map((d) => (
+                    <div key={d.date} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                      <span className="text-[9px] text-gray-400">{d.total.toFixed(1)}h</span>
+                      <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: `${(d.total / maxSleepStack) * 140}px`, minHeight: d.total > 0 ? 8 : 0 }}>
+                        <div className="bg-indigo-400 rounded-t-md w-full" style={{ flex: d.night_hours || 0.01, minHeight: d.night_hours > 0 ? 4 : 0 }} />
+                        <div className="bg-cyan-400 rounded-b-md w-full" style={{ flex: d.nap_hours || 0.01, minHeight: d.nap_hours > 0 ? 4 : 0 }} />
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
                     </div>
-                    <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="font-bold text-gray-900 mb-1">Despertares nocturnos</h2>
-            <p className="text-xs text-gray-400 mb-4">Últimos 7 días · Máx. aceptable: {benchmark.maxAwakenings}</p>
-            {props.weeklySleep.length === 0 ? (
-              <p className="text-sm text-gray-500 py-8 text-center">Sin datos para graficar.</p>
-            ) : (
-              <div className="flex items-end gap-2 h-40">
-                {props.weeklySleep.map((d) => (
-                  <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-[9px] text-gray-400">{d.awakenings}</span>
-                    <div className={cn("w-full rounded-t-md", d.awakenings > benchmark.maxAwakenings + 1 ? "bg-red-400" : d.awakenings > benchmark.maxAwakenings ? "bg-amber-400" : "bg-emerald-400")}
-                      style={{ height: `${(d.awakenings / maxAwakeBar) * 140}px`, minHeight: d.awakenings > 0 ? 4 : 2 }} />
-                    <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
-                  </div>
-                ))}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h2 className="font-bold text-gray-900 mb-1">Despertares nocturnos</h2>
+                <p className="text-xs text-gray-400 mb-4">Máx. recomendado: {benchmark.maxAwakenings}</p>
+                <div className="flex items-end gap-2 h-40">
+                  {props.weeklySleep.map((d) => (
+                    <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[9px] text-gray-400">{d.awakenings}</span>
+                      <div className={cn("w-full rounded-t-md", d.awakenings > benchmark.maxAwakenings + 1 ? "bg-red-400" : d.awakenings > benchmark.maxAwakenings ? "bg-amber-400" : "bg-emerald-400")}
+                        style={{ height: `${(d.awakenings / maxAwakeBar) * 140}px`, minHeight: d.awakenings > 0 ? 4 : 2 }} />
+                      <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="md:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="font-bold text-gray-900 mb-1">Distribución estimada (media semanal)</h2>
-            <p className="text-xs text-gray-400 mb-4">Noche, siestas y vigilia aproximada</p>
-            {props.weeklySleep.length === 0 ? (
-              <p className="text-sm text-gray-500">Sin datos.</p>
-            ) : (
-              <div className="flex h-8 rounded-xl overflow-hidden text-[10px]">
-                <div className="bg-nanni-400 flex items-center justify-center text-white font-medium px-1" style={{ width: `${Math.min(100, (avgNight / 24) * 100)}%`, minWidth: avgNight > 0 ? "2rem" : 0 }}>
+          {/* Distribution bar */}
+          {props.weeklySleep.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <h2 className="font-bold text-gray-900 mb-1">Distribución media del día</h2>
+              <p className="text-xs text-gray-400 mb-4">Noche, siestas y vigilia estimada</p>
+              <div className="flex h-10 rounded-xl overflow-hidden text-[10px]">
+                <div className="bg-indigo-400 flex items-center justify-center text-white font-medium px-2" style={{ width: `${Math.min(100, (avgNight / 24) * 100)}%`, minWidth: avgNight > 0 ? "3rem" : 0 }}>
                   {avgNight >= 1 ? `Noche ${avgNight.toFixed(1)}h` : ""}
                 </div>
-                <div className="bg-nanni-300 flex items-center justify-center text-white font-medium px-1" style={{ width: `${Math.min(100, (avgNap / 24) * 100)}%`, minWidth: avgNap > 0 ? "2rem" : 0 }}>
+                <div className="bg-cyan-400 flex items-center justify-center text-white font-medium px-2" style={{ width: `${Math.min(100, (avgNap / 24) * 100)}%`, minWidth: avgNap > 0 ? "2.5rem" : 0 }}>
                   {avgNap >= 0.5 ? `Siesta ${avgNap.toFixed(1)}h` : ""}
                 </div>
-                <div className="bg-amber-200 flex items-center justify-center text-amber-900 font-medium px-1 flex-1 min-w-[20%]">
+                <div className="bg-amber-200 flex items-center justify-center text-amber-900 font-medium px-2 flex-1 min-w-[20%]">
                   Vigilia ~{estWake.toFixed(1)}h
                 </div>
               </div>
-            )}
-          </div>
+              <div className="mt-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                <p className="text-[10px] text-gray-500">Referencia {benchmark.label}: Noche {benchmark.nightSleep} · Siestas {benchmark.naps} ({benchmark.napSleep}) · Vigilia {benchmark.wakeWindow}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {activeTab === "Análisis" && (
-        <AnalisisTab analytics={props.deepAnalytics} scoreTrend={props.scoreTrend} benchmark={benchmark} />
+      {activeTab === "Hábitos" && (
+        <HabitosTab analytics={props.deepAnalytics} benchmark={benchmark} />
       )}
 
-      {activeTab === "IA" && (
-        <div className="space-y-4">
+      {activeTab === "IA & Plan" && (
+        <div className="space-y-6">
+          {/* Alerts section */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
               Alertas por reglas (edad {benchmark.label})
             </h3>
-            <p className="text-xs text-gray-500 mt-1">
-              Interpretación automática basada en ventanas de sueño recomendadas. La vista Semana permanece como dato bruto.
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Interpretación automática basada en ventanas de sueño recomendadas.</p>
             {rulesAlerts.length === 0 ? (
               <div className="mt-3 bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-                <p className="text-xs text-emerald-700 font-medium">Sin alertas activas por reglas en los últimos días con datos.</p>
+                <p className="text-xs text-emerald-700 font-medium">Sin alertas activas en los últimos días con datos.</p>
               </div>
             ) : (
               <div className="mt-3 space-y-2">
                 {rulesAlerts.map((alert, idx) => (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "rounded-xl p-3 border",
-                      alert.level === "alta" ? "bg-red-50 border-red-100" : "bg-amber-50 border-amber-100"
-                    )}
-                  >
-                    <p className={cn("text-xs font-semibold mb-0.5", alert.level === "alta" ? "text-red-700" : "text-amber-700")}>
-                      Prioridad {alert.level}
-                    </p>
+                  <div key={idx} className={cn("rounded-xl p-3 border", alert.level === "alta" ? "bg-red-50 border-red-100" : "bg-amber-50 border-amber-100")}>
+                    <p className={cn("text-xs font-semibold mb-0.5", alert.level === "alta" ? "text-red-700" : "text-amber-700")}>Prioridad {alert.level}</p>
                     <p className="text-xs text-gray-700">{alert.text}</p>
                   </div>
                 ))}
@@ -625,6 +629,7 @@ export function FamilyDetailTabs(props: Props) {
             )}
           </div>
 
+          {/* AI insights */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h3 className="font-bold text-gray-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-nanni-600" /> Generar insights con IA</h3>
@@ -635,148 +640,201 @@ export function FamilyDetailTabs(props: Props) {
               {pendingInsight ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />} Generar
             </button>
           </div>
-          {props.insights.length === 0 ? (
-            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-8 text-center text-sm text-gray-500">No hay insights guardados. Pulsa &quot;Generar&quot; cuando haya suficientes registros (mín. 3 en la última semana).</div>
-          ) : (
-            props.insights.map((insight) => {
-              const st = insightStyles(insight.type);
-              return (
-                <div key={insight.id} className={cn("rounded-2xl border p-5", st.card)}>
-                  <div className="flex items-center gap-2 mb-2"><Brain className={cn("w-4 h-4", st.icon)} /><h3 className="text-sm font-bold text-gray-900">{insight.title}</h3></div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{insight.description}</p>
-                  <p className="text-[10px] text-gray-400 mt-3 capitalize">{insight.type.replace("_", " ")}</p>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {activeTab === "Plan" && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <form action={async (formData) => { await createPlan(formData); router.refresh(); }} className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-              <input type="hidden" name="family_id" value={props.familyId} />
-              <h3 className="font-bold text-gray-900 flex items-center gap-2"><Plus className="w-4 h-4 text-nanni-600" /> Nuevo plan</h3>
-              <input name="title" required placeholder="Título del plan" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent" />
-              <textarea name="description" placeholder="Descripción (opcional)" rows={2} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent resize-none" />
-              <button type="submit" className="bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-nanni-700 transition">Crear plan</button>
-            </form>
-            {props.templates.length > 0 && (
-              <div className="bg-gradient-to-br from-nanni-50 to-nanni-50 rounded-2xl border border-nanni-100 p-5 sm:w-72">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-2"><BookOpen className="w-4 h-4 text-nanni-600" /> Usar plantilla</h3>
-                <p className="text-xs text-gray-500 mb-3">Aplica un método probado con objetivos y pasos predefinidos.</p>
-                <button onClick={() => setShowTemplateSelector(true)} className="w-full bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-nanni-700 transition">
-                  Ver plantillas ({props.templates.length})
-                </button>
-              </div>
-            )}
-          </div>
-
-          {showTemplateSelector && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900">Seleccionar plantilla</h3>
-                <button onClick={() => setShowTemplateSelector(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {props.templates.map((t) => (
-                  <div key={t.id} className="border border-gray-200 rounded-xl p-4 hover:border-nanni-300 transition">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-bold text-gray-900">{t.title}</h4>
-                      {t.is_system && <span className="text-[9px] bg-nanni-100 text-nanni-600 px-1.5 py-0.5 rounded-full font-medium">Sistema</span>}
-                    </div>
-                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">{t.description}</p>
-                    <p className="text-[10px] text-gray-400 mb-3">{t.age_min_months}-{t.age_max_months} meses · {(t.goals as unknown[]).length} objetivos · {(t.steps as unknown[]).length} pasos</p>
-                    <button
-                      onClick={() => {
-                        startToggle(async () => {
-                          await createPlanFromTemplate(props.familyId, t.id);
-                          setShowTemplateSelector(false);
-                          router.refresh();
-                        });
-                      }}
-                      disabled={pendingToggle}
-                      className="w-full text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200 transition disabled:opacity-50"
-                    >
-                      Aplicar plantilla
-                    </button>
+          {props.insights.length > 0 && (
+            <div className="space-y-3">
+              {props.insights.map((insight) => {
+                const st = insightStyles(insight.type);
+                return (
+                  <div key={insight.id} className={cn("rounded-2xl border p-5", st.card)}>
+                    <div className="flex items-center gap-2 mb-2"><Brain className={cn("w-4 h-4", st.icon)} /><h3 className="text-sm font-bold text-gray-900">{insight.title}</h3></div>
+                    <p className="text-sm text-gray-600 leading-relaxed">{insight.description}</p>
+                    <p className="text-[10px] text-gray-400 mt-3 capitalize">{insight.type.replace("_", " ")}</p>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+          )}
+
+          {/* Plan progress from analytics */}
+          {props.deepAnalytics.planProgress.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="w-4 h-4 text-nanni-600" />
+                <h3 className="font-bold text-gray-900">Progreso de intervenciones</h3>
+              </div>
+              <p className="text-xs text-gray-400 mb-4">Score antes y después de cada plan</p>
+              <div className="space-y-4">
+                {props.deepAnalytics.planProgress.map((plan) => {
+                  const goalsProgress = plan.goalsTotal > 0 ? Math.round((plan.goalsAchieved / plan.goalsTotal) * 100) : 0;
+                  const stepsProgress = plan.stepsTotal > 0 ? Math.round((plan.stepsCompleted / plan.stepsTotal) * 100) : 0;
+                  return (
+                    <div key={plan.planId} className="bg-gray-50 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-900">{plan.planTitle}</h4>
+                          <p className="text-[10px] text-gray-400">
+                            Iniciado {new Date(plan.startedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                            {" · "}
+                            <span className={cn("font-medium capitalize", plan.planStatus === "active" ? "text-emerald-600" : plan.planStatus === "completed" ? "text-gray-600" : "text-amber-600")}>
+                              {plan.planStatus === "active" ? "Activo" : plan.planStatus === "completed" ? "Completado" : "Borrador"}
+                            </span>
+                          </p>
+                        </div>
+                        <div className={`text-center px-3 py-1.5 rounded-xl ${plan.scoreDelta >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
+                          <p className={`text-lg font-bold ${plan.scoreDelta >= 0 ? "text-emerald-600" : "text-red-600"}`}>{plan.scoreDelta > 0 ? "+" : ""}{plan.scoreDelta.toFixed(1)}</p>
+                          <p className="text-[9px] text-gray-400">delta score</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
+                          <p className="text-[10px] text-gray-400">Score antes</p>
+                          <p className="text-lg font-bold text-gray-500">{plan.scoreBefore.toFixed(1)}</p>
+                        </div>
+                        <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
+                          <p className="text-[10px] text-gray-400">Score ahora</p>
+                          <p className="text-lg font-bold text-gray-900">{plan.scoreNow.toFixed(1)}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-1"><span className="text-gray-500">Objetivos</span><span className="font-medium text-gray-900">{plan.goalsAchieved}/{plan.goalsTotal}</span></div>
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${goalsProgress}%` }} /></div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-1"><span className="text-gray-500">Pasos</span><span className="font-medium text-gray-900">{plan.stepsCompleted}/{plan.stepsTotal}</span></div>
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-nanni-400 rounded-full transition-all" style={{ width: `${stepsProgress}%` }} /></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {props.plans.length === 0 ? (
-            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-8 text-center text-sm text-gray-500">Aún no hay planes. Crea uno o usa una plantilla para definir objetivos y pasos con la familia.</div>
-          ) : (
-            props.plans.map((plan) => (
-              <div key={plan.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-4 md:p-5 border-b border-gray-50 flex flex-col sm:flex-row sm:items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-gray-900">{plan.title}</h3>
-                      <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize", plan.status === "active" ? "bg-emerald-100 text-emerald-700" : plan.status === "completed" ? "bg-gray-100 text-gray-600" : "bg-amber-100 text-amber-700")}>{plan.status}</span>
-                    </div>
-                    {plan.description && <p className="text-sm text-gray-500 mt-1">{plan.description}</p>}
-                  </div>
-                  <label className="text-xs text-gray-500 flex items-center gap-2 shrink-0">
-                    Estado
-                    <select className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white" defaultValue={plan.status} disabled={pendingToggle} onChange={(e) => { const v = e.target.value; startToggle(async () => { await updatePlanStatus(plan.id, v); router.refresh(); }); }}>
-                      <option value="draft">Borrador</option><option value="active">Activo</option><option value="completed">Completado</option>
-                    </select>
-                  </label>
+          {/* Plan management */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="font-bold text-gray-900 text-lg mb-4">Gestión de planes</h3>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <form action={async (formData) => { await createPlan(formData); router.refresh(); }} className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+                <input type="hidden" name="family_id" value={props.familyId} />
+                <h3 className="font-bold text-gray-900 flex items-center gap-2"><Plus className="w-4 h-4 text-nanni-600" /> Nuevo plan</h3>
+                <input name="title" required placeholder="Título del plan" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent" />
+                <textarea name="description" placeholder="Descripción (opcional)" rows={2} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent resize-none" />
+                <button type="submit" className="bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-nanni-700 transition">Crear plan</button>
+              </form>
+              {props.templates.length > 0 && (
+                <div className="bg-gradient-to-br from-nanni-50 to-nanni-50 rounded-2xl border border-nanni-100 p-5 sm:w-72">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-2"><BookOpen className="w-4 h-4 text-nanni-600" /> Usar plantilla</h3>
+                  <p className="text-xs text-gray-500 mb-3">Aplica un método probado con objetivos y pasos predefinidos.</p>
+                  <button onClick={() => setShowTemplateSelector(true)} className="w-full bg-nanni-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-nanni-700 transition">
+                    Ver plantillas ({props.templates.length})
+                  </button>
                 </div>
-                <div className="p-4 md:p-5 space-y-4 border-b border-gray-50">
-                  <div className="flex items-center gap-2 text-sm font-bold text-gray-900"><Target className="w-4 h-4 text-nanni-600" /> Objetivos</div>
-                  {plan.goals.length === 0 ? <p className="text-xs text-gray-400">Sin objetivos.</p> : (
-                    <ul className="space-y-2">
-                      {plan.goals.map((g) => (
-                        <li key={g.id} className="flex items-start gap-3 text-sm text-gray-700">
-                          <input type="checkbox" className="mt-1 rounded border-gray-300 text-nanni-600 focus:ring-nanni-500" checked={g.achieved} disabled={pendingToggle} onChange={(e) => { const checked = e.target.checked; startToggle(async () => { await toggleGoal(g.id, checked); router.refresh(); }); }} />
-                          <span className={cn(g.achieved && "line-through text-gray-400")}>
-                            {g.description}
-                            {g.metric != null && g.target_value != null && <span className="text-xs text-gray-400 ml-1">({g.current_value ?? "—"}/{g.target_value} {g.metric})</span>}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <form className="flex flex-col sm:flex-row gap-2 pt-2" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startToggle(async () => { await addPlanGoal(plan.id, fd); (e.target as HTMLFormElement).reset(); router.refresh(); }); }}>
-                    <input name="description" required placeholder="Nuevo objetivo" className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-                    <input name="target_value" placeholder="Meta num." className="w-28 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-                    <input name="metric" placeholder="Métrica" className="w-28 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-                    <button type="submit" className="text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200">Añadir</button>
-                  </form>
+              )}
+            </div>
+
+            {showTemplateSelector && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900">Seleccionar plantilla</h3>
+                  <button onClick={() => setShowTemplateSelector(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                 </div>
-                <div className="p-4 md:p-5 space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-bold text-gray-900"><ListOrdered className="w-4 h-4 text-nanni-600" /> Pasos</div>
-                  {plan.steps.length === 0 ? <p className="text-xs text-gray-400">Sin pasos.</p> : (
-                    <ul className="space-y-2">
-                      {plan.steps.map((s) => (
-                        <li key={s.id} className="flex items-start gap-3 text-sm text-gray-700">
-                          <input type="checkbox" className="mt-1 rounded border-gray-300 text-nanni-600 focus:ring-nanni-500" checked={s.completed} disabled={pendingToggle} onChange={(e) => { const checked = e.target.checked; startToggle(async () => { await toggleStep(s.id, checked); router.refresh(); }); }} />
-                          <div>
-                            <span className={cn("font-medium", s.completed && "line-through text-gray-400")}>{s.step_order}. {s.title}</span>
-                            {s.description && <p className="text-xs text-gray-500 mt-0.5">{s.description}</p>}
-                            <p className="text-[10px] text-gray-400 mt-1">{s.duration_days} días</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <form className="flex flex-col gap-2 pt-2" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startToggle(async () => { await addPlanStep(plan.id, fd); (e.target as HTMLFormElement).reset(); router.refresh(); }); }}>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <input name="title" required placeholder="Título del paso" className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-                      <input name="duration_days" type="number" min={1} defaultValue={7} className="w-full sm:w-24 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {props.templates.map((t) => (
+                    <div key={t.id} className="border border-gray-200 rounded-xl p-4 hover:border-nanni-300 transition">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-sm font-bold text-gray-900">{t.title}</h4>
+                        {t.is_system && <span className="text-[9px] bg-nanni-100 text-nanni-600 px-1.5 py-0.5 rounded-full font-medium">Sistema</span>}
+                      </div>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">{t.description}</p>
+                      <p className="text-[10px] text-gray-400 mb-3">{t.age_min_months}-{t.age_max_months} meses · {(t.goals as unknown[]).length} objetivos · {(t.steps as unknown[]).length} pasos</p>
+                      <button
+                        onClick={() => { startToggle(async () => { await createPlanFromTemplate(props.familyId, t.id); setShowTemplateSelector(false); router.refresh(); }); }}
+                        disabled={pendingToggle}
+                        className="w-full text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200 transition disabled:opacity-50"
+                      >
+                        Aplicar plantilla
+                      </button>
                     </div>
-                    <textarea name="description" placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none" />
-                    <button type="submit" className="text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200 w-fit">Añadir paso</button>
-                  </form>
+                  ))}
                 </div>
               </div>
-            ))
-          )}
+            )}
+
+            {props.plans.length === 0 ? (
+              <div className="bg-gray-50 rounded-2xl border border-gray-100 p-8 text-center text-sm text-gray-500 mt-4">Aún no hay planes. Crea uno o usa una plantilla.</div>
+            ) : (
+              <div className="space-y-4 mt-4">
+                {props.plans.map((plan) => (
+                  <div key={plan.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="p-4 md:p-5 border-b border-gray-50 flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-gray-900">{plan.title}</h3>
+                          <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize", plan.status === "active" ? "bg-emerald-100 text-emerald-700" : plan.status === "completed" ? "bg-gray-100 text-gray-600" : "bg-amber-100 text-amber-700")}>{plan.status}</span>
+                        </div>
+                        {plan.description && <p className="text-sm text-gray-500 mt-1">{plan.description}</p>}
+                      </div>
+                      <label className="text-xs text-gray-500 flex items-center gap-2 shrink-0">
+                        Estado
+                        <select className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white" defaultValue={plan.status} disabled={pendingToggle} onChange={(e) => { const v = e.target.value; startToggle(async () => { await updatePlanStatus(plan.id, v); router.refresh(); }); }}>
+                          <option value="draft">Borrador</option><option value="active">Activo</option><option value="completed">Completado</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="p-4 md:p-5 space-y-4 border-b border-gray-50">
+                      <div className="flex items-center gap-2 text-sm font-bold text-gray-900"><Target className="w-4 h-4 text-nanni-600" /> Objetivos</div>
+                      {plan.goals.length === 0 ? <p className="text-xs text-gray-400">Sin objetivos.</p> : (
+                        <ul className="space-y-2">
+                          {plan.goals.map((g) => (
+                            <li key={g.id} className="flex items-start gap-3 text-sm text-gray-700">
+                              <input type="checkbox" className="mt-1 rounded border-gray-300 text-nanni-600 focus:ring-nanni-500" checked={g.achieved} disabled={pendingToggle} onChange={(e) => { const checked = e.target.checked; startToggle(async () => { await toggleGoal(g.id, checked); router.refresh(); }); }} />
+                              <span className={cn(g.achieved && "line-through text-gray-400")}>
+                                {g.description}
+                                {g.metric != null && g.target_value != null && <span className="text-xs text-gray-400 ml-1">({g.current_value ?? "—"}/{g.target_value} {g.metric})</span>}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <form className="flex flex-col sm:flex-row gap-2 pt-2" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startToggle(async () => { await addPlanGoal(plan.id, fd); (e.target as HTMLFormElement).reset(); router.refresh(); }); }}>
+                        <input name="description" required placeholder="Nuevo objetivo" className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                        <input name="target_value" placeholder="Meta num." className="w-28 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                        <input name="metric" placeholder="Métrica" className="w-28 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                        <button type="submit" className="text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200">Añadir</button>
+                      </form>
+                    </div>
+                    <div className="p-4 md:p-5 space-y-4">
+                      <div className="flex items-center gap-2 text-sm font-bold text-gray-900"><ListOrdered className="w-4 h-4 text-nanni-600" /> Pasos</div>
+                      {plan.steps.length === 0 ? <p className="text-xs text-gray-400">Sin pasos.</p> : (
+                        <ul className="space-y-2">
+                          {plan.steps.map((s) => (
+                            <li key={s.id} className="flex items-start gap-3 text-sm text-gray-700">
+                              <input type="checkbox" className="mt-1 rounded border-gray-300 text-nanni-600 focus:ring-nanni-500" checked={s.completed} disabled={pendingToggle} onChange={(e) => { const checked = e.target.checked; startToggle(async () => { await toggleStep(s.id, checked); router.refresh(); }); }} />
+                              <div>
+                                <span className={cn("font-medium", s.completed && "line-through text-gray-400")}>{s.step_order}. {s.title}</span>
+                                {s.description && <p className="text-xs text-gray-500 mt-0.5">{s.description}</p>}
+                                <p className="text-[10px] text-gray-400 mt-1">{s.duration_days} días</p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <form className="flex flex-col gap-2 pt-2" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startToggle(async () => { await addPlanStep(plan.id, fd); (e.target as HTMLFormElement).reset(); router.refresh(); }); }}>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input name="title" required placeholder="Título del paso" className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                          <input name="duration_days" type="number" min={1} defaultValue={7} className="w-full sm:w-24 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                        </div>
+                        <textarea name="description" placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none" />
+                        <button type="submit" className="text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200 w-fit">Añadir paso</button>
+                      </form>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -871,46 +929,15 @@ function HorizontalBar({ label, value, max, color }: { label: string; value: num
   );
 }
 
-function AnalisisTab({ analytics, scoreTrend, benchmark }: { analytics: FamilyDeepAnalytics; scoreTrend: { date: string; score: number }[]; benchmark: AgeBenchmark }) {
+function HabitosTab({ analytics, benchmark }: { analytics: FamilyDeepAnalytics; benchmark: AgeBenchmark }) {
   const sm = analytics.sleepMethods;
   const aq = analytics.awakeningQuality;
   const wm = analytics.wakeupMood;
   const lat = analytics.latency;
   const fd = analytics.feeding;
-  const CHART_H = 80;
-  const trendMax = 10;
 
   return (
     <div className="space-y-6">
-      {/* Score trend */}
-      {scoreTrend.length > 1 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-bold text-gray-900 mb-1">Evolución del score</h2>
-          <p className="text-xs text-gray-400 mb-4">Últimos 14 días (ventana móvil de 7 días)</p>
-          <div className="relative h-20">
-            {[0, 5, 10].map((v) => (
-              <div key={v} className="absolute w-full border-t border-gray-50" style={{ bottom: `${(v / trendMax) * 100}%` }}>
-                <span className="absolute -left-0 -top-2 text-[9px] text-gray-300">{v}</span>
-              </div>
-            ))}
-            <svg viewBox={`0 0 ${scoreTrend.length * 20} ${CHART_H}`} className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-              <polyline fill="none" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" strokeLinejoin="round"
-                points={scoreTrend.map((t, i) => `${i * 20 + 10},${CHART_H - (t.score / trendMax) * CHART_H}`).join(" ")} />
-              {scoreTrend.map((t, i) => (
-                <circle key={i} cx={i * 20 + 10} cy={CHART_H - (t.score / trendMax) * CHART_H} r="3" fill="white" stroke="var(--color-nanni-500, #7c5cbf)" strokeWidth="2" />
-              ))}
-            </svg>
-          </div>
-          <div className="flex justify-between mt-1">
-            {scoreTrend.filter((_, i) => i % 3 === 0 || i === scoreTrend.length - 1).map((t) => (
-              <span key={t.date} className="text-[9px] text-gray-400">
-                {new Date(t.date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="grid md:grid-cols-2 gap-6">
         {/* Sleep method */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -1128,75 +1155,6 @@ function AnalisisTab({ analytics, scoreTrend, benchmark }: { analytics: FamilyDe
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Plan progress */}
-      {analytics.planProgress.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4 text-nanni-600" />
-            <h3 className="font-bold text-gray-900">Progreso de planes</h3>
-          </div>
-          <p className="text-xs text-gray-400 mb-4">Score antes y después de cada intervención</p>
-          <div className="space-y-4">
-            {analytics.planProgress.map((plan) => {
-              const goalsProgress = plan.goalsTotal > 0 ? Math.round((plan.goalsAchieved / plan.goalsTotal) * 100) : 0;
-              const stepsProgress = plan.stepsTotal > 0 ? Math.round((plan.stepsCompleted / plan.stepsTotal) * 100) : 0;
-              return (
-                <div key={plan.planId} className="bg-gray-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-900">{plan.planTitle}</h4>
-                      <p className="text-[10px] text-gray-400">
-                        Iniciado {new Date(plan.startedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
-                        {" · "}
-                        <span className={cn("font-medium capitalize", plan.planStatus === "active" ? "text-emerald-600" : plan.planStatus === "completed" ? "text-gray-600" : "text-amber-600")}>
-                          {plan.planStatus === "active" ? "Activo" : plan.planStatus === "completed" ? "Completado" : "Borrador"}
-                        </span>
-                      </p>
-                    </div>
-                    <div className={`text-center px-3 py-1.5 rounded-xl ${plan.scoreDelta >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
-                      <p className={`text-lg font-bold ${plan.scoreDelta >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                        {plan.scoreDelta > 0 ? "+" : ""}{plan.scoreDelta.toFixed(1)}
-                      </p>
-                      <p className="text-[9px] text-gray-400">delta score</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
-                      <p className="text-[10px] text-gray-400">Score antes</p>
-                      <p className="text-lg font-bold text-gray-500">{plan.scoreBefore.toFixed(1)}</p>
-                    </div>
-                    <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
-                      <p className="text-[10px] text-gray-400">Score ahora</p>
-                      <p className="text-lg font-bold text-gray-900">{plan.scoreNow.toFixed(1)}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-gray-500">Objetivos</span>
-                        <span className="font-medium text-gray-900">{plan.goalsAchieved}/{plan.goalsTotal}</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${goalsProgress}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-gray-500">Pasos</span>
-                        <span className="font-medium text-gray-900">{plan.stepsCompleted}/{plan.stepsTotal}</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-nanni-400 rounded-full transition-all" style={{ width: `${stepsProgress}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
