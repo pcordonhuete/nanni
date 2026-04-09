@@ -263,6 +263,7 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
 
     let nightHours = 0;
     let napHours = 0;
+    let napCount = 0;
     let embeddedAwakenings = 0;
     if (sleepRecs) {
       for (const rec of sleepRecs) {
@@ -278,6 +279,7 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
           embeddedAwakenings += (typeof details?.awakenings === "number" ? details.awakenings : 0) as number;
         } else {
           napHours += mins / 60;
+          napCount += 1;
         }
       }
     }
@@ -290,6 +292,7 @@ export async function getWeeklySleep(familyId: string): Promise<WeeklySleepData[
       date: dayStart.toISOString(),
       night_hours: Math.round(nightHours * 10) / 10,
       nap_hours: Math.round(napHours * 10) / 10,
+      nap_count: napCount,
       awakenings: totalAwakenings,
       total: Math.round((nightHours + napHours) * 10) / 10,
     });
@@ -1243,6 +1246,7 @@ export async function getWeeklySleepForRange(
 
     let nightHours = 0;
     let napHours = 0;
+    let napCount = 0;
     let embeddedAwakenings = 0;
     if (sleepRecs) {
       for (const rec of sleepRecs) {
@@ -1260,6 +1264,7 @@ export async function getWeeklySleepForRange(
           embeddedAwakenings += (typeof details?.awakenings === "number" ? details.awakenings : 0) as number;
         } else {
           napHours += mins / 60;
+          napCount += 1;
         }
       }
     }
@@ -1272,6 +1277,7 @@ export async function getWeeklySleepForRange(
       date: dayStart.toISOString(),
       night_hours: Math.round(nightHours * 10) / 10,
       nap_hours: Math.round(napHours * 10) / 10,
+      nap_count: napCount,
       awakenings: totalAwakenings,
       total: Math.round((nightHours + napHours) * 10) / 10,
     });

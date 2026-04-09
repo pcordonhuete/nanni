@@ -426,21 +426,64 @@ export function FamilyDetailTabs(props: Props) {
                   {props.weeklySleep.map((day) => (
                     <div key={day.date} className="flex items-center gap-3">
                       <span className="text-xs font-medium text-gray-400 w-8">{day.day}</span>
-                      <div className="flex-1 flex gap-1 h-5 min-w-0">
-                        <div className="bg-nanni-400 rounded-md h-full" style={{ width: `${(day.night_hours / 15) * 100}%`, minWidth: day.night_hours > 0 ? 4 : 0 }} title={`Noche: ${day.night_hours}h`} />
-                        <div className="bg-nanni-300 rounded-md h-full" style={{ width: `${(day.nap_hours / 15) * 100}%`, minWidth: day.nap_hours > 0 ? 4 : 0 }} title={`Siestas: ${day.nap_hours}h`} />
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Noche</span>
+                          <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-indigo-400 rounded-full"
+                              style={{ width: `${Math.min(100, (day.night_hours / 14) * 100)}%`, minWidth: day.night_hours > 0 ? 4 : 0 }}
+                              title={`Noche: ${day.night_hours}h`}
+                            />
+                          </div>
+                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.night_hours.toFixed(1)}h</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Siestas</span>
+                          <div className="h-3 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-cyan-400 rounded-full"
+                              style={{ width: `${Math.min(100, (day.nap_hours / 6) * 100)}%`, minWidth: day.nap_hours > 0 ? 4 : 0 }}
+                              title={`Siestas: ${day.nap_hours}h`}
+                            />
+                          </div>
+                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_hours.toFixed(1)}h</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400 w-14 shrink-0">Nº siestas</span>
+                          <div className="flex items-center gap-1.5 h-3">
+                            {Array.from({ length: Math.max(4, day.nap_count || 0) }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={cn("w-[2px] h-3 rounded-full", i < day.nap_count ? "bg-cyan-500" : "bg-gray-200")}
+                                title={`${day.nap_count} siestas`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[11px] text-gray-600 w-11 text-right shrink-0">{day.nap_count}</span>
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500 w-10 text-right shrink-0">{day.total.toFixed(1)}h</span>
-                      <div className="flex items-center gap-1 w-16 shrink-0 justify-end">
-                        {Array.from({ length: day.awakenings }).map((_, i) => (<div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />))}
+                      <div className="w-20 shrink-0 text-right">
+                        <p className="text-[10px] text-gray-400">Despertares</p>
+                        <div className="flex items-center justify-end gap-1 min-h-[10px] mt-0.5">
+                          {day.awakenings > 0 ? (
+                            Array.from({ length: day.awakenings }).map((_, i) => (
+                              <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-gray-300">—</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-600 mt-0.5">{day.awakenings}</p>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 flex-wrap">
-                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-nanni-400 rounded-sm" /><span className="text-[10px] text-gray-400">Noche</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-nanni-300 rounded-sm" /><span className="text-[10px] text-gray-400">Siestas</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /><span className="text-[10px] text-gray-400">Despertares</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-indigo-400 rounded-sm" /><span className="text-[10px] text-gray-400">Horas sueño nocturno</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-2 bg-cyan-400 rounded-sm" /><span className="text-[10px] text-gray-400">Horas de siesta</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-[2px] h-3 bg-cyan-500 rounded-full" /><span className="text-[10px] text-gray-400">Nº de siestas</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /><span className="text-[10px] text-gray-400">Despertares nocturnos</span></div>
                 </div>
               </>
             )}

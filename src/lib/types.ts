@@ -349,6 +349,7 @@ export interface WeeklySleepData {
   date: string;
   night_hours: number;
   nap_hours: number;
+  nap_count: number;
   awakenings: number;
   total: number;
 }
