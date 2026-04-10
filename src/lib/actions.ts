@@ -3,6 +3,39 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { RecordType, Relationship, RecordDetails } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function getSupabaseAdmin(): Promise<SupabaseClient | null> {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return null;
+  const { createClient: createAdmin } = await import("@supabase/supabase-js");
+  return createAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, key);
+}
+
+async function verifyParentRecordAccess(
+  admin: SupabaseClient,
+  familyToken: string,
+  recordId: string
+): Promise<{ error: string } | { familyId: string }> {
+  const { data: family } = await admin
+    .from("families")
+    .select("id")
+    .eq("invite_token", familyToken)
+    .single();
+
+  if (!family) return { error: "Familia no encontrada" };
+
+  const { data: row } = await admin
+    .from("activity_records")
+    .select("id")
+    .eq("id", recordId)
+    .eq("family_id", family.id)
+    .maybeSingle();
+
+  if (!row) return { error: "Registro no encontrado" };
+
+  return { familyId: family.id };
+}
 
 // ─── Families ───
 
@@ -204,6 +237,109 @@ export async function createRecordFromParent(
     // Notification insert may fail for anon users — non-blocking
   }
 
+  revalidatePath(`/familia/${family.id}`);
+  revalidatePath("/familias");
+  revalidatePath(`/p/${familyToken}`);
+  return { success: true };
+}
+
+/**
+ * Elimina un registro validando el token de la familia.
+ * Requiere SUPABASE_SERVICE_ROLE_KEY en el servidor (bypass RLS de forma segura tras comprobar token).
+ */
+export async function deleteRecordFromParent(familyToken: string, recordId: string) {
+  const admin = await getSupabaseAdmin();
+  if (!admin) {
+    return {
+      error:
+        "No se puede eliminar el registro: falta la clave de servicio en el servidor. Contacta al administrador.",
+    };
+  }
+
+  const access = await verifyParentRecordAccess(admin, familyToken, recordId);
+  if ("error" in access) return { error: access.error };
+
+  const { error } = await admin.from("activity_records").delete().eq("id", recordId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/familia/${access.familyId}`);
+  revalidatePath("/familias");
+  revalidatePath(`/p/${familyToken}`);
+  return { success: true };
+}
+
+/**
+ * Actualiza un registro validando el token de la familia.
+ * Requiere SUPABASE_SERVICE_ROLE_KEY en el servidor.
+ */
+export async function updateRecordFromParent(
+  familyToken: string,
+  recordId: string,
+  type: RecordType,
+  startedAt: string,
+  endedAt: string | null,
+  durationMinutes: number | null,
+  details: RecordDetails,
+  parentName: string
+) {
+  const admin = await getSupabaseAdmin();
+  if (!admin) {
+    return {
+      error:
+        "No se puede guardar: falta la clave de servicio en el servidor. Contacta al administrador.",
+    };
+  }
+
+  const access = await verifyParentRecordAccess(admin, familyToken, recordId);
+  if ("error" in access) return { error: access.error };
+
+  const dbType = type === "feeding" ? "feed" : type === "wakeup" ? "wake" : type;
+
+  const mergedDetails = {
+    ...(details as Record<string, unknown>),
+    recorded_by_name: parentName,
+    _ui_type: type,
+  };
+
+  const { error } = await admin
+    .from("activity_records")
+    .update({
+      type: dbType,
+      started_at: startedAt,
+      ended_at: endedAt,
+      duration_minutes: durationMinutes,
+      details: mergedDetails,
+    })
+    .eq("id", recordId);
+
+  if (error) return { error: error.message };
+
+  try {
+    const { data: fam } = await admin
+      .from("families")
+      .select("advisor_id, baby_name")
+      .eq("id", access.familyId)
+      .single();
+    if (fam) {
+      const typeLabels: Record<string, string> = {
+        sleep: "sueño", feeding: "cena", wakeup: "despertar", note: "nota",
+        feed: "toma", diaper: "pañal", play: "juego", mood: "humor", wake: "despertar",
+      };
+      await admin.from("notifications").insert({
+        user_id: fam.advisor_id,
+        type: "new_record",
+        title: `${parentName} actualizó ${typeLabels[type] || "registro"} de ${fam.baby_name}`,
+        body: `Registro modificado`,
+        link: `/familia/${access.familyId}`,
+      });
+    }
+  } catch {
+    // non-blocking
+  }
+
+  revalidatePath(`/familia/${access.familyId}`);
+  revalidatePath("/familias");
+  revalidatePath(`/p/${familyToken}`);
   return { success: true };
 }
 

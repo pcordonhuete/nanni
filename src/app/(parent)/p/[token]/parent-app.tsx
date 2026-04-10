@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   Moon, Sun, UtensilsCrossed, FileText, X, Clock, Target,
   TrendingUp, ChevronDown, ChevronUp, Plus, Minus,
-  Smile, Meh, Frown, CalendarDays,
+  Smile, Meh, Frown, CalendarDays, Pencil, Trash2, MoreVertical,
 } from "lucide-react";
-import { createRecordFromParent } from "@/lib/actions";
+import { createRecordFromParent, deleteRecordFromParent, updateRecordFromParent } from "@/lib/actions";
 import { formatTime, formatDateLong, babyAgeLabel, cn } from "@/lib/utils";
 import type {
-  Family, Brand, ActivityRecord, RecordType, SleepPlan,
+  Family, Brand, ActivityRecord, RecordType, RecordDetails, SleepPlan,
   SleepPlanGoal, SleepPlanStep,
 } from "@/lib/types";
 
@@ -112,6 +112,28 @@ function localDateKeyFromDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Día calendario en que “cuenta” la noche: inicio del sueño (ej. viernes 21h → viernes). */
+function nightCalendarKeyForSleepStart(targetDate: Date, dateOffset: number, startTime: string): string {
+  const [h, m] = startTime.split(":").map(Number);
+  const d = new Date(targetDate);
+  d.setDate(d.getDate() + dateOffset);
+  d.setHours(h, m, 0, 0);
+  return localDateKeyFromDate(d);
+}
+
+function isoToLocalTimeStr(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function sleepEndedAtIsoForEdit(r: ActivityRecord): string {
+  if (r.ended_at) return r.ended_at;
+  if (r.duration_minutes != null) {
+    return new Date(new Date(r.started_at).getTime() + r.duration_minutes * 60000).toISOString();
+  }
+  return r.started_at;
+}
+
 function displayDateFromKey(key: string): string {
   const d = new Date(`${key}T12:00:00`);
   return formatDateLong(d);
@@ -160,7 +182,7 @@ function sleepDetailLine(r: ActivityRecord): string {
   const moodEmoji: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", cranky: "😫 Malhumorado" };
   if (wakeupMood && moodEmoji[wakeupMood]) parts.push(moodEmoji[wakeupMood]);
   const nightDate = d?.night_date as string | undefined;
-  if (st === "night" && nightDate) parts.push(`Cuenta para ${displayDateFromKey(nightDate)}`);
+  if (st === "night" && nightDate) parts.push(`Día: ${displayDateFromKey(nightDate)}`);
   const loc = d?.location as string | undefined;
   const locLabels: Record<string, string> = { crib: "Cuna", cosleep: "Colecho", arms: "Brazos", stroller: "Carrito", car: "Coche" };
   if (loc && locLabels[loc]) parts.push(locLabels[loc]);
@@ -223,6 +245,14 @@ function getDisplayType(r: ActivityRecord): string {
   return (det?._ui_type as string) || r.type;
 }
 
+function recordToFormType(r: ActivityRecord): FormType {
+  const ui = getDisplayType(r);
+  if (ui === "feeding" || ui === "feed") return "feeding";
+  if (ui === "wakeup" || ui === "wake") return "wakeup";
+  if (ui === "note") return "note";
+  return "sleep";
+}
+
 function dayKeyForRecord(r: ActivityRecord): string {
   const d = r.details as Record<string, unknown>;
   const displayType = getDisplayType(r);
@@ -231,13 +261,26 @@ function dayKeyForRecord(r: ActivityRecord): string {
     if (sleepType === "night") {
       const tagged = d?.night_date as string | undefined;
       if (tagged) return tagged;
-      if (r.ended_at) return localDateKeyFromDate(new Date(r.ended_at));
+      return localDateKeyFromDate(new Date(r.started_at));
     }
   }
   return localDateKeyFromDate(new Date(r.started_at));
 }
 
-function RecordCard({ record }: { record: ActivityRecord }) {
+function RecordCard({
+  record,
+  primaryColor,
+  onEdit,
+  onDelete,
+  isBusy,
+}: {
+  record: ActivityRecord;
+  primaryColor: string;
+  onEdit: (r: ActivityRecord) => void;
+  onDelete: (r: ActivityRecord) => void;
+  isBusy: boolean;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const displayType = getDisplayType(record);
   const det = record.details as Record<string, unknown>;
   const isNapSleep = displayType === "sleep" && det?.sleep_type === "nap";
@@ -245,7 +288,7 @@ function RecordCard({ record }: { record: ActivityRecord }) {
   const detail = recordDetail(record);
   return (
     <div className={cn(
-      "flex items-start gap-3 bg-white rounded-xl p-3 border shadow-sm",
+      "relative flex items-start gap-3 bg-white rounded-xl p-3 border shadow-sm",
       displayType === "sleep" ? "border-indigo-100" : "border-gray-100"
     )}>
       <div className={cn(
@@ -265,9 +308,50 @@ function RecordCard({ record }: { record: ActivityRecord }) {
         )} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-semibold text-gray-900">{TYPE_LABELS[displayType] || displayType}</p>
-          <span className="text-[10px] text-gray-400">{formatTime(record.started_at)}</span>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[10px] text-gray-400">{formatTime(record.started_at)}</span>
+            <div className="relative">
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => setMenuOpen((o) => !o)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
+                aria-label="Opciones del registro"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+              {menuOpen && (
+                <>
+                  <button type="button" className="fixed inset-0 z-10 cursor-default" aria-label="Cerrar menú" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-0.5 z-20 bg-white border border-gray-100 rounded-xl shadow-lg py-1 min-w-[140px]">
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                      onClick={() => { setMenuOpen(false); onEdit(record); }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (typeof window !== "undefined" && window.confirm("¿Eliminar este registro? No se puede deshacer.")) {
+                          onDelete(record);
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Eliminar
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
         {detail && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{detail}</p>}
       </div>
@@ -289,6 +373,8 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
   const [mounted, setMounted] = useState(false);
   const [selectedProgressDay, setSelectedProgressDay] = useState(6);
   const [formError, setFormError] = useState<string | null>(null);
+  const [editingRecord, setEditingRecord] = useState<ActivityRecord | null>(null);
+  const [recordActionPending, setRecordActionPending] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(`nanni_parent_${token}`);
@@ -349,10 +435,46 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
     startedAt: string,
     endedAt: string | null,
     durationMinutes: number | null,
-    details: Record<string, unknown>
+    details: Record<string, unknown>,
+    recordId?: string
   ): Promise<{ error?: string }> {
-    return createRecordFromParent(token, type, startedAt, endedAt, durationMinutes, details, parentName);
+    if (recordId) {
+      return updateRecordFromParent(
+        token,
+        recordId,
+        type,
+        startedAt,
+        endedAt,
+        durationMinutes,
+        details as RecordDetails,
+        parentName
+      );
+    }
+    return createRecordFromParent(token, type, startedAt, endedAt, durationMinutes, details as RecordDetails, parentName);
   }
+
+  function handleDeleteRecord(r: ActivityRecord) {
+    setRecordActionPending(true);
+    void deleteRecordFromParent(token, r.id).then((res) => {
+      setRecordActionPending(false);
+      if (res.error) {
+        setFormError(res.error);
+      } else {
+        router.refresh();
+      }
+    });
+  }
+
+  const recordCardProps = {
+    primaryColor,
+    onEdit: (rec: ActivityRecord) => {
+      setFormError(null);
+      setEditingRecord(rec);
+      setShowForm(recordToFormType(rec));
+    },
+    onDelete: handleDeleteRecord,
+    isBusy: recordActionPending,
+  };
 
   if (!mounted) {
     return (
@@ -366,6 +488,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
   function handleOpenSleepFromBanner() {
     setShowWakeupBanner(false);
     setFormError(null);
+    setEditingRecord(null);
     setShowForm("sleep");
   }
 
@@ -461,7 +584,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
                 <p className="text-xs text-gray-400 mt-1">Toca los botones de abajo para añadir.</p>
               </div>
             ) : (
-              todayRecords.map((r) => <RecordCard key={r.id} record={r} />)
+              todayRecords.map((r) => <RecordCard key={r.id} record={r} {...recordCardProps} />)
             )}
           </>
         )}
@@ -543,7 +666,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
               </div>
             ) : (
               <div className="space-y-2">
-                {selectedDayRecords.map((r) => <RecordCard key={r.id} record={r} />)}
+                {selectedDayRecords.map((r) => <RecordCard key={r.id} record={r} {...recordCardProps} />)}
               </div>
             )}
 
@@ -639,7 +762,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
           )}
           <div className="flex gap-2">
             {QUICK_BUTTONS.map((btn) => (
-              <button key={btn.type} onClick={() => { setFormError(null); setShowForm(btn.type); }}
+              <button key={btn.type} onClick={() => { setFormError(null); setEditingRecord(null); setShowForm(btn.type); }}
                 className={`flex-1 ${btn.color} rounded-xl py-2.5 flex flex-col items-center gap-1 active:scale-95 transition`}>
                 <btn.icon className="w-4 h-4" />
                 <span className="text-[9px] font-medium">{btn.label}</span>
@@ -652,6 +775,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
       {/* Bottom sheet forms */}
       {showForm && (
         <FormSheet
+          key={editingRecord?.id ?? `new-${showForm}-${formTargetDate.getTime()}`}
           type={showForm}
           dark={darkSheet && showForm === "sleep"}
           primaryColor={primaryColor}
@@ -659,16 +783,18 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
           babyName={family.baby_name}
           targetDate={formTargetDate}
           error={formError}
-          onClose={() => { setShowForm(null); setFormError(null); }}
-          onSubmit={(type, startedAt, endedAt, durationMinutes, details) => {
+          editingRecord={editingRecord}
+          onClose={() => { setShowForm(null); setFormError(null); setEditingRecord(null); }}
+          onSubmit={(type, startedAt, endedAt, durationMinutes, details, recordId) => {
             setFormError(null);
             startTransition(async () => {
-              const result = await saveRecord(type, startedAt, endedAt, durationMinutes, details);
+              const result = await saveRecord(type, startedAt, endedAt, durationMinutes, details, recordId);
               if (result.error) {
                 setFormError(result.error);
               } else {
                 setShowForm(null);
                 setFormError(null);
+                setEditingRecord(null);
                 router.refresh();
               }
             });
@@ -684,7 +810,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
 // ════════════════════════════════════════
 
 function FormSheet({
-  type, dark, primaryColor, isPending, babyName, targetDate, error, onClose,
+  type, dark, primaryColor, isPending, babyName, targetDate, error, editingRecord, onClose,
   onSubmit,
 }: {
   type: FormType;
@@ -694,10 +820,19 @@ function FormSheet({
   babyName: string;
   targetDate: Date;
   error: string | null;
+  editingRecord: ActivityRecord | null;
   onClose: () => void;
-  onSubmit: (type: FormType, startedAt: string, endedAt: string | null, durationMinutes: number | null, details: Record<string, unknown>) => void;
+  onSubmit: (
+    type: FormType,
+    startedAt: string,
+    endedAt: string | null,
+    durationMinutes: number | null,
+    details: Record<string, unknown>,
+    recordId?: string
+  ) => void;
 }) {
   const isToday = targetDate.toDateString() === new Date().toDateString();
+  const isEdit = !!editingRecord;
 
   function defaultTime(ft: FormType): string {
     if (isToday) return nowTimeStr();
@@ -707,38 +842,135 @@ function FormSheet({
     return "12:00";
   }
 
+  const erSleep =
+    type === "sleep" && editingRecord && getDisplayType(editingRecord) === "sleep"
+      ? editingRecord
+      : null;
+  const erWake =
+    type === "wakeup" && editingRecord && (getDisplayType(editingRecord) === "wakeup" || getDisplayType(editingRecord) === "wake")
+      ? editingRecord
+      : null;
+  const erFeed =
+    type === "feeding" && editingRecord && (getDisplayType(editingRecord) === "feeding" || getDisplayType(editingRecord) === "feed")
+      ? editingRecord
+      : null;
+  const erNote =
+    type === "note" && editingRecord && getDisplayType(editingRecord) === "note"
+      ? editingRecord
+      : null;
+
   // Sleep state
   const [sleepType, setSleepType] = useState<"night" | "nap">(() => {
+    if (erSleep) {
+      const d = erSleep.details as Record<string, unknown>;
+      return d?.sleep_type === "nap" ? "nap" : "night";
+    }
     if (!isToday) return "night";
     const h = new Date().getHours();
     return h >= 19 || h < 7 ? "night" : "nap";
   });
-  const [startTime, setStartTime] = useState(() => defaultTime("sleep"));
-  const [endTime, setEndTime] = useState(() => isToday ? nowTimeStr() : "07:00");
-  const [awakenings, setAwakenings] = useState(0);
-  const [awakeningCrying, setAwakeningCrying] = useState<boolean | null>(null);
-  const [wakeupMoodInSleep, setWakeupMoodInSleep] = useState<"happy" | "neutral" | "cranky">("neutral");
-  const [showDetails, setShowDetails] = useState(false);
-  const [location, setLocation] = useState<string>("");
-  const [fellAsleepMethod, setFellAsleepMethod] = useState<string>("");
-  const [latency, setLatency] = useState<number | null>(null);
-  const [sleepNotes, setSleepNotes] = useState("");
+  const [startTime, setStartTime] = useState(() =>
+    erSleep ? isoToLocalTimeStr(erSleep.started_at) : defaultTime("sleep")
+  );
+  const [endTime, setEndTime] = useState(() =>
+    erSleep ? isoToLocalTimeStr(sleepEndedAtIsoForEdit(erSleep)) : isToday ? nowTimeStr() : "07:00"
+  );
+  const [awakenings, setAwakenings] = useState(() => {
+    if (!erSleep) return 0;
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.awakenings === "number" ? d.awakenings : 0;
+  });
+  const [awakeningCrying, setAwakeningCrying] = useState<boolean | null>(() => {
+    if (!erSleep) return null;
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.awakening_crying === "boolean" ? d.awakening_crying : null;
+  });
+  const [wakeupMoodInSleep, setWakeupMoodInSleep] = useState<"happy" | "neutral" | "cranky">(() => {
+    if (!erSleep) return "neutral";
+    const d = erSleep.details as Record<string, unknown>;
+    const m = d?.wakeup_mood as string | undefined;
+    if (m === "happy" || m === "neutral" || m === "cranky") return m;
+    return "neutral";
+  });
+  const [showDetails, setShowDetails] = useState(() => {
+    if (!erSleep) return false;
+    const d = erSleep.details as Record<string, unknown>;
+    return !!(d?.location || d?.fell_asleep_method || d?.latency_minutes || d?.notes);
+  });
+  const [location, setLocation] = useState<string>(() => {
+    if (!erSleep) return "";
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.location === "string" ? d.location : "";
+  });
+  const [fellAsleepMethod, setFellAsleepMethod] = useState<string>(() => {
+    if (!erSleep) return "";
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.fell_asleep_method === "string" ? d.fell_asleep_method : "";
+  });
+  const [latency, setLatency] = useState<number | null>(() => {
+    if (!erSleep) return null;
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.latency_minutes === "number" ? d.latency_minutes : null;
+  });
+  const [sleepNotes, setSleepNotes] = useState(() => {
+    if (!erSleep) return "";
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.notes === "string" ? d.notes : "";
+  });
 
   // Wakeup state (standalone form, kept for backwards compat)
-  const [wakeupTime, setWakeupTime] = useState(() => defaultTime("wakeup"));
-  const [wakeupMood, setWakeupMood] = useState<"happy" | "neutral" | "cranky">("neutral");
-  const [neededHelp, setNeededHelp] = useState(false);
-  const [wakeupNotes, setWakeupNotes] = useState("");
+  const [wakeupTime, setWakeupTime] = useState(() =>
+    erWake ? isoToLocalTimeStr(erWake.started_at) : defaultTime("wakeup")
+  );
+  const [wakeupMood, setWakeupMood] = useState<"happy" | "neutral" | "cranky">(() => {
+    if (!erWake) return "neutral";
+    const d = erWake.details as Record<string, unknown>;
+    const m = d?.mood as string | undefined;
+    if (m === "happy" || m === "neutral" || m === "cranky") return m;
+    return "neutral";
+  });
+  const [neededHelp, setNeededHelp] = useState(() => {
+    if (!erWake) return false;
+    const d = erWake.details as Record<string, unknown>;
+    return !!d?.needed_help;
+  });
+  const [wakeupNotes, setWakeupNotes] = useState(() => {
+    if (!erWake) return "";
+    const d = erWake.details as Record<string, unknown>;
+    return typeof d?.notes === "string" ? d.notes : "";
+  });
 
   // Feeding state
-  const [feedTime, setFeedTime] = useState(() => defaultTime("feeding"));
-  const [feedMethod, setFeedMethod] = useState<string>("solids");
-  const [feedDescription, setFeedDescription] = useState("");
-  const [feedAmount, setFeedAmount] = useState<string>("normal");
+  const [feedTime, setFeedTime] = useState(() =>
+    erFeed ? isoToLocalTimeStr(erFeed.started_at) : defaultTime("feeding")
+  );
+  const [feedMethod, setFeedMethod] = useState<string>(() => {
+    if (!erFeed) return "solids";
+    const d = erFeed.details as Record<string, unknown>;
+    return typeof d?.method === "string" ? d.method : "solids";
+  });
+  const [feedDescription, setFeedDescription] = useState(() => {
+    if (!erFeed) return "";
+    const d = erFeed.details as Record<string, unknown>;
+    return typeof d?.description === "string" ? d.description : "";
+  });
+  const [feedAmount, setFeedAmount] = useState<string>(() => {
+    if (!erFeed) return "normal";
+    const d = erFeed.details as Record<string, unknown>;
+    return typeof d?.amount === "string" ? d.amount : "normal";
+  });
 
   // Note state
-  const [noteTags, setNoteTags] = useState<string[]>([]);
-  const [noteText, setNoteText] = useState("");
+  const [noteTags, setNoteTags] = useState<string[]>(() => {
+    if (!erNote) return [];
+    const d = erNote.details as Record<string, unknown>;
+    return Array.isArray(d?.tags) ? (d.tags as string[]) : [];
+  });
+  const [noteText, setNoteText] = useState(() => {
+    if (!erNote) return "";
+    const d = erNote.details as Record<string, unknown>;
+    return typeof d?.text === "string" ? d.text : "";
+  });
 
   const durationMin = type === "sleep"
     ? calcDurationMinutes(startTime, endTime, sleepType === "night")
@@ -749,7 +981,7 @@ function FormSheet({
     const offset = isToday && new Date().getHours() < 12 ? -1 : 0;
     const previewStart = buildISOFromTime(startTime, targetDate, offset);
     const previewEnd = new Date(new Date(previewStart).getTime() + dur * 60000).toISOString();
-    const key = localDateKeyFromDate(new Date(previewEnd));
+    const key = nightCalendarKeyForSleepStart(targetDate, offset, startTime);
     return {
       dayLabel: displayDateFromKey(key),
       rangeLabel: `${formatTime(previewStart)} → ${formatTime(previewEnd)}`,
@@ -757,6 +989,7 @@ function FormSheet({
   })();
 
   function handleSubmit() {
+    const rid = editingRecord?.id;
     if (type === "sleep") {
       const offset = isToday && sleepType === "night" && new Date().getHours() < 12 ? -1 : 0;
       const startedAt = buildISOFromTime(startTime, targetDate, offset);
@@ -767,9 +1000,9 @@ function FormSheet({
         awakenings,
       };
       if (sleepType === "night") {
-        const endKey = localDateKeyFromDate(new Date(endedAt));
-        details.night_date = endKey;
-        details.night_label = `Noche que termina ${displayDateFromKey(endKey)}`;
+        const nightKey = nightCalendarKeyForSleepStart(targetDate, offset, startTime);
+        details.night_date = nightKey;
+        details.night_label = `Noche del ${displayDateFromKey(nightKey)}`;
       }
       if (awakenings > 0 && awakeningCrying !== null) details.awakening_crying = awakeningCrying;
       if (sleepType === "night") details.wakeup_mood = wakeupMoodInSleep;
@@ -777,7 +1010,7 @@ function FormSheet({
       if (fellAsleepMethod) details.fell_asleep_method = fellAsleepMethod;
       if (latency !== null) details.latency_minutes = latency;
       if (sleepNotes) details.notes = sleepNotes;
-      onSubmit("sleep", startedAt, endedAt, dur, details);
+      onSubmit("sleep", startedAt, endedAt, dur, details, rid);
 
     } else if (type === "wakeup") {
       const startedAt = buildISOFromTime(wakeupTime, targetDate);
@@ -785,7 +1018,7 @@ function FormSheet({
         mood: wakeupMood,
         needed_help: neededHelp || undefined,
         notes: wakeupNotes || undefined,
-      });
+      }, rid);
 
     } else if (type === "feeding") {
       const startedAt = buildISOFromTime(feedTime, targetDate);
@@ -794,7 +1027,7 @@ function FormSheet({
         description: feedDescription || undefined,
         amount: feedAmount,
         notes: undefined,
-      });
+      }, rid);
 
     } else if (type === "note") {
       if (!noteText.trim() && noteTags.length === 0) return;
@@ -802,7 +1035,7 @@ function FormSheet({
       onSubmit("note", noteDate.toISOString(), null, null, {
         text: noteText || undefined,
         tags: noteTags.length > 0 ? noteTags : undefined,
-      });
+      }, rid);
     }
   }
 
@@ -821,10 +1054,14 @@ function FormSheet({
         <div className={cn("flex items-center justify-between p-4 border-b", dark ? "border-gray-800" : "border-gray-100")}>
           <div>
             <h3 className={cn("font-bold", text)}>
-              {type === "sleep" && "Registrar sueño"}
-              {type === "wakeup" && "Despertar matutino"}
-              {type === "feeding" && "Registrar cena"}
-              {type === "note" && "Añadir nota"}
+              {isEdit ? "Editar registro" : (
+                <>
+                  {type === "sleep" && "Registrar sueño"}
+                  {type === "wakeup" && "Despertar matutino"}
+                  {type === "feeding" && "Registrar cena"}
+                  {type === "note" && "Añadir nota"}
+                </>
+              )}
             </h3>
             {!isToday && (
               <p className={cn("text-xs mt-0.5 capitalize", textSub)}>{formatDateLong(targetDate)}</p>
@@ -875,7 +1112,7 @@ function FormSheet({
               {sleepPreview && (
                 <div className={cn("rounded-xl px-3 py-2 text-xs border",
                   dark ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-amber-50 border-amber-100 text-amber-800")}>
-                  <p className="font-semibold">Esta noche cuenta para: {sleepPreview.dayLabel}</p>
+                  <p className="font-semibold">Esta noche se registra en el día: {sleepPreview.dayLabel}</p>
                   <p className="mt-0.5 opacity-80">Tramo: {sleepPreview.rangeLabel}</p>
                 </div>
               )}
@@ -1116,7 +1353,7 @@ function FormSheet({
           <button type="button" onClick={handleSubmit} disabled={isPending}
             className="w-full text-white font-medium py-3 rounded-xl transition text-sm disabled:opacity-50 active:scale-[0.98]"
             style={{ backgroundColor: primaryColor }}>
-            {isPending ? "Guardando..." : "Guardar"}
+            {isPending ? "Guardando..." : isEdit ? "Guardar cambios" : "Guardar"}
           </button>
         </div>
       </div>

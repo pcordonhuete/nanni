@@ -484,7 +484,7 @@ function sleepDayKey(rec: {
   if (sleepType === "night") {
     const tagged = details?.night_date as string | undefined;
     if (tagged) return tagged;
-    if (rec.ended_at) return localDateKey(rec.ended_at);
+    return localDateKey(rec.started_at);
   }
   return localDateKey(rec.started_at);
 }
