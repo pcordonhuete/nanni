@@ -31,7 +31,7 @@ import type {
 } from "@/lib/types";
 import { format, eachDayOfInterval, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { sleepScore, statusFromScore, babyAgeMonths } from "@/lib/utils";
+import { sleepScore, statusFromScore, babyAgeMonths, averageSleepMetric } from "@/lib/utils";
 
 // ─── Profile ───
 
@@ -315,12 +315,8 @@ export async function getFamilyWithStats(familyId: string) {
 
   const lastNightAwakenings = weeklySleep[weeklySleep.length - 1]?.awakenings || 0;
   const ageMonths = babyAgeMonths(family.baby_birth_date);
-  const avgSleep = weeklySleep.length > 0
-    ? weeklySleep.reduce((a, d) => a + d.total, 0) / weeklySleep.length
-    : 0;
-  const avgAwakenings = weeklySleep.length > 0
-    ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length
-    : 0;
+  const avgSleep = averageSleepMetric(weeklySleep, (d) => d.total);
+  const avgAwakenings = averageSleepMetric(weeklySleep, (d) => d.awakenings);
 
   const score = sleepScore(avgSleep, avgAwakenings, ageMonths);
   const { label: status_label } = statusFromScore(score);

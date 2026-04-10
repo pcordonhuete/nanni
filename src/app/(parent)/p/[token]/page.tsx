@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { getWeeklySleep } from "@/lib/db";
+import { averageSleepMetric, countDaysWithSleepRecords } from "@/lib/utils";
 import { ParentApp } from "./parent-app";
 
 export default async function ParentPage({
@@ -63,11 +64,9 @@ export default async function ParentPage({
     activePlan = { ...activePlanRow, goals: goals || [], steps: steps || [] };
   }
 
-  const weekAvgSleep = weeklySleep.length > 0
-    ? weeklySleep.reduce((a, d) => a + d.total, 0) / weeklySleep.length : 0;
-  const weekAvgAwakenings = weeklySleep.length > 0
-    ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length : 0;
-  const daysWithData = weeklySleep.filter((d) => d.total > 0 || d.awakenings > 0).length;
+  const daysWithData = countDaysWithSleepRecords(weeklySleep);
+  const weekAvgSleep = averageSleepMetric(weeklySleep, (d) => d.total);
+  const weekAvgAwakenings = averageSleepMetric(weeklySleep, (d) => d.awakenings);
 
   return (
     <ParentApp

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getFamily, getWeeklySleep, getInsights, getNotes, getFamilyMembers } from "@/lib/db";
-import { babyAgeLabel, formatDate, sleepScore, statusFromScore } from "@/lib/utils";
+import { babyAgeLabel, formatDate, sleepScore, statusFromScore, averageSleepMetric } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -40,12 +40,8 @@ export async function GET(
     .single();
 
   const age = babyAgeLabel(family.baby_birth_date);
-  const avgSleep = weeklySleep.length > 0
-    ? weeklySleep.reduce((a, d) => a + d.total, 0) / weeklySleep.length
-    : 0;
-  const avgAwakenings = weeklySleep.length > 0
-    ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length
-    : 0;
+  const avgSleep = averageSleepMetric(weeklySleep, (d) => d.total);
+  const avgAwakenings = averageSleepMetric(weeklySleep, (d) => d.awakenings);
 
   const ageMonths = Math.floor(
     (Date.now() - new Date(family.baby_birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30.44)

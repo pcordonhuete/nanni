@@ -103,6 +103,26 @@ export function getAgeBenchmark(ageMonths: number): AgeBenchmark {
   return { label: "2-3 años", totalSleep: "10-13h", nightSleep: "10-12h", napSleep: "1-2h", naps: "0-1", maxAwakenings: 0, wakeWindow: "5.5-6h" };
 }
 
+/** Días con al menos un dato de sueño (horas totales o despertares). */
+export function countDaysWithSleepRecords(
+  days: { total: number; awakenings: number }[]
+): number {
+  return days.filter((d) => d.total > 0 || d.awakenings > 0).length;
+}
+
+/**
+ * Media de un campo numérico solo sobre días con registro de sueño.
+ * Los días sin datos no cuentan en el divisor (evita distorsionar 14/30 días).
+ */
+export function averageSleepMetric<T extends { total: number; awakenings: number }>(
+  days: T[],
+  pick: (d: T) => number
+): number {
+  const n = countDaysWithSleepRecords(days);
+  if (n === 0) return 0;
+  return days.reduce((a, d) => a + pick(d), 0) / n;
+}
+
 export function scoreExplanation(score: number): string {
   if (score >= 8)
     return "Excelente. El sueño está alineado con los rangos recomendados para la edad y los despertares son mínimos.";

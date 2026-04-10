@@ -23,7 +23,10 @@ import {
   updateFamilyContact, updateFamily,
 } from "@/lib/actions";
 import { generateInsights } from "@/lib/ai";
-import { inviteUrl, cn, whatsappUrl, scoreExplanation, getAgeBenchmark } from "@/lib/utils";
+import {
+  inviteUrl, cn, whatsappUrl, scoreExplanation, getAgeBenchmark,
+  countDaysWithSleepRecords, averageSleepMetric,
+} from "@/lib/utils";
 import type {
   ActivityRecord, WeeklySleepData, Insight, AdvisorNote, SleepPlan,
   SleepPlanGoal, SleepPlanStep, InsightType, RecordType,
@@ -713,11 +716,12 @@ function SuenoTab({
 
   const totalRange = parseRange(benchmark.totalSleep);
   const nightRange = parseRange(benchmark.nightSleep);
-  const daysWithData = weeklySleep.filter((d) => d.total > 0 || d.awakenings > 0).length;
-  const weekAvgSleep = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.total, 0) / weeklySleep.length : 0;
-  const weekAvgWake = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length : 0;
-  const avgNight = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.night_hours, 0) / weeklySleep.length : 0;
-  const avgNap = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.nap_hours, 0) / weeklySleep.length : 0;
+  const daysWithData = countDaysWithSleepRecords(weeklySleep);
+  const weekAvgSleep = averageSleepMetric(weeklySleep, (d) => d.total);
+  const weekAvgWake = averageSleepMetric(weeklySleep, (d) => d.awakenings);
+  const avgNight = averageSleepMetric(weeklySleep, (d) => d.night_hours);
+  const avgNap = averageSleepMetric(weeklySleep, (d) => d.nap_hours);
+  const avgNapCount = averageSleepMetric(weeklySleep, (d) => d.nap_count);
   /* +12% cabeza de eje: las barras no llenan el 100% y no rozan el borde superior */
   const rawMax = Math.max(...weeklySleep.map((d) => d.night_hours + d.nap_hours), 16, 1);
   const maxSleepStack = Math.ceil(rawMax * 1.12 * 10) / 10;
@@ -763,15 +767,19 @@ function SuenoTab({
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-indigo-600 tabular-nums">{weekAvgSleep.toFixed(1)}<span className="text-base font-medium text-gray-400">h</span></p>
+          <p className="text-2xl font-bold text-indigo-600 tabular-nums">
+            {daysWithData > 0 ? <>{weekAvgSleep.toFixed(1)}<span className="text-base font-medium text-gray-400">h</span></> : "—"}
+          </p>
           <p className="text-xs text-gray-500 mt-1.5">Media sueño</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-amber-600 tabular-nums">{weekAvgWake.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-amber-600 tabular-nums">{daysWithData > 0 ? weekAvgWake.toFixed(1) : "—"}</p>
           <p className="text-xs text-gray-500 mt-1.5">Media despertares</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-cyan-600 tabular-nums">{avgNap.toFixed(1)}<span className="text-base font-medium text-gray-400">h</span></p>
+          <p className="text-2xl font-bold text-cyan-600 tabular-nums">
+            {daysWithData > 0 ? <>{avgNap.toFixed(1)}<span className="text-base font-medium text-gray-400">h</span></> : "—"}
+          </p>
           <p className="text-xs text-gray-500 mt-1.5">Media siestas</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
@@ -969,14 +977,27 @@ function SuenoTab({
             </tbody>
             <tfoot>
               <tr className="bg-gray-50 border-t-2 border-gray-200">
-                <td className="pl-6 pr-4 py-3.5 font-semibold text-gray-900">Media</td>
-                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-800 leading-snug">{fmtHoursWithMinutes(avgNight)}</td>
-                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[15px] font-semibold text-gray-800">{weekAvgWake.toFixed(1)}</td>
-                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-800 leading-snug">{fmtHoursWithMinutes(avgNap)}</td>
-                <td className="text-center px-4 py-3.5 font-mono tabular-nums text-[15px] font-semibold text-gray-800">
-                  {weeklySleep.length > 0 ? (weeklySleep.reduce((a, d) => a + d.nap_count, 0) / weeklySleep.length).toFixed(1) : "—"}
+                <td className="pl-6 pr-4 py-3.5 font-semibold text-gray-900 align-top">
+                  <span className="block">Media</span>
+                  {daysWithData > 0 && (
+                    <span className="block text-[10px] font-normal text-gray-500 mt-0.5">Solo días con registro ({daysWithData})</span>
+                  )}
                 </td>
-                <td className="text-right pl-4 pr-6 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-900 leading-snug">{fmtHoursWithMinutes(weekAvgSleep)}</td>
+                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-800 leading-snug">
+                  {daysWithData > 0 ? fmtHoursWithMinutes(avgNight) : "—"}
+                </td>
+                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[15px] font-semibold text-gray-800">
+                  {daysWithData > 0 ? weekAvgWake.toFixed(1) : "—"}
+                </td>
+                <td className="text-right px-4 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-800 leading-snug">
+                  {daysWithData > 0 ? fmtHoursWithMinutes(avgNap) : "—"}
+                </td>
+                <td className="text-center px-4 py-3.5 font-mono tabular-nums text-[15px] font-semibold text-gray-800">
+                  {daysWithData > 0 ? avgNapCount.toFixed(1) : "—"}
+                </td>
+                <td className="text-right pl-4 pr-6 py-3.5 font-mono tabular-nums text-[14px] font-semibold text-gray-900 leading-snug">
+                  {daysWithData > 0 ? fmtHoursWithMinutes(weekAvgSleep) : "—"}
+                </td>
               </tr>
             </tfoot>
           </table>
