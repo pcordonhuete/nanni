@@ -225,13 +225,17 @@ export async function deleteRecordFromParent(familyToken: string, recordId: stri
 
   if (!family) return { error: "Familia no encontrada" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("activity_records")
     .delete()
     .eq("id", recordId)
-    .eq("family_id", family.id);
+    .eq("family_id", family.id)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "No se pudo eliminar el registro. Es posible que no tengas permisos suficientes." };
+  }
 
   try {
     await supabase.from("notifications").insert({
@@ -283,7 +287,7 @@ export async function updateRecordFromParent(
     _ui_type: type,
   };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("activity_records")
     .update({
       type: dbType,
@@ -293,9 +297,13 @@ export async function updateRecordFromParent(
       details: mergedDetails,
     })
     .eq("id", recordId)
-    .eq("family_id", family.id);
+    .eq("family_id", family.id)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: "No se pudo actualizar el registro. Es posible que no tengas permisos suficientes." };
+  }
 
   const typeLabels: Record<string, string> = {
     sleep: "sueño", feeding: "cena", wakeup: "despertar", note: "nota",

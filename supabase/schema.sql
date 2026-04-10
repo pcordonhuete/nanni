@@ -203,6 +203,22 @@ create policy "Advisors can insert records"
     )
   );
 
+create policy "Advisors can update records of their families"
+  on public.activity_records for update using (
+    exists (
+      select 1 from public.families f
+      where f.id = activity_records.family_id and f.advisor_id = auth.uid()
+    )
+  );
+
+create policy "Advisors can delete records of their families"
+  on public.activity_records for delete using (
+    exists (
+      select 1 from public.families f
+      where f.id = activity_records.family_id and f.advisor_id = auth.uid()
+    )
+  );
+
 -- ────────────────────────────────────────────────────────────────
 -- 6. Sleep Plans
 -- ────────────────────────────────────────────────────────────────
