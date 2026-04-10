@@ -675,6 +675,8 @@ export function FamilyDetailTabs(props: Props) {
 // ─── Sueño Tab ───
 
 const CHART_BAR_H = 180;
+/** Espacio bajo la leyenda para marcas de siestas y barras que crecen hacia arriba */
+const CHART_TOP_PAD = 44;
 const RANGE_OPTIONS = [
   { label: "7 días", days: 7 },
   { label: "14 días", days: 14 },
@@ -716,7 +718,9 @@ function SuenoTab({
   const weekAvgWake = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.awakenings, 0) / weeklySleep.length : 0;
   const avgNight = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.night_hours, 0) / weeklySleep.length : 0;
   const avgNap = weeklySleep.length > 0 ? weeklySleep.reduce((a, d) => a + d.nap_hours, 0) / weeklySleep.length : 0;
-  const maxSleepStack = Math.max(...weeklySleep.map((d) => d.night_hours + d.nap_hours), 16, 1);
+  /* +12% cabeza de eje: las barras no llenan el 100% y no rozan el borde superior */
+  const rawMax = Math.max(...weeklySleep.map((d) => d.night_hours + d.nap_hours), 16, 1);
+  const maxSleepStack = Math.ceil(rawMax * 1.12 * 10) / 10;
   const maxAwakeBar = Math.max(...weeklySleep.map((d) => d.awakenings), 6, 1);
   const recommendedLine = totalRange && totalRange.min > 0 ? totalRange.min : null;
 
@@ -778,9 +782,9 @@ function SuenoTab({
 
       {/* Unified chart */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6">
+        <div className="flex flex-col gap-3 mb-4">
           <p className="text-sm text-gray-500">Sueño nocturno, siestas y despertares por día</p>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-600">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 text-xs text-gray-600 pb-1 border-b border-gray-100/80">
             <div className="flex items-center gap-2"><div className="w-[2px] h-3.5 bg-cyan-500 rounded-full shrink-0" /><span>Nº siestas</span></div>
             <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-cyan-400 rounded-sm shrink-0" /><span>Siesta</span></div>
             <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 bg-indigo-500 rounded-sm shrink-0" /><span>Noche</span></div>
@@ -788,23 +792,34 @@ function SuenoTab({
           </div>
         </div>
 
-        <div className="relative pl-8 pr-8">
-          <div className="absolute left-0 top-0 h-[180px] w-7 flex flex-col justify-between text-right pr-1">
+        <div className="relative pl-8 pr-8" style={{ paddingTop: CHART_TOP_PAD }}>
+          <div
+            className="absolute left-0 w-7 flex flex-col justify-between text-right pr-1"
+            style={{ top: CHART_TOP_PAD, height: CHART_BAR_H }}
+          >
             {[maxSleepStack, Math.round(maxSleepStack * 0.66), Math.round(maxSleepStack * 0.33), 0].map((v) => (
               <span key={`l${v}`} className="text-[10px] text-gray-400 tabular-nums leading-none">{v}h</span>
             ))}
           </div>
-          <div className="absolute right-0 top-0 h-[180px] w-7 flex flex-col justify-between text-left pl-1">
+          <div
+            className="absolute right-0 w-7 flex flex-col justify-between text-left pl-1"
+            style={{ top: CHART_TOP_PAD, height: CHART_BAR_H }}
+          >
             {[maxAwakeBar, Math.round(maxAwakeBar / 2), 0].map((v) => (
               <span key={`r${v}`} className="text-[10px] text-amber-400/90 tabular-nums leading-none">{v}</span>
             ))}
           </div>
 
-          <div className="mx-0">
+          <div className="mx-0 relative">
             {recommendedLine && (
-              <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: `${(recommendedLine / maxSleepStack) * CHART_BAR_H}px` }}>
+              <div
+                className="absolute left-0 right-0 pointer-events-none"
+                style={{
+                  top: CHART_BAR_H - (recommendedLine / maxSleepStack) * CHART_BAR_H,
+                }}
+              >
                 <div className="w-full border-t-2 border-dashed border-emerald-300/60" />
-                <span className="absolute -top-4 right-0 text-[10px] text-emerald-600 font-semibold bg-white/95 px-1.5 py-0.5 rounded">Mín. {recommendedLine}h</span>
+                <span className="absolute -top-4 right-0 text-[10px] text-emerald-600 font-semibold bg-white/95 px-1.5 py-0.5 rounded shadow-sm">Mín. {recommendedLine}h</span>
               </div>
             )}
 
