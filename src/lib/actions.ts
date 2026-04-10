@@ -37,6 +37,27 @@ async function verifyParentRecordAccess(
   return { familyId: family.id };
 }
 
+const PARENT_RECORD_MUTATION_HINT =
+  "Para editar o eliminar desde el portal de padres, ejecuta el SQL del archivo supabase/migration_parent_record_rpc.sql en Supabase (SQL Editor), o configura SUPABASE_SERVICE_ROLE_KEY en Vercel.";
+
+function parentRpcFunctionMissing(error: { message?: string; code?: string } | null | undefined): boolean {
+  const m = String(error?.message ?? "");
+  return (
+    m.includes("Could not find the function") ||
+    (m.includes("function") && m.includes("does not exist")) ||
+    error?.code === "PGRST202" ||
+    error?.code === "42883"
+  );
+}
+
+function mapParentRpcError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("invalid_invite_token")) return "Familia no encontrada";
+  if (m.includes("record_not_found")) return "Registro no encontrado";
+  if (m.includes("invalid_type")) return "Tipo de registro no válido";
+  return message;
+}
+
 // ─── Families ───
 
 export async function createFamily(formData: FormData) {
@@ -245,32 +266,44 @@ export async function createRecordFromParent(
 
 /**
  * Elimina un registro validando el token de la familia.
- * Requiere SUPABASE_SERVICE_ROLE_KEY en el servidor (bypass RLS de forma segura tras comprobar token).
+ * Preferencia: RPC en Supabase (migration_parent_record_rpc.sql). Alternativa: SUPABASE_SERVICE_ROLE_KEY.
  */
 export async function deleteRecordFromParent(familyToken: string, recordId: string) {
-  const admin = await getSupabaseAdmin();
-  if (!admin) {
-    return {
-      error:
-        "No se puede eliminar el registro: falta la clave de servicio en el servidor. Contacta al administrador.",
-    };
+  const supabase = await createClient();
+  const { data: familyId, error } = await supabase.rpc("delete_activity_record_from_parent", {
+    p_invite_token: familyToken,
+    p_record_id: recordId,
+  });
+
+  if (!error && familyId) {
+    revalidatePath(`/familia/${familyId}`);
+    revalidatePath("/familias");
+    revalidatePath(`/p/${familyToken}`);
+    return { success: true };
   }
 
-  const access = await verifyParentRecordAccess(admin, familyToken, recordId);
-  if ("error" in access) return { error: access.error };
+  if (error && !parentRpcFunctionMissing(error)) {
+    return { error: mapParentRpcError(error.message) };
+  }
 
-  const { error } = await admin.from("activity_records").delete().eq("id", recordId);
-  if (error) return { error: error.message };
+  const admin = await getSupabaseAdmin();
+  if (admin) {
+    const access = await verifyParentRecordAccess(admin, familyToken, recordId);
+    if ("error" in access) return { error: access.error };
+    const { error: delErr } = await admin.from("activity_records").delete().eq("id", recordId);
+    if (delErr) return { error: delErr.message };
+    revalidatePath(`/familia/${access.familyId}`);
+    revalidatePath("/familias");
+    revalidatePath(`/p/${familyToken}`);
+    return { success: true };
+  }
 
-  revalidatePath(`/familia/${access.familyId}`);
-  revalidatePath("/familias");
-  revalidatePath(`/p/${familyToken}`);
-  return { success: true };
+  return { error: PARENT_RECORD_MUTATION_HINT };
 }
 
 /**
  * Actualiza un registro validando el token de la familia.
- * Requiere SUPABASE_SERVICE_ROLE_KEY en el servidor.
+ * Preferencia: RPC en Supabase (migration_parent_record_rpc.sql). Alternativa: SUPABASE_SERVICE_ROLE_KEY.
  */
 export async function updateRecordFromParent(
   familyToken: string,
@@ -282,17 +315,6 @@ export async function updateRecordFromParent(
   details: RecordDetails,
   parentName: string
 ) {
-  const admin = await getSupabaseAdmin();
-  if (!admin) {
-    return {
-      error:
-        "No se puede guardar: falta la clave de servicio en el servidor. Contacta al administrador.",
-    };
-  }
-
-  const access = await verifyParentRecordAccess(admin, familyToken, recordId);
-  if ("error" in access) return { error: access.error };
-
   const dbType = type === "feeding" ? "feed" : type === "wakeup" ? "wake" : type;
 
   const mergedDetails = {
@@ -301,46 +323,77 @@ export async function updateRecordFromParent(
     _ui_type: type,
   };
 
-  const { error } = await admin
-    .from("activity_records")
-    .update({
-      type: dbType,
-      started_at: startedAt,
-      ended_at: endedAt,
-      duration_minutes: durationMinutes,
-      details: mergedDetails,
-    })
-    .eq("id", recordId);
+  const supabase = await createClient();
+  const { data: familyId, error } = await supabase.rpc("update_activity_record_from_parent", {
+    p_invite_token: familyToken,
+    p_record_id: recordId,
+    p_type: dbType,
+    p_started_at: startedAt,
+    p_ended_at: endedAt,
+    p_duration_minutes: durationMinutes,
+    p_details: mergedDetails,
+    p_parent_name: parentName,
+  });
 
-  if (error) return { error: error.message };
-
-  try {
-    const { data: fam } = await admin
-      .from("families")
-      .select("advisor_id, baby_name")
-      .eq("id", access.familyId)
-      .single();
-    if (fam) {
-      const typeLabels: Record<string, string> = {
-        sleep: "sueño", feeding: "cena", wakeup: "despertar", note: "nota",
-        feed: "toma", diaper: "pañal", play: "juego", mood: "humor", wake: "despertar",
-      };
-      await admin.from("notifications").insert({
-        user_id: fam.advisor_id,
-        type: "new_record",
-        title: `${parentName} actualizó ${typeLabels[type] || "registro"} de ${fam.baby_name}`,
-        body: `Registro modificado`,
-        link: `/familia/${access.familyId}`,
-      });
-    }
-  } catch {
-    // non-blocking
+  if (!error && familyId) {
+    revalidatePath(`/familia/${familyId}`);
+    revalidatePath("/familias");
+    revalidatePath(`/p/${familyToken}`);
+    return { success: true };
   }
 
-  revalidatePath(`/familia/${access.familyId}`);
-  revalidatePath("/familias");
-  revalidatePath(`/p/${familyToken}`);
-  return { success: true };
+  if (error && !parentRpcFunctionMissing(error)) {
+    return { error: mapParentRpcError(error.message) };
+  }
+
+  const admin = await getSupabaseAdmin();
+  if (admin) {
+    const access = await verifyParentRecordAccess(admin, familyToken, recordId);
+    if ("error" in access) return { error: access.error };
+
+    const { error: upErr } = await admin
+      .from("activity_records")
+      .update({
+        type: dbType,
+        started_at: startedAt,
+        ended_at: endedAt,
+        duration_minutes: durationMinutes,
+        details: mergedDetails,
+      })
+      .eq("id", recordId);
+
+    if (upErr) return { error: upErr.message };
+
+    try {
+      const { data: fam } = await admin
+        .from("families")
+        .select("advisor_id, baby_name")
+        .eq("id", access.familyId)
+        .single();
+      if (fam) {
+        const typeLabels: Record<string, string> = {
+          sleep: "sueño", feeding: "cena", wakeup: "despertar", note: "nota",
+          feed: "toma", diaper: "pañal", play: "juego", mood: "humor", wake: "despertar",
+        };
+        await admin.from("notifications").insert({
+          user_id: fam.advisor_id,
+          type: "new_record",
+          title: `${parentName} actualizó ${typeLabels[type] || "registro"} de ${fam.baby_name}`,
+          body: `Registro modificado`,
+          link: `/familia/${access.familyId}`,
+        });
+      }
+    } catch {
+      // non-blocking
+    }
+
+    revalidatePath(`/familia/${access.familyId}`);
+    revalidatePath("/familias");
+    revalidatePath(`/p/${familyToken}`);
+    return { success: true };
+  }
+
+  return { error: PARENT_RECORD_MUTATION_HINT };
 }
 
 // ─── Sleep Plans ───
