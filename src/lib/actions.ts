@@ -33,7 +33,7 @@ export async function createFamily(formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/familias");
-  revalidatePath("/dashboard");
+  revalidatePath("/familias");
   return { data };
 }
 
@@ -69,7 +69,7 @@ export async function deleteFamily(familyId: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/familias");
-  revalidatePath("/dashboard");
+  revalidatePath("/familias");
   return { success: true };
 }
 
@@ -147,7 +147,7 @@ export async function createRecord(
   }
 
   revalidatePath(`/familia/${familyId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/familias");
   return { data };
 }
 
@@ -575,7 +575,7 @@ export async function bulkUpdateFamilyStatus(
   if (error) return { error: error.message };
 
   revalidatePath("/familias");
-  revalidatePath("/dashboard");
+  revalidatePath("/familias");
   return { success: true };
 }
 

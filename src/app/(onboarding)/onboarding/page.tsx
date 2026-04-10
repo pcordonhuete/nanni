@@ -40,7 +40,7 @@ export default function OnboardingPage() {
       if (result.error) toast(result.error, "error");
       else {
         toast("¡Todo listo! Bienvenida a Nanni");
-        router.push("/dashboard");
+        router.push("/familias");
       }
     });
   }
@@ -202,7 +202,7 @@ export default function OnboardingPage() {
                 </button>
               </div>
             </form>
-            <button onClick={() => router.push("/dashboard")} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-4 py-2 transition">
+            <button onClick={() => router.push("/familias")} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-4 py-2 transition">
               Saltar por ahora
             </button>
           </>

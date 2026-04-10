@@ -33,10 +33,10 @@ export default async function CheckoutResultPage({
           Tu plan ya está activo. Bienvenida a Nanni.
         </p>
         <Link
-          href="/dashboard"
+          href="/familias"
           className="inline-flex items-center gap-2 bg-nanni-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-nanni-700 transition text-sm"
         >
-          Ir al dashboard
+          Ir a familias
         </Link>
       </div>
     );

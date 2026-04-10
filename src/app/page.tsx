@@ -319,7 +319,7 @@ export default function LandingPage() {
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
                   </div>
                   <div className="flex-1 bg-white border border-gray-200/80 rounded-md px-3 py-1 text-[10px] text-gray-400 text-center font-mono">
-                    app.nanniapp.com/dashboard
+                    app.nanniapp.com/familias
                   </div>
                 </div>
                 <div className="flex">
@@ -949,7 +949,7 @@ export default function LandingPage() {
                   <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
                 </div>
                 <div className="flex-1 max-w-md mx-auto bg-white border border-gray-200/80 rounded-lg px-4 py-1.5 text-xs text-gray-400 text-center font-mono">
-                  app.nanniapp.com/dashboard
+                  app.nanniapp.com/familias
                 </div>
               </div>
               <div className="flex">

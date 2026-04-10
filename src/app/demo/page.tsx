@@ -29,7 +29,7 @@ export default function DemoPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/familias");
       router.refresh();
     }
 

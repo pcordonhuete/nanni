@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Search, LayoutDashboard, Users, BarChart3, Palette, Settings, Moon, ArrowRight } from "lucide-react";
+import { Search, Users, BarChart3, Palette, Settings, Moon, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Family } from "@/lib/types";
 
@@ -10,7 +10,6 @@ interface CommandPaletteProps {
 }
 
 const staticRoutes = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Familias", href: "/familias", icon: Users },
   { label: "Analíticas", href: "/analiticas", icon: BarChart3 },
   { label: "Mi marca", href: "/marca", icon: Palette },

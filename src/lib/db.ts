@@ -977,6 +977,30 @@ export async function getPortfolioHealth(advisorId: string): Promise<PortfolioFa
   });
 }
 
+// ─── Portfolio sleep methods (aggregated) ───
+
+export async function getPortfolioSleepMethods(familyIds: string[]): Promise<Record<string, number>> {
+  if (familyIds.length === 0) return {};
+  const supabase = await createClient();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
+  const { data } = await supabase
+    .from("activity_records")
+    .select("details")
+    .in("family_id", familyIds)
+    .eq("type", "sleep")
+    .gte("started_at", cutoff.toISOString());
+
+  const methods: Record<string, number> = {};
+  for (const rec of data || []) {
+    const d = rec.details as Record<string, unknown> | null;
+    const m = d?.fell_asleep_method as string | undefined;
+    if (m) methods[m] = (methods[m] || 0) + 1;
+  }
+  return methods;
+}
+
 // ─── Family deep analytics ───
 
 export async function getFamilyDeepAnalytics(familyId: string, days = 7): Promise<FamilyDeepAnalytics> {

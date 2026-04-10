@@ -58,7 +58,7 @@ export async function POST(request: Request) {
             type: "system",
             title: "Suscripción activada",
             body: `Tu plan ${plan === "premium" ? "Premium" : "Básico"} está activo. ¡Bienvenida!`,
-            link: "/dashboard",
+            link: "/familias",
           });
         }
         break;

@@ -42,7 +42,7 @@ export default function CambiarPasswordPage() {
         setSuccess(true);
         setLoading(false);
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/familias");
           router.refresh();
         }, 2000);
       }

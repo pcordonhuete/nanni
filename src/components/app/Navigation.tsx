@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import {
-  Moon, LayoutDashboard, Users, BarChart3, Palette, Settings,
+  Moon, Users, BarChart3, Palette, Settings,
   LogOut, MoreHorizontal, Plus, Search,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/app/NotificationPanel";
@@ -29,7 +29,6 @@ const sidebarGroups = [
   {
     label: "Principal",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/familias", label: "Familias", icon: Users },
       { href: "/analiticas", label: "Analíticas", icon: BarChart3 },
     ],
@@ -45,7 +44,6 @@ const sidebarGroups = [
 ];
 
 const mobileNavItems = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/familias", label: "Familias", icon: Users },
   { href: "/analiticas", label: "Datos", icon: BarChart3 },
   { href: "/marca", label: "Marca", icon: Palette },
@@ -53,7 +51,6 @@ const mobileNavItems = [
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
   return pathname.startsWith(href);
 }
 
@@ -84,7 +81,7 @@ export default function Navigation({
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-gray-100 fixed inset-y-0 left-0 z-30">
         <div className="p-5 pb-4">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Link href="/familias" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-nanni-600 flex items-center justify-center">
               <Moon className="w-4 h-4 text-white" />
             </div>
@@ -184,7 +181,7 @@ export default function Navigation({
       {/* Mobile Top Bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 h-14">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/familias" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-nanni-600 flex items-center justify-center">
               <Moon className="w-3.5 h-3.5 text-white" />
             </div>
