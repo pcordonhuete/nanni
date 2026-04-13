@@ -557,7 +557,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-900">
-                      Score: 8.5
+                      Puntuación: 8.5
                     </p>
                     <p className="text-[9px] text-gray-500">
                       Mateo mejorando

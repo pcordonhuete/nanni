@@ -183,7 +183,7 @@ export default function RegistroPage() {
           href="/login"
           className="text-nanni-600 font-medium hover:text-nanni-700"
         >
-          Inicia sesión
+          Entrar
         </Link>
       </p>
     </div>

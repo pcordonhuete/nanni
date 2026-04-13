@@ -135,7 +135,7 @@ export default function LoginPage() {
               Entrando...
             </>
           ) : (
-            "Iniciar sesión"
+            "Entrar"
           )}
         </button>
       </form>

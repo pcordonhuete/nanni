@@ -324,7 +324,7 @@ export function FamilyDetailTabs(props: Props) {
         {[
           { label: "Sueño hoy", value: sleepTodayLabel, icon: Moon, color: "text-nanni-600 bg-nanni-50" },
           { label: "Despertares (últ. noche)", value: awakeningsLabel, icon: AlertTriangle, color: "text-amber-600 bg-amber-50" },
-          { label: "Score", value: props.score.toFixed(1), icon: Star, color: "text-emerald-600 bg-emerald-50", hasInfo: true },
+          { label: "Puntuación", value: props.score.toFixed(1), icon: Star, color: "text-emerald-600 bg-emerald-50", hasInfo: true },
           { label: "Tendencia", value: props.trendLabel, icon: props.trendPositive ? TrendingUp : TrendingDown, color: props.trendPositive ? "text-emerald-600 bg-emerald-50" : "text-red-600 bg-red-50" },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm relative">
@@ -347,11 +347,11 @@ export function FamilyDetailTabs(props: Props) {
       {showScoreInfo && (
         <div className="bg-nanni-50 border border-nanni-100 rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-nanni-900 flex items-center gap-2"><Info className="w-4 h-4" /> Cómo se calcula el Score</h4>
+            <h4 className="text-sm font-bold text-nanni-900 flex items-center gap-2"><Info className="w-4 h-4" /> Cómo se calcula la puntuación</h4>
             <button onClick={() => setShowScoreInfo(false)} className="text-nanni-400 hover:text-nanni-600"><X className="w-4 h-4" /></button>
           </div>
           <p className="text-xs text-nanni-800">{scoreExplanation(props.score)}</p>
-          <p className="text-xs text-nanni-700">El score combina: horas de sueño vs lo esperado para la edad ({benchmark.totalSleep}) y penalización por despertares (máx aceptable: {benchmark.maxAwakenings}).</p>
+          <p className="text-xs text-nanni-700">La puntuación combina: horas de sueño vs lo esperado para la edad ({benchmark.totalSleep}) y penalización por despertares (máx aceptable: {benchmark.maxAwakenings}).</p>
           <div className="bg-white rounded-xl p-3 mt-2">
             <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">Referencia para {benchmark.label}</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -471,7 +471,7 @@ export function FamilyDetailTabs(props: Props) {
                 <Target className="w-4 h-4 text-nanni-600" />
                 <h3 className="font-bold text-gray-900">Progreso de intervenciones</h3>
               </div>
-              <p className="text-xs text-gray-400 mb-4">Score antes y después de cada plan</p>
+              <p className="text-xs text-gray-400 mb-4">Puntuación antes y después de cada plan</p>
               <div className="space-y-4">
                 {props.deepAnalytics.planProgress.map((plan) => {
                   const goalsProgress = plan.goalsTotal > 0 ? Math.round((plan.goalsAchieved / plan.goalsTotal) * 100) : 0;
@@ -496,11 +496,11 @@ export function FamilyDetailTabs(props: Props) {
                       </div>
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
-                          <p className="text-[10px] text-gray-400">Score antes</p>
+                          <p className="text-[10px] text-gray-400">Antes</p>
                           <p className="text-lg font-bold text-gray-500">{plan.scoreBefore.toFixed(1)}</p>
                         </div>
                         <div className="text-center bg-white rounded-lg p-2 border border-gray-100">
-                          <p className="text-[10px] text-gray-400">Score ahora</p>
+                          <p className="text-[10px] text-gray-400">Ahora</p>
                           <p className="text-lg font-bold text-gray-900">{plan.scoreNow.toFixed(1)}</p>
                         </div>
                       </div>

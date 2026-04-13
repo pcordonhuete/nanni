@@ -960,8 +960,8 @@ export async function getPortfolioHealth(advisorId: string): Promise<PortfolioFa
     const lastAt = lastRecMap.get(f.id) || null;
     const lastAgoH = lastAt ? (now.getTime() - new Date(lastAt).getTime()) / 3600000 : 9999;
     let attentionReason: string | null = null;
-    if (lastAgoH > 48) attentionReason = `Sin registrar hace ${Math.round(lastAgoH / 24)}d`;
-    else if (curr.score < 4) attentionReason = "Score crítico";
+    if (lastAgoH > 48) attentionReason = `Sin registrar hace ${Math.round(lastAgoH / 24)} días`;
+    else if (curr.score < 4) attentionReason = "Necesita atención";
     else if (delta <= -1) attentionReason = "Empeorando rápido";
     return {
       family: f, ageMonths: babyAgeMonths(f.baby_birth_date),

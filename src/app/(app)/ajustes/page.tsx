@@ -15,7 +15,7 @@ import { PLAN_LIMITS } from "@/lib/types";
 
 const NOTIF_CONFIG = [
   { key: "new_record" as const, label: "Nuevo registro de una familia", description: "Cuando una familia registra una actividad" },
-  { key: "family_inactive" as const, label: "Familia sin registrar (24h)", description: "Alerta si una familia no registra en 24 horas" },
+  { key: "family_inactive" as const, label: "Familia sin actividad", description: "Alerta si una familia no registra en 24 horas" },
   { key: "insight" as const, label: "Insights IA disponibles", description: "Cuando la IA detecta un patrón nuevo" },
   { key: "weekly_summary" as const, label: "Resumen semanal", description: "Informe resumido cada lunes" },
 ];

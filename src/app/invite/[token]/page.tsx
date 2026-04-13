@@ -56,7 +56,7 @@ export default async function InvitePage({
 
         {/* Content */}
         <div className="p-6 text-center">
-          <p className="text-gray-500 text-sm mb-2">Te han invitado a registrar el diario de</p>
+          <p className="text-gray-500 text-sm mb-2">{advisor?.full_name || brandName} te invita a registrar el día a día de</p>
           <h2 className="text-2xl font-bold text-gray-900 mb-1">{family.baby_name}</h2>
           <p className="text-sm text-gray-400 mb-6">{age}</p>
 
@@ -82,12 +82,12 @@ export default async function InvitePage({
             className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-xl transition text-sm"
             style={{ backgroundColor: primaryColor }}
           >
-            Empezar a registrar
+            Acceder al diario de {family.baby_name}
             <ArrowRight className="w-4 h-4" />
           </Link>
 
           <p className="text-[11px] text-gray-400 mt-4">
-            Puedes instalar esta página como app en tu móvil para acceder más rápido.
+            Añade esta página a tu pantalla de inicio para acceder como una app: pulsa compartir (iOS) o el menú del navegador (Android) y selecciona &ldquo;Añadir a pantalla de inicio&rdquo;.
           </p>
         </div>
       </div>

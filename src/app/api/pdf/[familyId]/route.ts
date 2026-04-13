@@ -101,7 +101,7 @@ export async function GET(
   <div class="stats">
     <div class="stat"><div class="stat-value">${avgSleep.toFixed(1)}h</div><div class="stat-label">Media sueño/día</div></div>
     <div class="stat"><div class="stat-value">${avgAwakenings.toFixed(1)}</div><div class="stat-label">Media despertares</div></div>
-    <div class="stat"><div class="stat-value">${score}</div><div class="stat-label">Score</div></div>
+    <div class="stat"><div class="stat-value">${score}</div><div class="stat-label">Puntuación</div></div>
     <div class="stat"><div class="stat-value">${statusLabel}</div><div class="stat-label">Estado</div></div>
   </div>
 

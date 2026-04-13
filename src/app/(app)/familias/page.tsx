@@ -356,7 +356,7 @@ export default function FamiliasPage() {
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="bg-gray-50 rounded-lg p-2 text-center">
                     <p className="text-xs font-bold text-gray-900">{family.score.toFixed(1)}</p>
-                    <p className="text-[9px] text-gray-400">Score</p>
+                    <p className="text-[9px] text-gray-400">Puntuación</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-2 text-center">
                     <p className="text-xs font-bold text-gray-900">
@@ -414,7 +414,7 @@ export default function FamiliasPage() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Score {family.score.toFixed(1)} · {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despertares · Último: {family.last_record_at ? timeAgo(family.last_record_at) : "ninguno"}
+                    Puntuación {family.score.toFixed(1)} · {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despertares · Último: {family.last_record_at ? timeAgo(family.last_record_at) : "ninguno"}
                   </p>
                   {family.attention_reason && (
                     <p className="text-[11px] text-amber-600 font-medium mt-0.5">{family.attention_reason}</p>
