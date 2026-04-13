@@ -475,7 +475,7 @@ export default function LandingPage() {
                   <div className="px-3 pb-2 space-y-1">
                     {[
                       { icon: Sun, label: "Despertar", time: "07:15", detail: "Contento", bg: "bg-amber-50", ic: "text-amber-500" },
-                      { icon: Droplets, label: "Toma", time: "07:30", detail: "Pecho 20min", bg: "bg-sky-50", ic: "text-sky-500" },
+                      { icon: Droplets, label: "Alimentación", time: "07:30", detail: "Pecho 20min", bg: "bg-sky-50", ic: "text-sky-500" },
                       { icon: Moon, label: "Siesta", time: "09:30", detail: "1h 20min · Cuna", bg: "bg-nanni-50", ic: "text-nanni-500" },
                       { icon: Activity, label: "Juego", time: "11:05", detail: "45min · Parque", bg: "bg-emerald-50", ic: "text-emerald-500" },
                       { icon: Moon, label: "Siesta", time: "", detail: "En curso...", bg: "bg-nanni-50", ic: "text-nanni-500", active: true },
@@ -602,7 +602,7 @@ export default function LandingPage() {
                       },
                       {
                         icon: Droplets,
-                        l: "Toma",
+                        l: "Alimentación",
                         d: "Pecho 25min",
                         bg: "bg-amber-50",
                         ic: "text-amber-500",
@@ -657,7 +657,7 @@ export default function LandingPage() {
                         },
                         {
                           icon: Droplets,
-                          l: "Toma",
+                          l: "Alimentación",
                           bg: "bg-sky-100",
                           ic: "text-sky-600",
                         },

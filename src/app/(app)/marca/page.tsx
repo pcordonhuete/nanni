@@ -247,7 +247,7 @@ export default function MarcaPage() {
                   <div className="space-y-2">
                     {[
                       { icon: Moon, label: "Siesta", bg: "bg-nanni-50", iconColor: "text-nanni-600" },
-                      { icon: Droplets, label: "Toma", bg: "bg-amber-50", iconColor: "text-amber-500" },
+                      { icon: Droplets, label: "Alimentación", bg: "bg-amber-50", iconColor: "text-amber-500" },
                       { icon: Sun, label: "En curso...", bg: "bg-sky-50", iconColor: "text-sky-500" },
                     ].map((e) => (
                       <div key={e.label} className={`${e.bg} rounded-xl p-2.5 flex items-center gap-2`}>

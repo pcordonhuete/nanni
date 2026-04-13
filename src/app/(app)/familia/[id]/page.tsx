@@ -26,11 +26,11 @@ async function createNoteFormAction(formData: FormData) {
 
 const RECORD_META: Record<string, { icon: LucideIcon; label: string }> = {
   sleep: { icon: Moon, label: "Sueño" },
-  feeding: { icon: UtensilsCrossed, label: "Cena" },
+  feeding: { icon: UtensilsCrossed, label: "Alimentación" },
   wakeup: { icon: Sun, label: "Despertar" },
   note: { icon: FileText, label: "Nota" },
   wake: { icon: Sun, label: "Despertar" },
-  feed: { icon: Droplets, label: "Toma" },
+  feed: { icon: Droplets, label: "Alimentación" },
   diaper: { icon: Baby, label: "Pañal" },
   play: { icon: Activity, label: "Juego" },
   mood: { icon: Smile, label: "Humor" },
@@ -76,7 +76,7 @@ function buildRecordDetail(rec: ActivityRecord): string {
       const aLabels: Record<string, string> = { little: "Poco", normal: "Normal", lots: "Mucho" };
       const fm = det?.method as string;
       const fa = det?.amount as string;
-      return [fm && mLabels[fm], det?.description as string, fa && aLabels[fa]].filter(Boolean).join(" · ") || "Cena";
+      return [fm && mLabels[fm], det?.description as string, fa && aLabels[fa]].filter(Boolean).join(" · ") || "Alimentación";
     }
     case "wakeup": {
       const moods: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", cranky: "😫 Malhumorado" };
@@ -85,7 +85,7 @@ function buildRecordDetail(rec: ActivityRecord): string {
     }
     case "feed": {
       const bits = [det?.food_description as string, det?.amount_ml != null ? `${det.amount_ml} ml` : "", det?.method as string].filter(Boolean);
-      return [dur, ...bits].filter(Boolean).join(" · ") || "Toma";
+      return [dur, ...bits].filter(Boolean).join(" · ") || "Alimentación";
     }
     case "diaper": {
       return [det?.diaper_type as string, det?.color as string, det?.notes as string].filter(Boolean).join(" · ") || "Pañal";

@@ -28,7 +28,7 @@ type FormType = "sleep" | "feeding" | "wakeup" | "note";
 
 const QUICK_BUTTONS: { type: FormType; label: string; icon: typeof Moon; color: string }[] = [
   { type: "sleep", label: "Sueño", icon: Moon, color: "bg-indigo-100 text-indigo-600" },
-  { type: "feeding", label: "Cena", icon: UtensilsCrossed, color: "bg-sky-100 text-sky-600" },
+  { type: "feeding", label: "Alimentación", icon: UtensilsCrossed, color: "bg-sky-100 text-sky-600" },
   { type: "note", label: "Nota", icon: FileText, color: "bg-gray-100 text-gray-600" },
 ];
 
@@ -141,8 +141,8 @@ function displayDateFromKey(key: string): string {
 
 // ─── Record label helpers ───
 const TYPE_LABELS: Record<string, string> = {
-  sleep: "Sueño", feeding: "Cena", wakeup: "Despertar", note: "Nota",
-  feed: "Toma", diaper: "Pañal", play: "Juego", mood: "Humor", wake: "Despertar",
+  sleep: "Sueño", feeding: "Alimentación", wakeup: "Despertar", note: "Nota",
+  feed: "Alimentación", diaper: "Pañal", play: "Juego", mood: "Humor", wake: "Despertar",
 };
 
 const TYPE_ICONS: Record<string, typeof Moon> = {
