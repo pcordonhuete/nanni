@@ -22,6 +22,7 @@ interface ParentAppProps {
   initialRecords: ActivityRecord[];
   activePlan: (SleepPlan & { goals: SleepPlanGoal[]; steps: SleepPlanStep[] }) | null;
   weekSummary: { avgSleep: number; avgAwakenings: number; daysWithData: number };
+  authenticatedParentName?: string | null;
 }
 
 type FormType = "sleep" | "feeding" | "wakeup" | "note";
