@@ -50,10 +50,10 @@ export default function LoginPage() {
           <Moon className="w-7 h-7 text-nanni-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Bienvenida de nuevo
+          Hola de nuevo
         </h1>
         <p className="text-gray-500 mt-1">
-          Accede a tu panel de Nanni
+          Accede a tus familias
         </p>
       </div>
 

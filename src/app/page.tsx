@@ -188,7 +188,7 @@ const faqs = [
   },
   {
     q: "¿Funciona sin conexión a internet?",
-    a: "Sí. La app funciona offline. Los registros se sincronizan cuando vuelve la conexión. Perfecto para las 3am.",
+    a: "Sí. La app funciona sin conexión. Los registros se sincronizan cuando vuelve la conexión. Perfecto para las 3am.",
   },
   {
     q: "¿Qué incluye el análisis con IA?",
@@ -204,7 +204,7 @@ const faqs = [
   },
   {
     q: "¿Cuál es la política de reembolsos?",
-    a: "Puedes cancelar en cualquier momento y seguirás con acceso hasta el final del periodo facturado. No realizamos reembolsos por periodos parciales salvo error imputable a Nanni. Si crees que tienes derecho a uno, escríbenos a hola@nanniapp.com y lo revisamos.",
+    a: "Si no estás satisfecha en los primeros 30 días, te devolvemos el dinero sin preguntas. Después, puedes cancelar cuando quieras y mantienes el acceso hasta el final del periodo facturado. Escríbenos a hola@nanniapp.com y lo resolvemos.",
   },
 ];
 

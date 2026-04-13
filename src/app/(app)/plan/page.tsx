@@ -198,10 +198,10 @@ export default function PlanPage() {
       {/* Expired state */}
       {trialExpired && (
         <div className="mb-8 bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
-          <Lock className="w-8 h-8 text-red-400 mx-auto mb-2" />
-          <h3 className="font-bold text-red-800 text-lg">Tu prueba gratuita ha terminado</h3>
-          <p className="text-red-600 text-sm mt-1">
-            Elige un plan para recuperar el acceso a tus familias, datos e insights
+          <Lock className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+          <h3 className="font-bold text-gray-800 text-lg">Tu periodo de prueba ha terminado</h3>
+          <p className="text-gray-600 text-sm mt-1">
+            Elige un plan para seguir ayudando a tus familias con Nanni
           </p>
         </div>
       )}
@@ -218,10 +218,10 @@ export default function PlanPage() {
           </span>
         </div>
         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
-          La herramienta que tu consulta necesita
+          Más tiempo asesorando, menos recopilando
         </h1>
         <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-          Ahorra horas de trabajo, impresiona a tus familias y escala tu negocio de asesoría de sueño
+          Tus familias registran desde el móvil, tú recibes datos limpios con análisis automático
         </p>
       </div>
 
@@ -344,9 +344,9 @@ export default function PlanPage() {
       {/* Value props */}
       <div className="grid sm:grid-cols-3 gap-5 mb-12">
         {[
-          { icon: TrendingUp, title: "2x más retención", desc: "Las familias que usan la app registran 3x más y completan el 87% de los planes" },
+          { icon: TrendingUp, title: "Familias más comprometidas", desc: "Registrar desde el móvil es tan fácil que las familias lo hacen sin que les persigas" },
           { icon: Brain, title: "IA que trabaja por ti", desc: "Análisis automático de patrones, alertas proactivas y recomendaciones basadas en datos" },
-          { icon: Heart, title: "Impresiona a tus clientes", desc: "App con tu marca, informes profesionales y seguimiento en tiempo real" },
+          { icon: Heart, title: "Tu imagen profesional", desc: "App con tu marca, informes profesionales y seguimiento en tiempo real" },
         ].map(({ icon: Icon, title, desc }) => (
           <div key={title} className="bg-gray-50 rounded-2xl p-5 text-center">
             <div className="w-10 h-10 rounded-xl bg-nanni-100 flex items-center justify-center mx-auto mb-3">
@@ -389,9 +389,9 @@ export default function PlanPage() {
       {/* Guarantee */}
       <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center mb-8">
         <Shield className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-        <h4 className="font-bold text-emerald-800 mb-1">Garantía de 14 días</h4>
+        <h4 className="font-bold text-emerald-800 mb-1">Satisfacción garantizada</h4>
         <p className="text-sm text-emerald-700">
-          Si no estás 100% satisfecha, te devolvemos el dinero. Sin preguntas.
+          Si no estás convencida en los primeros 30 días, te devolvemos el dinero. Sin preguntas.
         </p>
       </div>
 

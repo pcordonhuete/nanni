@@ -173,8 +173,8 @@ export default function FamiliasPage() {
             const lastRecordAt = lastRec?.created_at || null;
             const hoursSinceLast = lastRecordAt ? (Date.now() - new Date(lastRecordAt).getTime()) / 3600000 : 9999;
             const attentionReason =
-              hoursSinceLast > 48 ? `Sin registrar hace ${Math.round(hoursSinceLast / 24)}d` :
-              score < 4 ? "Score crítico" :
+              hoursSinceLast > 48 ? `Sin registrar hace ${Math.round(hoursSinceLast / 24)} días` :
+              score < 4 ? "Necesita atención" :
               trend === "down" ? "Tendencia negativa" : null;
 
             return {
@@ -282,7 +282,7 @@ export default function FamiliasPage() {
         <div className="flex items-center gap-2">
           {!bulkMode ? (
             <button onClick={() => setBulkMode(true)} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1.5 transition">
-              <CheckSquare className="w-3.5 h-3.5" /> Selección múltiple
+              <CheckSquare className="w-3.5 h-3.5" /> Seleccionar varias
             </button>
           ) : (
             <div className="flex items-center gap-2 flex-wrap bg-nanni-50 rounded-xl px-3 py-2 w-full">
@@ -311,9 +311,9 @@ export default function FamiliasPage() {
       ) : families.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="Sin familias todavía"
-          description="Añade tu primera familia para empezar a recibir registros de sueño y rutinas."
-          action={{ label: "Añadir familia", onClick: () => setShowInvite(true) }}
+          title="Invita a tu primera familia"
+          description="Envía un enlace y empieza a recibir registros de sueño y rutinas."
+          action={{ label: "Invitar familia", onClick: () => setShowInvite(true) }}
         />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -367,7 +367,7 @@ export default function FamiliasPage() {
                 </div>
                 <div className="mb-3 text-[11px]">
                   <p className="text-gray-500">
-                    {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despert.
+                    {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despertares
                     {family.score_delta !== 0 ? (
                       <span className={cn("ml-1 font-medium", family.score_delta > 0 ? "text-emerald-600" : "text-red-500")}>
                         ({family.score_delta > 0 ? "+" : ""}{family.score_delta})
@@ -414,7 +414,7 @@ export default function FamiliasPage() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Score {family.score.toFixed(1)} · {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despert. · Último: {family.last_record_at ? timeAgo(family.last_record_at) : "ninguno"}
+                    Score {family.score.toFixed(1)} · {family.avg_sleep_hours}h sueño · {family.avg_awakenings} despertares · Último: {family.last_record_at ? timeAgo(family.last_record_at) : "ninguno"}
                   </p>
                   {family.attention_reason && (
                     <p className="text-[11px] text-amber-600 font-medium mt-0.5">{family.attention_reason}</p>

@@ -68,7 +68,7 @@ export default function RegistroPage() {
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Crea tu cuenta</h1>
         <p className="text-gray-500 mt-1">
-          14 días gratis de Premium, sin tarjeta
+          14 días gratis de Premium, sin tarjeta. Empieza a recibir registros hoy.
         </p>
       </div>
 
@@ -95,7 +95,7 @@ export default function RegistroPage() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Tu nombre"
+            placeholder="Ana García López"
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nanni-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
           />
         </div>
