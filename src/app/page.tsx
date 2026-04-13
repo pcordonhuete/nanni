@@ -75,8 +75,8 @@ const steps = [
 const features = [
   {
     icon: Smartphone,
-    title: "App nativa (PWA)",
-    text: "Se instala como app en el móvil de los padres. Push notifications, funciona offline. Sin pasar por App Store.",
+    title: "App en el móvil, sin App Store",
+    text: "Se instala como app en el móvil de los padres. Notificaciones, funciona sin conexión. Sin descargas.",
   },
   {
     icon: BarChart3,
@@ -90,12 +90,12 @@ const features = [
   },
   {
     icon: Users,
-    title: "Multi-padre sincronizado",
+    title: "Para mamá y papá",
     text: "Ambos padres registran desde su móvil. Sincronización instantánea, sin duplicados.",
   },
   {
     icon: Palette,
-    title: "White-label completo",
+    title: "Tu marca, tu imagen",
     text: "Tu logo, colores y dominio. Landing de captación con formulario incluida. Los padres ven tu marca.",
   },
   {
@@ -108,7 +108,7 @@ const features = [
 const plans = [
   {
     name: "Básico",
-    desc: "Para asesoras que empiezan",
+    desc: "Todo lo que necesitas para empezar",
     discountedPrice: "25",
     regularPrice: "49",
     afterMonthly: "49",
@@ -133,7 +133,7 @@ const plans = [
       "Todo del Básico, más:",
       "Familias ilimitadas",
       "Análisis IA + recomendaciones",
-      "White-label (logo, colores, dominio)",
+      "Tu marca propia (logo, colores, dominio)",
       "Gráficas avanzadas + PDF",
       "Hasta 5 miembros del equipo",
       "Soporte prioritario",
@@ -303,7 +303,7 @@ export default function LandingPage() {
                 <span className="w-px h-3.5 bg-gray-200" />
                 <span className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-nanni-500" />
-                  Setup en 2 min
+                  Lista en 2 min
                 </span>
               </div>
             </div>
