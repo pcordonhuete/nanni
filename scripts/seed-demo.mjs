@@ -62,14 +62,14 @@ function uuid() {
 
 // ─── Demo families config ───
 const FAMILIES = [
-  { baby_name: "Mateo",   birth_offset_months: 7,  status: "active",    trend: "improving",  parent_email: "mateo.padres@demo.com",   parent_phone: "+34 612 111 001" },
-  { baby_name: "Lucía",   birth_offset_months: 5,  status: "active",    trend: "stable",     parent_email: "lucia.padres@demo.com",   parent_phone: "+34 612 111 002" },
-  { baby_name: "Hugo",    birth_offset_months: 10, status: "active",    trend: "slow",       parent_email: "hugo.padres@demo.com",    parent_phone: "+34 612 111 003" },
-  { baby_name: "Martina", birth_offset_months: 4,  status: "active",    trend: "new",        parent_email: "martina.padres@demo.com", parent_phone: "+34 612 111 004" },
-  { baby_name: "Leo",     birth_offset_months: 8,  status: "active",    trend: "struggling", parent_email: "leo.padres@demo.com",     parent_phone: "+34 612 111 005" },
-  { baby_name: "Emma",    birth_offset_months: 3,  status: "active",    trend: "improving",  parent_email: "emma.padres@demo.com",    parent_phone: "+34 612 111 006" },
-  { baby_name: "Sofía",   birth_offset_months: 14, status: "completed", trend: "stable",     parent_email: "sofia.padres@demo.com",   parent_phone: "+34 612 111 007" },
-  { baby_name: "Daniel",  birth_offset_months: 6,  status: "paused",    trend: "stable",     parent_email: "daniel.padres@demo.com",  parent_phone: "+34 612 111 008" },
+  { baby_name: "Mateo",   baby_last_name: "López Ruiz",     city: "Madrid",     birth_offset_months: 7,  status: "active",    trend: "improving",  parent_email: "mateo.padres@demo.com",   parent_phone: "+34 612 111 001" },
+  { baby_name: "Lucía",   baby_last_name: "Fernández",      city: "Barcelona",  birth_offset_months: 5,  status: "active",    trend: "stable",     parent_email: "lucia.padres@demo.com",   parent_phone: "+34 612 111 002" },
+  { baby_name: "Hugo",    baby_last_name: "Martín García",  city: "Valencia",   birth_offset_months: 10, status: "active",    trend: "improving",  parent_email: "hugo.padres@demo.com",    parent_phone: "+34 612 111 003" },
+  { baby_name: "Martina", baby_last_name: "Sánchez",        city: "Sevilla",    birth_offset_months: 4,  status: "active",    trend: "stable",     parent_email: "martina.padres@demo.com", parent_phone: "+34 612 111 004" },
+  { baby_name: "Leo",     baby_last_name: "Navarro Pérez",  city: "Bilbao",     birth_offset_months: 8,  status: "active",    trend: "improving",  parent_email: "leo.padres@demo.com",     parent_phone: "+34 612 111 005" },
+  { baby_name: "Emma",    baby_last_name: "Torres",         city: "Málaga",     birth_offset_months: 3,  status: "active",    trend: "improving",  parent_email: "emma.padres@demo.com",    parent_phone: "+34 612 111 006" },
+  { baby_name: "Sofía",   baby_last_name: "Romero Díaz",    city: "Zaragoza",   birth_offset_months: 14, status: "completed", trend: "stable",     parent_email: "sofia.padres@demo.com",   parent_phone: "+34 612 111 007" },
+  { baby_name: "Daniel",  baby_last_name: "Gil",            city: "Alicante",   birth_offset_months: 6,  status: "paused",    trend: "stable",     parent_email: "daniel.padres@demo.com",  parent_phone: "+34 612 111 008" },
 ];
 
 function birthDate(offsetMonths) {
@@ -81,7 +81,7 @@ function birthDate(offsetMonths) {
 // ─── Generate records for a day (new data model) ───
 function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
   const records = [];
-  const improveFactor = trend === "improving" ? Math.min(dayIndex / 30, 1) : trend === "slow" ? Math.min(dayIndex / 60, 0.5) : trend === "struggling" ? 0.1 : trend === "new" ? 0.3 : 0.7;
+  const improveFactor = trend === "improving" ? Math.min(dayIndex / 30, 1) : 0.7; // stable = consistently good
 
   const locations = ["crib", "cosleep", "arms", "stroller", "car"];
   const methods = ["self", "rocking", "feeding", "white_noise"];
@@ -93,8 +93,8 @@ function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
   nightStart.setHours(19 + randomInt(0, 1), randomInt(30, 59), 0, 0);
   const nightDurationMin = Math.round(randomBetween(480, 600) + improveFactor * 60);
   const nightEnd = new Date(nightStart.getTime() + nightDurationMin * 60000);
-  const maxWakes = trend === "struggling" ? 4 : trend === "new" ? 3 : Math.max(0, Math.round(3 - improveFactor * 3));
-  const nightAwakenings = randomInt(Math.max(0, maxWakes - 1), maxWakes);
+  const maxWakes = Math.max(0, Math.round(2 - improveFactor * 2));
+  const nightAwakenings = randomInt(0, maxWakes);
 
   records.push({
     id: uuid(), family_id: familyId, type: "sleep",
@@ -115,7 +115,7 @@ function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
   const wakeupTime = new Date(nightEnd.getTime() + randomInt(0, 15) * 60000);
   const wakeupMoods = improveFactor > 0.5 ? ["happy", "happy", "neutral"] : ["neutral", "cranky", "happy"];
   records.push({
-    id: uuid(), family_id: familyId, type: "wakeup",
+    id: uuid(), family_id: familyId, type: "wake",
     started_at: wakeupTime.toISOString(), ended_at: null, duration_minutes: null,
     details: {
       mood: wakeupMoods[randomInt(0, 2)],
@@ -154,7 +154,7 @@ function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
   const dinnerDescs = ["Puré de verduras", "Papilla de frutas", "Pollo con arroz", "Crema de calabaza", "Biberón 200ml"];
   const amounts = ["little", "normal", "lots"];
   records.push({
-    id: uuid(), family_id: familyId, type: "feeding",
+    id: uuid(), family_id: familyId, type: "feed",
     started_at: dinnerTime.toISOString(), ended_at: null, duration_minutes: null,
     details: {
       method: dinnerMethods[randomInt(0, dinnerMethods.length - 1)],
@@ -195,50 +195,48 @@ function generateDayRecords(familyId, day, dayIndex, trend, ageMonths) {
 
 // ─── Insights templates ───
 function generateInsights(familyId, advisorId, babyName) {
-  return [
-    {
-      id: uuid(), family_id: familyId, advisor_id: advisorId, type: "improvement",
-      title: `Mejora detectada en ${babyName}`,
-      description: `Los despertares nocturnos de ${babyName} se han reducido un 40% en la última semana. Adelantar la hora de acostarse 15 minutos está funcionando.`,
-      data: { metric: "awakenings", change: -40 }, is_read: false, created_at: daysAgo(1).toISOString(),
-    },
-    {
-      id: uuid(), family_id: familyId, advisor_id: advisorId, type: "pattern",
-      title: `Patrón de siestas de ${babyName}`,
-      description: `${babyName} duerme mejor las siestas cuando la siesta de la mañana es antes de las 10:00. Las siestas tardías correlacionan con más despertares nocturnos.`,
-      data: { metric: "nap_timing" }, is_read: false, created_at: daysAgo(3).toISOString(),
-    },
-    {
-      id: uuid(), family_id: familyId, advisor_id: advisorId, type: "recommendation",
-      title: `Sugerencia para ${babyName}`,
-      description: `La ventana de vigilia antes de acostarse supera las 3h. Prueba una siesta corta a las 16:30 para evitar sobre-cansancio.`,
-      data: { metric: "wake_window" }, is_read: true, created_at: daysAgo(5).toISOString(),
-    },
+  const insightSets = [
+    [
+      { type: "improvement", title: `Mejora detectada en ${babyName}`, description: `Los despertares nocturnos de ${babyName} se han reducido un 40% en la última semana. Adelantar la hora de acostarse 15 minutos está funcionando.`, data: { metric: "awakenings", change: -40 } },
+      { type: "pattern", title: `Patrón de siestas de ${babyName}`, description: `${babyName} duerme mejor las siestas cuando la siesta de la mañana es antes de las 10:00. Las siestas tardías correlacionan con más despertares nocturnos.`, data: { metric: "nap_timing" } },
+      { type: "recommendation", title: `Sugerencia para ${babyName}`, description: `El sueño nocturno de ${babyName} ha mejorado 45 min esta semana. Mantén la rutina actual y valora reducir una siesta si ya duerme 11h de noche.`, data: { metric: "night_sleep" } },
+    ],
+    [
+      { type: "improvement", title: `${babyName} consolida siestas`, description: `Las siestas de ${babyName} son más largas y regulares esta semana. La media ha subido de 40 a 55 minutos. El ruido blanco parece estar ayudando.`, data: { metric: "nap_duration", change: 37 } },
+      { type: "pattern", title: `Correlación alimentación-sueño`, description: `Los días que ${babyName} cena antes de las 19:00 duerme 30 min más de media. Parece beneficiarse de un hueco más largo entre cena y sueño.`, data: { metric: "feeding_sleep" } },
+      { type: "improvement", title: `Menos ayuda para dormirse`, description: `${babyName} se ha dormido solo/a en 4 de las últimas 7 noches, frente a 1 de 7 la semana anterior. La retirada gradual funciona.`, data: { metric: "self_soothe" } },
+    ],
   ];
+  const set = insightSets[randomInt(0, insightSets.length - 1)];
+  return set.map((s, i) => ({
+    id: uuid(), family_id: familyId, advisor_id: advisorId,
+    ...s, is_read: i > 0, created_at: daysAgo(i * 2 + 1).toISOString(),
+  }));
 }
 
 // ─── Sleep plans ───
 function generatePlan(familyId, advisorId, babyName, trend) {
   const planId = uuid();
+  const isImproving = trend === "improving";
   const plan = {
     id: planId, family_id: familyId, advisor_id: advisorId,
     title: `Plan de sueño — ${babyName}`,
     description: `Método de extinción gradual adaptado a la edad y temperamento de ${babyName}. Objetivo: consolidar sueño nocturno y reducir despertares.`,
-    status: trend === "stable" || trend === "improving" ? "active" : "draft",
-    created_at: daysAgo(20).toISOString(), updated_at: daysAgo(2).toISOString(),
+    status: "active",
+    created_at: daysAgo(20).toISOString(), updated_at: daysAgo(1).toISOString(),
   };
 
   const goals = [
-    { id: uuid(), plan_id: planId, description: "Reducir despertares nocturnos a ≤1", target_value: 1, current_value: trend === "improving" ? 1.2 : 2.5, metric: "awakenings", achieved: trend === "improving", created_at: daysAgo(20).toISOString() },
-    { id: uuid(), plan_id: planId, description: "Sueño nocturno ≥10.5h", target_value: 10.5, current_value: trend === "improving" ? 10.8 : 9.5, metric: "night_hours", achieved: trend === "improving", created_at: daysAgo(20).toISOString() },
-    { id: uuid(), plan_id: planId, description: "Se duerme solo/a en la cuna", target_value: null, current_value: null, metric: "self_soothe", achieved: false, created_at: daysAgo(20).toISOString() },
+    { id: uuid(), plan_id: planId, description: "Reducir despertares nocturnos a ≤1", target_value: 1, current_value: isImproving ? 0.8 : 1.2, metric: "awakenings", achieved: isImproving, created_at: daysAgo(20).toISOString() },
+    { id: uuid(), plan_id: planId, description: "Sueño nocturno ≥10.5h", target_value: 10.5, current_value: isImproving ? 11.1 : 10.3, metric: "night_hours", achieved: isImproving, created_at: daysAgo(20).toISOString() },
+    { id: uuid(), plan_id: planId, description: "Se duerme solo/a en la cuna", target_value: null, current_value: null, metric: "self_soothe", achieved: isImproving, created_at: daysAgo(20).toISOString() },
   ];
 
   const steps = [
     { id: uuid(), plan_id: planId, step_order: 1, title: "Rutina predecible", description: "Establecer rutina fija: baño → pijama → cuento → canción → cuna.", duration_days: 7, completed: true, completed_at: daysAgo(13).toISOString(), created_at: daysAgo(20).toISOString() },
-    { id: uuid(), plan_id: planId, step_order: 2, title: "Hora fija de acostarse", description: "Acostarse entre 19:30-20:00 cada noche. No variar más de 15 min.", duration_days: 7, completed: trend === "improving", completed_at: trend === "improving" ? daysAgo(6).toISOString() : null, created_at: daysAgo(13).toISOString() },
-    { id: uuid(), plan_id: planId, step_order: 3, title: "Retirada gradual", description: "Ir reduciendo la presencia: al lado de la cuna → en la puerta → fuera.", duration_days: 10, completed: false, completed_at: null, created_at: daysAgo(6).toISOString() },
-    { id: uuid(), plan_id: planId, step_order: 4, title: "Autonomía nocturna", description: "Esperar 2-3 min antes de intervenir en despertares. Dar oportunidad de reconectar ciclos.", duration_days: 7, completed: false, completed_at: null, created_at: daysAgo(6).toISOString() },
+    { id: uuid(), plan_id: planId, step_order: 2, title: "Hora fija de acostarse", description: "Acostarse entre 19:30-20:00 cada noche. No variar más de 15 min.", duration_days: 7, completed: true, completed_at: daysAgo(6).toISOString(), created_at: daysAgo(13).toISOString() },
+    { id: uuid(), plan_id: planId, step_order: 3, title: "Retirada gradual", description: "Ir reduciendo la presencia: al lado de la cuna → en la puerta → fuera.", duration_days: 10, completed: isImproving, completed_at: isImproving ? daysAgo(2).toISOString() : null, created_at: daysAgo(6).toISOString() },
+    { id: uuid(), plan_id: planId, step_order: 4, title: "Autonomía nocturna", description: "Esperar 2-3 min antes de intervenir en despertares. Dar oportunidad de reconectar ciclos.", duration_days: 7, completed: false, completed_at: null, created_at: daysAgo(2).toISOString() },
   ];
 
   return { plan, goals, steps };
@@ -257,15 +255,14 @@ function generateNotes(familyId, advisorId, babyName) {
 // ─── Notifications ───
 function generateNotifications(userId, families) {
   const notifs = [];
-  for (const f of families.slice(0, 5)) {
+  for (const f of families.slice(0, 6)) {
     notifs.push(
-      { id: uuid(), user_id: userId, type: "new_record", title: `Nuevo registro de ${f.baby_name}`, body: `Los padres de ${f.baby_name} han registrado la actividad de hoy.`, is_read: Math.random() > 0.4, link: null, created_at: daysAgo(randomInt(0, 2)).toISOString() },
-      { id: uuid(), user_id: userId, type: "insight", title: `Nuevo insight para ${f.baby_name}`, body: `La IA ha detectado un nuevo patrón en los datos de ${f.baby_name}.`, is_read: Math.random() > 0.6, link: null, created_at: daysAgo(randomInt(1, 4)).toISOString() },
+      { id: uuid(), user_id: userId, type: "new_record", title: `Nuevo registro de ${f.baby_name}`, body: `Los padres de ${f.baby_name} han registrado la actividad de hoy.`, is_read: Math.random() > 0.4, link: null, created_at: daysAgo(randomInt(0, 1)).toISOString() },
+      { id: uuid(), user_id: userId, type: "insight", title: `Mejora detectada en ${f.baby_name}`, body: `La IA ha detectado una mejora en los patrones de sueño de ${f.baby_name}.`, is_read: Math.random() > 0.6, link: null, created_at: daysAgo(randomInt(1, 3)).toISOString() },
     );
   }
   notifs.push(
-    { id: uuid(), user_id: userId, type: "weekly_summary", title: "Resumen semanal disponible", body: "Tu resumen semanal está listo. 6 de 8 familias registraron actividad.", is_read: false, link: null, created_at: daysAgo(1).toISOString() },
-    { id: uuid(), user_id: userId, type: "family_inactive", title: `${families[4]?.baby_name || "Leo"} sin registrar (24h)`, body: "No se han registrado actividades en las últimas 24 horas.", is_read: false, link: null, created_at: daysAgo(0).toISOString() },
+    { id: uuid(), user_id: userId, type: "system", title: "Resumen semanal disponible", body: "Tu resumen semanal está listo. Todas las familias activas registraron actividad esta semana.", is_read: false, link: null, created_at: daysAgo(1).toISOString() },
   );
   return notifs;
 }
@@ -368,6 +365,8 @@ async function main() {
     id: uuid(),
     advisor_id: userId,
     baby_name: f.baby_name,
+    baby_last_name: f.baby_last_name,
+    city: f.city,
     baby_birth_date: birthDate(f.birth_offset_months),
     status: f.status,
   }));
