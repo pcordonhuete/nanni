@@ -22,7 +22,7 @@ const testimonials = [
   {
     name: "Laura Sánchez",
     role: "Consultora certificada COCS",
-    text: "La IA me ahorra 2h al día analizando patrones. Mis clientes notan la diferencia desde la primera semana.",
+    text: "Ahorro 2h al día porque los datos ya llegan organizados. Mis clientes notan la diferencia desde la primera semana.",
     avatar: "LS",
   },
 ];
@@ -34,7 +34,7 @@ const features = {
     { text: "Planes de sueño personalizados", included: true },
     { text: "Informes PDF", included: true },
     { text: "Soporte por email", included: true },
-    { text: "Insights IA automáticos", included: false },
+    { text: "Análisis de patrones automático", included: false },
     { text: "Tu marca propia (white-label)", included: false },
     { text: "Equipo / multi-usuario", included: false },
   ],
@@ -44,7 +44,7 @@ const features = {
     { text: "Planes de sueño personalizados", included: true },
     { text: "Informes PDF avanzados", included: true },
     { text: "Soporte prioritario", included: true },
-    { text: "Insights IA automáticos", included: true },
+    { text: "Análisis de patrones automático", included: true },
     { text: "Tu marca propia (white-label)", included: true },
     { text: "Hasta 5 miembros de equipo", included: true },
   ],
@@ -345,7 +345,7 @@ export default function PlanPage() {
       <div className="grid sm:grid-cols-3 gap-5 mb-12">
         {[
           { icon: TrendingUp, title: "Familias más comprometidas", desc: "Registrar desde el móvil es tan fácil que las familias lo hacen sin que les persigas" },
-          { icon: Brain, title: "IA que trabaja por ti", desc: "Análisis automático de patrones, alertas proactivas y recomendaciones basadas en datos" },
+          { icon: Brain, title: "Tus datos, tus decisiones", desc: "Patrones, alertas y sugerencias basadas en los registros de tus familias. Tú decides qué aplicar." },
           { icon: Heart, title: "Tu imagen profesional", desc: "App con tu marca, informes profesionales y seguimiento en tiempo real" },
         ].map(({ icon: Icon, title, desc }) => (
           <div key={title} className="bg-gray-50 rounded-2xl p-5 text-center">

@@ -57,7 +57,7 @@ export default function TerminosPage() {
           <ul>
             <li>App para padres (PWA) con marca personalizable para registrar actividad del bebé.</li>
             <li>Panel de control (dashboard) para la asesora con gráficas, timeline y alertas.</li>
-            <li>Análisis de datos con inteligencia artificial (plan Premium).</li>
+            <li>Análisis automático de patrones de sueño (plan Premium).</li>
             <li>Personalización white-label: logo, colores y dominio (plan Premium).</li>
             <li>Generación de informes en PDF.</li>
           </ul>
@@ -118,7 +118,7 @@ export default function TerminosPage() {
           <h2>11. Limitación de responsabilidad</h2>
           <ul>
             <li>Nanni proporciona el servicio &ldquo;tal cual&rdquo; (as is). No garantizamos que se ajuste a todas tus necesidades.</li>
-            <li>Los análisis e insights de IA son orientativos y no constituyen asesoramiento médico.</li>
+            <li>Los análisis y observaciones automáticas son orientativos y no constituyen asesoramiento médico.</li>
             <li>Nanni no será responsable de daños indirectos, lucro cesante o pérdida de datos, en la medida permitida por la ley aplicable.</li>
             <li>La responsabilidad total de Nanni se limitará al importe abonado en los últimos 12 meses.</li>
           </ul>

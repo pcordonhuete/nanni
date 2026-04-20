@@ -106,8 +106,8 @@ Responde SOLO con el JSON, sin texto adicional.`;
     await supabase.from("notifications").insert({
       user_id: advisorId,
       type: "insight",
-      title: `Nuevos insights para ${family.baby_name}`,
-      body: `La IA ha generado ${insights.length} nuevos insights`,
+      title: `Nuevas observaciones de ${family.baby_name}`,
+      body: `Tienes ${insights.length} nuevas observaciones basadas en los registros recientes`,
       link: `/familia/${familyId}`,
     });
 

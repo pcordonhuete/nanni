@@ -102,7 +102,7 @@ export default function PrivacidadPage() {
             <li><strong>Supabase (Hetzner, UE)</strong> — Alojamiento de la base de datos y autenticación.</li>
             <li><strong>Stripe (EE.UU., con cláusulas contractuales tipo)</strong> — Procesamiento de pagos.</li>
             <li><strong>Vercel (EE.UU., con cláusulas contractuales tipo)</strong> — Hosting de la aplicación.</li>
-            <li><strong>OpenAI (EE.UU., con cláusulas contractuales tipo)</strong> — Generación de insights IA. Los datos enviados son anonimizados y no se usan para entrenar modelos de terceros.</li>
+            <li><strong>OpenAI (EE.UU., con cláusulas contractuales tipo)</strong> — Análisis automático de patrones. Los datos enviados son anonimizados y no se usan para entrenar modelos de terceros.</li>
           </ul>
           <p>No vendemos ni cedemos datos personales a terceros con fines comerciales.</p>
 

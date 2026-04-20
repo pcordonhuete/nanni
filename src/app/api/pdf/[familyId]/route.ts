@@ -118,7 +118,7 @@ export async function GET(
   `).join("")}
 
   ${insights.length > 0 ? `
-    <h2>Insights IA</h2>
+    <h2>Observaciones</h2>
     ${insights.slice(0, 5).map((i) => `
       <div class="insight">
         <div class="insight-title">${i.title}</div>

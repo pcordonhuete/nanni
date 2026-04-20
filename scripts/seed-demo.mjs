@@ -258,7 +258,7 @@ function generateNotifications(userId, families) {
   for (const f of families.slice(0, 6)) {
     notifs.push(
       { id: uuid(), user_id: userId, type: "new_record", title: `Nuevo registro de ${f.baby_name}`, body: `Los padres de ${f.baby_name} han registrado la actividad de hoy.`, is_read: Math.random() > 0.4, link: null, created_at: daysAgo(randomInt(0, 1)).toISOString() },
-      { id: uuid(), user_id: userId, type: "insight", title: `Mejora detectada en ${f.baby_name}`, body: `La IA ha detectado una mejora en los patrones de sueño de ${f.baby_name}.`, is_read: Math.random() > 0.6, link: null, created_at: daysAgo(randomInt(1, 3)).toISOString() },
+      { id: uuid(), user_id: userId, type: "insight", title: `Mejora detectada en ${f.baby_name}`, body: `Los datos muestran una mejora en los patrones de sueño de ${f.baby_name}.`, is_read: Math.random() > 0.6, link: null, created_at: daysAgo(randomInt(1, 3)).toISOString() },
     );
   }
   notifs.push(

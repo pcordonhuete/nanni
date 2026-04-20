@@ -48,7 +48,7 @@ export type TimelineEntry = {
   type: RecordType;
 };
 
-const TABS = ["Diario", "Sueño", "Hábitos", "IA & Plan", "Notas"] as const;
+const TABS = ["Diario", "Sueño", "Hábitos", "Análisis & Plan", "Notas"] as const;
 type TabId = (typeof TABS)[number];
 
 function insightStyles(type: InsightType) {
@@ -413,7 +413,7 @@ export function FamilyDetailTabs(props: Props) {
         <HabitosTab analytics={props.deepAnalytics} benchmark={benchmark} />
       )}
 
-      {activeTab === "IA & Plan" && (
+      {activeTab === "Análisis & Plan" && (
         <div className="space-y-6">
           {/* Alerts section */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -441,12 +441,12 @@ export function FamilyDetailTabs(props: Props) {
           {/* AI insights */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-nanni-600" /> Generar insights con IA</h3>
-              <p className="text-xs text-gray-500 mt-1">Analiza los registros de la última semana y crea hasta 3 insights nuevos.</p>
+              <h3 className="font-bold text-gray-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-nanni-600" /> Analizar patrones</h3>
+              <p className="text-xs text-gray-500 mt-1">Revisa los registros de la última semana y genera hasta 3 observaciones para ti.</p>
               {insightError && <p className="text-xs text-red-600 mt-2">{insightError}</p>}
             </div>
             <button type="button" disabled={pendingInsight} onClick={onGenerateInsights} className="shrink-0 bg-nanni-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-nanni-700 transition disabled:opacity-60">
-              {pendingInsight ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />} Generar
+              {pendingInsight ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />} Analizar
             </button>
           </div>
           {props.insights.length > 0 && (

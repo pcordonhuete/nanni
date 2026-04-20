@@ -67,7 +67,7 @@ const steps = [
   {
     num: "03",
     title: "Tú analizas y decides",
-    text: "Datos limpios en tu panel. La IA detecta patrones y te sugiere ajustes de rutina.",
+    text: "Datos limpios en tu panel. Visualiza patrones, cruza variables y decide los ajustes de rutina.",
     icon: Brain,
   },
 ];
@@ -85,8 +85,8 @@ const features = [
   },
   {
     icon: Brain,
-    title: "Análisis IA",
-    text: "Detecta correlaciones entre tomas y despertares, regresiones, ventanas óptimas. Te sugiere qué ajustar.",
+    title: "Análisis de patrones",
+    text: "Correlaciones entre tomas y despertares, regresiones, ventanas óptimas. Los datos te dicen qué ajustar.",
   },
   {
     icon: Users,
@@ -132,7 +132,7 @@ const plans = [
     features: [
       "Todo del Básico, más:",
       "Familias ilimitadas",
-      "Análisis IA + recomendaciones",
+      "Análisis de patrones + sugerencias",
       "Tu marca propia (logo, colores, dominio)",
       "Gráficas avanzadas + PDF",
       "Hasta 5 miembros del equipo",
@@ -155,7 +155,7 @@ const testimonials = [
   },
   {
     quote:
-      "La IA detectó un patrón en los despertares de un bebé que yo no había visto. Ajustamos la ventana de vigilia y en 3 días dormía del tirón.",
+      "Los datos me mostraron un patrón en los despertares que yo no había visto. Ajustamos la ventana de vigilia y en 3 días dormía del tirón.",
     name: "Laura M.",
     role: "Sleep coach certificada",
     initials: "LM",
@@ -191,8 +191,8 @@ const faqs = [
     a: "Sí. La app funciona sin conexión. Los registros se sincronizan cuando vuelve la conexión. Perfecto para las 3am.",
   },
   {
-    q: "¿Qué incluye el análisis con IA?",
-    a: "Patrones de sueño, correlaciones tomas-despertares, ventanas óptimas, regresiones. Más sugerencias de ajuste basadas en datos.",
+    q: "¿Qué incluye el análisis de patrones?",
+    a: "Patrones de sueño, correlaciones tomas-despertares, ventanas óptimas, regresiones. Sugerencias de ajuste basadas en los datos que registran tus familias.",
   },
   {
     q: "¿Puedo exportar los datos?",
@@ -279,7 +279,7 @@ export default function LandingPage() {
               <p className="mt-6 text-lg text-gray-500 leading-relaxed max-w-xl">
                 Deja de perseguir registros por WhatsApp. Con Nanni, los padres
                 documentan sueño y rutinas desde una app con tu marca, y tú
-                recibes datos organizados con análisis IA automático.
+                recibes datos organizados con análisis automático.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-3">
                 <Link
@@ -905,7 +905,7 @@ export default function LandingPage() {
                         <div className="flex items-center gap-2">
                           <Brain className="w-4 h-4 text-emerald-600 shrink-0" />
                           <div>
-                            <p className="text-[9px] font-bold text-emerald-700">IA: Mejora detectada</p>
+                            <p className="text-[9px] font-bold text-emerald-700">Mejora detectada</p>
                             <p className="text-[8px] text-emerald-600">Adelantar acostarse 15min está funcionando</p>
                           </div>
                         </div>
@@ -934,7 +934,7 @@ export default function LandingPage() {
                 </span>
               </h2>
               <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-                Datos en tiempo real, alertas automáticas e insights de IA.
+                Datos en tiempo real, alertas automáticas y análisis de patrones.
                 Sin perseguir a nadie.
               </p>
             </div>
@@ -1054,7 +1054,7 @@ export default function LandingPage() {
                     </div>
                     <div className="md:col-span-2">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                        IA Insights
+                        Observaciones
                       </p>
                       <div className="space-y-2">
                         <div className="p-3 rounded-xl border bg-emerald-50 border-emerald-100">
@@ -1162,7 +1162,7 @@ export default function LandingPage() {
                 </span>
               </h2>
               <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
-                Familias que registran solas, datos que se analizan solos, y tú
+                Familias que registran solas, datos que se organizan solos, y tú
                 con tiempo para lo que importa: ayudar a dormir mejor.
               </p>
             </div>
