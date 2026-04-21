@@ -175,9 +175,14 @@ function sleepDetailLine(r: ActivityRecord): string {
   if (r.ended_at) parts.push(`→ ${formatTime(r.ended_at)}`);
   const aw = d?.awakenings as number | undefined;
   if (typeof aw === "number" && aw > 0) {
-    const crying = d?.awakening_crying as boolean | undefined;
-    const cryingStr = crying === true ? " 😢" : crying === false ? " 😌" : "";
-    parts.push(`${aw} despertares${cryingStr}`);
+    const totalAwMin = d?.awakening_total_minutes as number | undefined;
+    if (typeof totalAwMin === "number" && totalAwMin > 0) {
+      parts.push(`${aw} despertares (${totalAwMin} min)`);
+    } else {
+      const crying = d?.awakening_crying as boolean | undefined;
+      const cryingStr = crying === true ? " 😢" : crying === false ? " 😌" : "";
+      parts.push(`${aw} despertares${cryingStr}`);
+    }
   }
   const wakeupMood = d?.wakeup_mood as string | undefined;
   const moodEmoji: Record<string, string> = { happy: "😊 Contento", neutral: "😐 Neutro", cranky: "😫 Malhumorado" };
@@ -521,7 +526,7 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
   const totalSteps = activePlan?.steps.length || 0;
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col">
+    <div className="max-w-md mx-auto min-h-screen md:min-h-0 md:max-w-none flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
@@ -876,16 +881,21 @@ function FormSheet({
   const [endTime, setEndTime] = useState(() =>
     erSleep ? isoToLocalTimeStr(sleepEndedAtIsoForEdit(erSleep)) : isToday ? nowTimeStr() : "07:00"
   );
-  const [awakenings, setAwakenings] = useState(() => {
-    if (!erSleep) return 0;
+  type AwakeningEntry = { durationMin: number; crying: boolean | null };
+  const [awakeningList, setAwakeningList] = useState<AwakeningEntry[]>(() => {
+    if (!erSleep) return [];
     const d = erSleep.details as Record<string, unknown>;
-    return typeof d?.awakenings === "number" ? d.awakenings : 0;
+    if (Array.isArray(d?.awakening_details)) {
+      return (d.awakening_details as AwakeningEntry[]).map((a) => ({
+        durationMin: typeof a.durationMin === "number" ? a.durationMin : 5,
+        crying: typeof a.crying === "boolean" ? a.crying : null,
+      }));
+    }
+    const count = typeof d?.awakenings === "number" ? d.awakenings : 0;
+    const crying = typeof d?.awakening_crying === "boolean" ? d.awakening_crying : null;
+    return Array.from({ length: count }, () => ({ durationMin: 5, crying }));
   });
-  const [awakeningCrying, setAwakeningCrying] = useState<boolean | null>(() => {
-    if (!erSleep) return null;
-    const d = erSleep.details as Record<string, unknown>;
-    return typeof d?.awakening_crying === "boolean" ? d.awakening_crying : null;
-  });
+  const awakenings = awakeningList.length;
   const [wakeupMoodInSleep, setWakeupMoodInSleep] = useState<"happy" | "neutral" | "cranky">(() => {
     if (!erSleep) return "neutral";
     const d = erSleep.details as Record<string, unknown>;
@@ -896,7 +906,7 @@ function FormSheet({
   const [showDetails, setShowDetails] = useState(() => {
     if (!erSleep) return false;
     const d = erSleep.details as Record<string, unknown>;
-    return !!(d?.location || d?.fell_asleep_method || d?.latency_minutes || d?.notes);
+    return !!(d?.location || d?.fell_asleep_method || d?.fell_asleep_notes || d?.latency_minutes || d?.notes);
   });
   const [location, setLocation] = useState<string>(() => {
     if (!erSleep) return "";
@@ -907,6 +917,11 @@ function FormSheet({
     if (!erSleep) return "";
     const d = erSleep.details as Record<string, unknown>;
     return typeof d?.fell_asleep_method === "string" ? d.fell_asleep_method : "";
+  });
+  const [fellAsleepNotes, setFellAsleepNotes] = useState(() => {
+    if (!erSleep) return "";
+    const d = erSleep.details as Record<string, unknown>;
+    return typeof d?.fell_asleep_notes === "string" ? d.fell_asleep_notes : "";
   });
   const [latency, setLatency] = useState<number | null>(() => {
     if (!erSleep) return null;
@@ -1005,10 +1020,17 @@ function FormSheet({
         details.night_date = nightKey;
         details.night_label = `Noche del ${displayDateFromKey(nightKey)}`;
       }
-      if (awakenings > 0 && awakeningCrying !== null) details.awakening_crying = awakeningCrying;
+      if (awakeningList.length > 0) {
+        details.awakening_details = awakeningList;
+        details.awakening_total_minutes = awakeningList.reduce((sum, a) => sum + a.durationMin, 0);
+        if (awakeningList.some((a) => a.crying !== null)) {
+          details.awakening_crying = awakeningList.some((a) => a.crying === true);
+        }
+      }
       if (sleepType === "night") details.wakeup_mood = wakeupMoodInSleep;
       if (location) details.location = location;
       if (fellAsleepMethod) details.fell_asleep_method = fellAsleepMethod;
+      if (fellAsleepNotes) details.fell_asleep_notes = fellAsleepNotes;
       if (latency !== null) details.latency_minutes = latency;
       if (sleepNotes) details.notes = sleepNotes;
       onSubmit("sleep", startedAt, endedAt, dur, details, rid);
@@ -1118,33 +1140,65 @@ function FormSheet({
                 </div>
               )}
 
-              {/* Awakenings stepper */}
+              {/* Awakenings */}
               <div className="space-y-3">
-                <label className={cn("text-sm font-medium block", textSub)}>Despertares nocturnos</label>
-                <div className="flex items-center gap-4">
-                  <button type="button" onClick={() => { setAwakenings(Math.max(0, awakenings - 1)); if (awakenings <= 1) setAwakeningCrying(null); }}
-                    className={cn("w-10 h-10 rounded-full border-2 flex items-center justify-center transition", chipBase, "hover:border-indigo-400")}>
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className={cn("text-2xl font-bold w-8 text-center", text)}>{awakenings}</span>
-                  <button type="button" onClick={() => setAwakenings(Math.min(10, awakenings + 1))}
-                    className={cn("w-10 h-10 rounded-full border-2 flex items-center justify-center transition", chipBase, "hover:border-indigo-400")}>
-                    <Plus className="w-4 h-4" />
-                  </button>
+                <div className="flex items-center justify-between">
+                  <label className={cn("text-sm font-medium", textSub)}>Despertares nocturnos</label>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setAwakeningList((prev) => prev.slice(0, -1))}
+                      disabled={awakenings === 0}
+                      className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center transition disabled:opacity-30", chipBase, "hover:border-indigo-400")}>
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className={cn("text-xl font-bold w-6 text-center", text)}>{awakenings}</span>
+                    <button type="button" onClick={() => setAwakeningList((prev) => [...prev, { durationMin: 5, crying: null }])}
+                      disabled={awakenings >= 10}
+                      className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center transition disabled:opacity-30", chipBase, "hover:border-indigo-400")}>
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                {awakenings > 0 && (
-                  <div>
-                    <label className={cn("text-xs font-medium mb-1.5 block", textMuted)}>¿Se despertó llorando?</label>
-                    <div className="flex gap-2">
-                      {([{ v: true, label: "Sí, llorando", emoji: "😢" }, { v: false, label: "No, sin llanto", emoji: "😌" }] as const).map(({ v, label, emoji }) => (
-                        <button key={String(v)} type="button"
-                          onClick={() => setAwakeningCrying(awakeningCrying === v ? null : v)}
-                          className={cn("flex-1 py-2 text-xs font-medium rounded-xl border-2 transition",
-                            awakeningCrying === v ? chipActive : chipBase)}>
-                          {emoji} {label}
-                        </button>
-                      ))}
+                {awakeningList.map((aw, idx) => (
+                  <div key={idx} className={cn("rounded-xl border p-3 space-y-2.5", dark ? "border-gray-700 bg-gray-800/50" : "border-gray-200 bg-gray-50")}>
+                    <div className="flex items-center justify-between">
+                      <span className={cn("text-xs font-semibold", textSub)}>Despertar {idx + 1}</span>
+                      <button type="button" onClick={() => setAwakeningList((prev) => prev.filter((_, i) => i !== idx))}
+                        className={cn("text-xs", textMuted)}>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
+                    <div>
+                      <label className={cn("text-[11px] font-medium mb-1 block", textMuted)}>Duración</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {([1, 3, 5, 10, 15, 20, 30] as const).map((min) => (
+                          <button key={min} type="button"
+                            onClick={() => setAwakeningList((prev) => prev.map((a, i) => i === idx ? { ...a, durationMin: min } : a))}
+                            className={cn("px-2.5 py-1 rounded-lg text-xs border transition",
+                              aw.durationMin === min ? chipActive : chipBase)}>
+                            {min} min
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className={cn("text-[11px] font-medium mb-1 block", textMuted)}>¿Llorando?</label>
+                      <div className="flex gap-1.5">
+                        {([{ v: true, label: "Sí", emoji: "😢" }, { v: false, label: "No", emoji: "😌" }] as const).map(({ v, label, emoji }) => (
+                          <button key={String(v)} type="button"
+                            onClick={() => setAwakeningList((prev) => prev.map((a, i) => i === idx ? { ...a, crying: a.crying === v ? null : v } : a))}
+                            className={cn("px-3 py-1 text-xs font-medium rounded-lg border transition",
+                              aw.crying === v ? chipActive : chipBase)}>
+                            {emoji} {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {awakeningList.length > 0 && (
+                  <div className={cn("text-xs font-medium text-center py-1.5 rounded-lg",
+                    dark ? "bg-indigo-900/30 text-indigo-300" : "bg-indigo-50 text-indigo-700")}>
+                    Total despierto: {awakeningList.reduce((s, a) => s + a.durationMin, 0)} min
                   </div>
                 )}
               </div>
@@ -1204,6 +1258,9 @@ function FormSheet({
                         </button>
                       ))}
                     </div>
+                    <textarea value={fellAsleepNotes} onChange={(e) => setFellAsleepNotes(e.target.value)}
+                      rows={2} placeholder="Ej: Con chupete y peluche, meciéndolo 5 min..."
+                      className={cn("w-full mt-2 px-3 py-2 rounded-xl text-xs border resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500", inputBg)} />
                   </div>
 
                   {/* Latency */}
