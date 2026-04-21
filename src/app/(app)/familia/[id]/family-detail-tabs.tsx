@@ -19,7 +19,7 @@ const TIMELINE_ICONS: Record<string, LucideIcon> = {
 };
 import {
   createPlan, addPlanGoal, addPlanStep, toggleGoal, toggleStep,
-  updatePlanStatus, createPlanFromTemplate,
+  updatePlanStatus, createPlanFromTemplate, activatePhase,
   updateFamilyContact, updateFamily,
 } from "@/lib/actions";
 import { generateInsights } from "@/lib/ai";
@@ -615,28 +615,66 @@ export function FamilyDetailTabs(props: Props) {
                       </form>
                     </div>
                     <div className="p-4 md:p-5 space-y-4">
-                      <div className="flex items-center gap-2 text-sm font-bold text-gray-900"><ListOrdered className="w-4 h-4 text-nanni-600" /> Pasos</div>
-                      {plan.steps.length === 0 ? <p className="text-xs text-gray-400">Sin pasos.</p> : (
-                        <ul className="space-y-2">
-                          {plan.steps.map((s) => (
-                            <li key={s.id} className="flex items-start gap-3 text-sm text-gray-700">
-                              <input type="checkbox" className="mt-1 rounded border-gray-300 text-nanni-600 focus:ring-nanni-500" checked={s.completed} disabled={pendingToggle} onChange={(e) => { const checked = e.target.checked; startToggle(async () => { await toggleStep(s.id, checked); router.refresh(); }); }} />
-                              <div>
-                                <span className={cn("font-medium", s.completed && "line-through text-gray-400")}>{s.step_order}. {s.title}</span>
-                                {s.description && <p className="text-xs text-gray-500 mt-0.5">{s.description}</p>}
-                                <p className="text-[10px] text-gray-400 mt-1">{s.duration_days} días</p>
+                      <div className="flex items-center gap-2 text-sm font-bold text-gray-900"><ListOrdered className="w-4 h-4 text-nanni-600" /> Fases</div>
+                      {plan.steps.length === 0 ? <p className="text-xs text-gray-400">Sin fases.</p> : (
+                        <div className="space-y-3">
+                          {plan.steps.map((s) => {
+                            const phaseStatus = s.status || (s.completed ? "completed" : "locked");
+                            const statusColors = phaseStatus === "completed" ? "border-emerald-200 bg-emerald-50/50" : phaseStatus === "active" ? "border-nanni-200 bg-nanni-50/30" : "border-gray-200 bg-gray-50/50 opacity-60";
+                            const statusLabel = phaseStatus === "completed" ? "Completada" : phaseStatus === "active" ? "Activa" : "Bloqueada";
+                            const statusBadge = phaseStatus === "completed" ? "bg-emerald-100 text-emerald-700" : phaseStatus === "active" ? "bg-nanni-100 text-nanni-700" : "bg-gray-100 text-gray-500";
+                            return (
+                              <div key={s.id} className={cn("rounded-xl border p-4 space-y-2", statusColors)}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">{s.step_order}</span>
+                                    <span className="text-sm font-semibold text-gray-900">{s.title}</span>
+                                    <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", statusBadge)}>{statusLabel}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400">{s.duration_days} días</span>
+                                    {phaseStatus === "locked" && (
+                                      <button disabled={pendingToggle} onClick={() => { startToggle(async () => { await activatePhase(s.id); router.refresh(); }); }}
+                                        className="text-xs font-medium text-nanni-600 bg-nanni-100 px-2.5 py-1 rounded-lg hover:bg-nanni-200 transition disabled:opacity-50">
+                                        Activar
+                                      </button>
+                                    )}
+                                    {phaseStatus === "active" && (
+                                      <button disabled={pendingToggle} onClick={() => { startToggle(async () => { await toggleStep(s.id, true); router.refresh(); }); }}
+                                        className="text-xs font-medium text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-lg hover:bg-emerald-200 transition disabled:opacity-50">
+                                        Completar
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                {s.description && <p className="text-xs text-gray-600">{s.description}</p>}
+                                {s.advisor_notes && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 border border-amber-100">📋 {s.advisor_notes}</p>}
+                                {(s.guidelines || []).length > 0 && (
+                                  <div className="mt-1">
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Pautas para la familia</p>
+                                    <ul className="space-y-0.5">
+                                      {(s.guidelines || []).map((g) => (
+                                        <li key={g.id} className="text-xs text-gray-700 flex items-start gap-1.5">
+                                          <span className="text-nanni-500 mt-0.5 shrink-0">•</span> {g.text}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
-                            </li>
-                          ))}
-                        </ul>
+                            );
+                          })}
+                        </div>
                       )}
                       <form className="flex flex-col gap-2 pt-2" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startToggle(async () => { await addPlanStep(plan.id, fd); (e.target as HTMLFormElement).reset(); router.refresh(); }); }}>
                         <div className="flex flex-col sm:flex-row gap-2">
-                          <input name="title" required placeholder="Título del paso" className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                          <input name="title" required placeholder="Nombre de la fase" className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
                           <input name="duration_days" type="number" min={1} defaultValue={7} className="w-full sm:w-24 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
                         </div>
-                        <textarea name="description" placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none" />
-                        <button type="submit" className="text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200 w-fit">Añadir paso</button>
+                        <textarea name="description" placeholder="Descripción visible para la familia" rows={2} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none" />
+                        <textarea name="advisor_notes" placeholder="Notas internas (solo tú las ves)" rows={1} className="w-full px-3 py-2 bg-amber-50/50 border border-gray-100 rounded-xl text-xs resize-none" />
+                        <textarea name="guidelines" placeholder="Pautas (una por línea)" rows={3} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs resize-none" />
+                        <button type="submit" className="text-sm font-medium bg-nanni-100 text-nanni-700 px-3 py-2 rounded-xl hover:bg-nanni-200 w-fit">Añadir fase</button>
                       </form>
                     </div>
                   </div>

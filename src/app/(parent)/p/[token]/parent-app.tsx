@@ -713,49 +713,96 @@ export function ParentApp({ family, brand, advisorName, token, initialRecords, a
         )}
 
         {/* PLAN TAB */}
-        {activeSection === "plan" && activePlan && (
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold text-gray-900">{activePlan.title}</h2>
-            {activePlan.description && <p className="text-xs text-gray-500">{activePlan.description}</p>}
-            {activePlan.goals.length > 0 && (
+        {activeSection === "plan" && activePlan && (() => {
+          const visiblePhases = activePlan.steps.filter((s) => s.status === "active" || s.status === "completed" || s.completed);
+          const activePhase = visiblePhases.find((s) => s.status === "active" && !s.completed);
+          const completedPhases = visiblePhases.filter((s) => s.status === "completed" || s.completed);
+          const totalPhases = activePlan.steps.length;
+          return (
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold text-gray-900">{activePlan.title}</h2>
+              {activePlan.description && <p className="text-xs text-gray-500">{activePlan.description}</p>}
+
+              {/* Progress bar */}
               <div className="bg-white rounded-xl p-4 border border-gray-100">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Objetivos</h3>
-                <ul className="space-y-2">
-                  {activePlan.goals.map((g) => (
-                    <li key={g.id} className="flex items-start gap-2 text-sm">
-                      <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5", g.achieved ? "border-emerald-500 bg-emerald-500" : "border-gray-300")}>
-                        {g.achieved && <span className="text-white text-[10px]">✓</span>}
-                      </div>
-                      <span className={cn(g.achieved && "text-gray-400 line-through")}>{g.description}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-500">Progreso</span>
+                  <span className="text-xs font-bold text-gray-900">{completedPhases.length}/{totalPhases} fases</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${totalPhases > 0 ? (completedPhases.length / totalPhases) * 100 : 0}%`, backgroundColor: primaryColor }} />
+                </div>
               </div>
-            )}
-            {activePlan.steps.length > 0 && (
-              <div className="bg-white rounded-xl p-4 border border-gray-100">
-                <button onClick={() => setShowPlanSteps(!showPlanSteps)} className="flex items-center justify-between w-full">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase">Pasos del plan</h3>
-                  {showPlanSteps ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                </button>
-                {showPlanSteps && (
-                  <ul className="space-y-3 mt-3">
-                    {activePlan.steps.map((s) => (
-                      <li key={s.id} className="flex items-start gap-3">
-                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0", s.completed ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-500")}>{s.step_order}</div>
-                        <div>
-                          <p className={cn("text-sm font-medium", s.completed && "line-through text-gray-400")}>{s.title}</p>
-                          {s.description && <p className="text-xs text-gray-500 mt-0.5">{s.description}</p>}
-                          <p className="text-[10px] text-gray-400 mt-0.5">{s.duration_days} días</p>
+
+              {/* Active phase with guidelines */}
+              {activePhase && (
+                <div className="rounded-xl border-2 p-4 space-y-3" style={{ borderColor: primaryColor, backgroundColor: primaryColor + "08" }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>{activePhase.step_order}</div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">{activePhase.title}</h3>
+                      <p className="text-[10px] text-gray-400">{activePhase.duration_days} días · Fase actual</p>
+                    </div>
+                  </div>
+                  {activePhase.description && <p className="text-xs text-gray-600">{activePhase.description}</p>}
+                  {(activePhase.guidelines || []).length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Qué hacer en esta fase</p>
+                      <ul className="space-y-2">
+                        {(activePhase.guidelines || []).map((g) => (
+                          <li key={g.id} className="flex items-start gap-2 text-sm text-gray-800">
+                            <span className="mt-0.5 shrink-0" style={{ color: primaryColor }}>•</span>
+                            <span>{g.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Goals */}
+              {activePlan.goals.length > 0 && (
+                <div className="bg-white rounded-xl p-4 border border-gray-100">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Objetivos</h3>
+                  <ul className="space-y-2">
+                    {activePlan.goals.map((g) => (
+                      <li key={g.id} className="flex items-start gap-2 text-sm">
+                        <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5", g.achieved ? "border-emerald-500 bg-emerald-500" : "border-gray-300")}>
+                          {g.achieved && <span className="text-white text-[10px]">✓</span>}
                         </div>
+                        <span className={cn(g.achieved && "text-gray-400 line-through")}>{g.description}</span>
                       </li>
                     ))}
                   </ul>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+
+              {/* Completed phases */}
+              {completedPhases.length > 0 && (
+                <div className="bg-white rounded-xl p-4 border border-gray-100">
+                  <button onClick={() => setShowPlanSteps(!showPlanSteps)} className="flex items-center justify-between w-full">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase">Fases completadas ({completedPhases.length})</h3>
+                    {showPlanSteps ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </button>
+                  {showPlanSteps && (
+                    <ul className="space-y-3 mt-3">
+                      {completedPhases.map((s) => (
+                        <li key={s.id} className="flex items-start gap-3 opacity-60">
+                          <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-600 shrink-0">{s.step_order}</div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-400 line-through">{s.title}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{s.duration_days} días · Completada</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </main>
 
       {/* Bottom action bar */}

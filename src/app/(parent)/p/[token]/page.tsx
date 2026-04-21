@@ -61,7 +61,15 @@ export default async function ParentPage({
       supabase.from("sleep_plan_goals").select("*").eq("plan_id", activePlanRow.id).order("created_at"),
       supabase.from("sleep_plan_steps").select("*").eq("plan_id", activePlanRow.id).order("step_order"),
     ]);
-    activePlan = { ...activePlanRow, goals: goals || [], steps: steps || [] };
+    const stepIds = (steps || []).map((s) => s.id);
+    const { data: guidelines } = stepIds.length > 0
+      ? await supabase.from("plan_phase_guidelines").select("*").in("step_id", stepIds).order("guideline_order")
+      : { data: [] };
+    const stepsWithGuidelines = (steps || []).map((s) => ({
+      ...s,
+      guidelines: (guidelines || []).filter((g) => g.step_id === s.id),
+    }));
+    activePlan = { ...activePlanRow, goals: goals || [], steps: stepsWithGuidelines };
   }
 
   const daysWithData = countDaysWithSleepRecords(weeklySleep);

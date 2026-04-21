@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import {
   Moon, Users, BarChart3, Palette, Settings,
-  LogOut, MoreHorizontal, Plus, Search,
+  LogOut, MoreHorizontal, Plus, Search, ClipboardList,
 } from "lucide-react";
 import { NotificationPanel } from "@/components/app/NotificationPanel";
 import { CommandPalette } from "@/components/app/CommandPalette";
@@ -30,6 +30,7 @@ const sidebarGroups = [
     label: "Principal",
     items: [
       { href: "/familias", label: "Familias", icon: Users },
+      { href: "/planes", label: "Planes", icon: ClipboardList },
       { href: "/analiticas", label: "Analíticas", icon: BarChart3 },
     ],
   },
@@ -45,8 +46,8 @@ const sidebarGroups = [
 
 const mobileNavItems = [
   { href: "/familias", label: "Familias", icon: Users },
+  { href: "/planes", label: "Planes", icon: ClipboardList },
   { href: "/analiticas", label: "Datos", icon: BarChart3 },
-  { href: "/marca", label: "Marca", icon: Palette },
   { href: "/ajustes", label: "Más", icon: MoreHorizontal },
 ];
 

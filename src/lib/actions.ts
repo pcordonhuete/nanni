@@ -401,7 +401,9 @@ export async function addPlanStep(planId: string, formData: FormData) {
   const supabase = await createClient();
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
+  const advisorNotes = formData.get("advisor_notes") as string;
   const durationDays = parseInt(formData.get("duration_days") as string) || 7;
+  const guidelinesRaw = formData.get("guidelines") as string;
 
   const { data: existingSteps } = await supabase
     .from("sleep_plan_steps")
@@ -414,15 +416,30 @@ export async function addPlanStep(planId: string, formData: FormData) {
     ? existingSteps[0].step_order + 1
     : 1;
 
-  const { error } = await supabase.from("sleep_plan_steps").insert({
+  const { data: step, error } = await supabase.from("sleep_plan_steps").insert({
     plan_id: planId,
     step_order: nextOrder,
     title,
     description: description || null,
+    advisor_notes: advisorNotes || null,
     duration_days: durationDays,
-  });
+    status: nextOrder === 1 ? "active" : "locked",
+    activated_at: nextOrder === 1 ? new Date().toISOString() : null,
+  }).select().single();
 
-  if (error) return { error: error.message };
+  if (error || !step) return { error: error?.message || "Error creando fase" };
+
+  if (guidelinesRaw) {
+    const lines = guidelinesRaw.split("\n").map((l) => l.trim()).filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      await supabase.from("plan_phase_guidelines").insert({
+        step_id: step.id,
+        guideline_order: i + 1,
+        text: lines[i],
+      });
+    }
+  }
+
   revalidatePath("/");
   return { success: true };
 }
@@ -431,8 +448,73 @@ export async function toggleStep(stepId: string, completed: boolean) {
   const supabase = await createClient();
   await supabase
     .from("sleep_plan_steps")
-    .update({ completed, completed_at: completed ? new Date().toISOString() : null })
+    .update({
+      completed,
+      completed_at: completed ? new Date().toISOString() : null,
+      status: completed ? "completed" : "active",
+    })
     .eq("id", stepId);
+  revalidatePath("/");
+}
+
+export async function activatePhase(stepId: string) {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+  await supabase
+    .from("sleep_plan_steps")
+    .update({ status: "active", activated_at: now })
+    .eq("id", stepId);
+  revalidatePath("/");
+}
+
+export async function addGuideline(stepId: string, text: string) {
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("plan_phase_guidelines")
+    .select("guideline_order")
+    .eq("step_id", stepId)
+    .order("guideline_order", { ascending: false })
+    .limit(1);
+  const nextOrder = existing && existing.length > 0 ? existing[0].guideline_order + 1 : 1;
+  const { error } = await supabase.from("plan_phase_guidelines").insert({
+    step_id: stepId,
+    guideline_order: nextOrder,
+    text,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function removeGuideline(guidelineId: string) {
+  const supabase = await createClient();
+  await supabase.from("plan_phase_guidelines").delete().eq("id", guidelineId);
+  revalidatePath("/");
+}
+
+export async function toggleGuidelineCheck(guidelineId: string, familyId: string) {
+  const supabase = await createClient();
+  const today = new Date().toISOString().split("T")[0];
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: existing } = await supabase
+    .from("guideline_checks")
+    .select("id")
+    .eq("guideline_id", guidelineId)
+    .eq("family_id", familyId)
+    .eq("checked_date", today)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    await supabase.from("guideline_checks").delete().eq("id", existing[0].id);
+  } else {
+    await supabase.from("guideline_checks").insert({
+      guideline_id: guidelineId,
+      family_id: familyId,
+      checked_date: today,
+      checked_by: user?.id || null,
+    });
+  }
   revalidatePath("/");
 }
 
@@ -639,15 +721,28 @@ export async function createPlanFromTemplate(
     });
   }
 
-  const steps = (template.steps as { title: string; description?: string; duration_days: number }[]) || [];
+  const steps = (template.steps as { title: string; description?: string; duration_days: number; advisor_notes?: string; guidelines?: string[] }[]) || [];
   for (let i = 0; i < steps.length; i++) {
-    await supabase.from("sleep_plan_steps").insert({
+    const { data: step } = await supabase.from("sleep_plan_steps").insert({
       plan_id: plan.id,
       step_order: i + 1,
       title: steps[i].title,
       description: steps[i].description ?? null,
+      advisor_notes: steps[i].advisor_notes ?? null,
       duration_days: steps[i].duration_days,
-    });
+      status: i === 0 ? "active" : "locked",
+      activated_at: i === 0 ? new Date().toISOString() : null,
+    }).select().single();
+
+    if (step && steps[i].guidelines) {
+      for (let g = 0; g < steps[i].guidelines!.length; g++) {
+        await supabase.from("plan_phase_guidelines").insert({
+          step_id: step.id,
+          guideline_order: g + 1,
+          text: steps[i].guidelines![g],
+        });
+      }
+    }
   }
 
   revalidatePath(`/familia/${familyId}`);
@@ -662,8 +757,17 @@ export async function createSleepPlanTemplate(formData: FormData) {
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const method = formData.get("method") as string;
+  const ageMin = parseInt(formData.get("age_min_months") as string) || 0;
+  const ageMax = parseInt(formData.get("age_max_months") as string) || 36;
+  const goalsRaw = formData.get("goals") as string;
+  const stepsRaw = formData.get("steps") as string;
 
   if (!title) return { error: "Título obligatorio" };
+
+  let goals = [];
+  let steps = [];
+  try { goals = goalsRaw ? JSON.parse(goalsRaw) : []; } catch { /* empty */ }
+  try { steps = stepsRaw ? JSON.parse(stepsRaw) : []; } catch { /* empty */ }
 
   const { error } = await supabase.from("sleep_plan_templates").insert({
     advisor_id: user.id,
@@ -671,13 +775,59 @@ export async function createSleepPlanTemplate(formData: FormData) {
     title,
     description: description || null,
     method: method || null,
-    goals: [],
-    steps: [],
+    age_min_months: ageMin,
+    age_max_months: ageMax,
+    goals,
+    steps,
   });
 
   if (error) return { error: error.message };
 
-  revalidatePath("/familias");
+  revalidatePath("/planes");
+  return { success: true };
+}
+
+export async function updateSleepPlanTemplate(templateId: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const method = formData.get("method") as string;
+  const ageMin = parseInt(formData.get("age_min_months") as string) || 0;
+  const ageMax = parseInt(formData.get("age_max_months") as string) || 36;
+  const goalsRaw = formData.get("goals") as string;
+  const stepsRaw = formData.get("steps") as string;
+
+  let goals = [];
+  let steps = [];
+  try { goals = goalsRaw ? JSON.parse(goalsRaw) : []; } catch { /* empty */ }
+  try { steps = stepsRaw ? JSON.parse(stepsRaw) : []; } catch { /* empty */ }
+
+  const { error } = await supabase.from("sleep_plan_templates").update({
+    title,
+    description: description || null,
+    method: method || null,
+    age_min_months: ageMin,
+    age_max_months: ageMax,
+    goals,
+    steps,
+  }).eq("id", templateId).eq("advisor_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/planes");
+  return { success: true };
+}
+
+export async function deleteSleepPlanTemplate(templateId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  await supabase.from("sleep_plan_templates").delete().eq("id", templateId).eq("advisor_id", user.id);
+  revalidatePath("/planes");
   return { success: true };
 }
 

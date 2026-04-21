@@ -384,7 +384,21 @@ export async function getPlanWithDetails(planId: string) {
     .eq("plan_id", planId)
     .order("step_order");
 
-  return { ...plan, goals: goals || [], steps: steps || [] };
+  const stepIds = (steps || []).map((s) => s.id);
+  const { data: guidelines } = stepIds.length > 0
+    ? await supabase
+        .from("plan_phase_guidelines")
+        .select("*")
+        .in("step_id", stepIds)
+        .order("guideline_order")
+    : { data: [] };
+
+  const stepsWithGuidelines = (steps || []).map((s) => ({
+    ...s,
+    guidelines: (guidelines || []).filter((g) => g.step_id === s.id),
+  }));
+
+  return { ...plan, goals: goals || [], steps: stepsWithGuidelines };
 }
 
 // ─── Notes ───

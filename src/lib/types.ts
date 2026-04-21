@@ -122,6 +122,8 @@ export interface SleepPlanGoal {
   created_at: string;
 }
 
+export type PhaseStatus = "locked" | "active" | "completed";
+
 export interface SleepPlanStep {
   id: string;
   plan_id: string;
@@ -131,6 +133,27 @@ export interface SleepPlanStep {
   duration_days: number;
   completed: boolean;
   completed_at: string | null;
+  advisor_notes: string | null;
+  status: PhaseStatus;
+  activated_at: string | null;
+  guidelines: PhaseGuideline[];
+  created_at: string;
+}
+
+export interface PhaseGuideline {
+  id: string;
+  step_id: string;
+  guideline_order: number;
+  text: string;
+  created_at: string;
+}
+
+export interface GuidelineCheck {
+  id: string;
+  guideline_id: string;
+  family_id: string;
+  checked_date: string;
+  checked_by: string | null;
   created_at: string;
 }
 
@@ -316,6 +339,8 @@ export interface TemplateStep {
   title: string;
   description: string | null;
   duration_days: number;
+  advisor_notes?: string | null;
+  guidelines?: string[];
 }
 
 export interface IntakeTemplate {
