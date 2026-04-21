@@ -1143,7 +1143,7 @@ function FormSheet({
               {/* Awakenings */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className={cn("text-sm font-medium", textSub)}>Despertares nocturnos</label>
+                  <label className={cn("text-sm font-medium", textSub)}>{sleepType === "nap" ? "Despertares durante la siesta" : "Despertares nocturnos"}</label>
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={() => setAwakeningList((prev) => prev.slice(0, -1))}
                       disabled={awakenings === 0}
@@ -1281,7 +1281,7 @@ function FormSheet({
                   <div>
                     <label className={cn("text-xs font-medium mb-1.5 block", textMuted)}>Notas</label>
                     <textarea value={sleepNotes} onChange={(e) => setSleepNotes(e.target.value)}
-                      rows={2} placeholder="Ej: Le están saliendo los dientes..."
+                      rows={2} placeholder="Ej: Se durmió en brazos con biberón, a los 10 min lo pasé a la cuna y no se despertó"
                       className={cn("w-full px-3 py-2 rounded-xl text-sm border resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500", inputBg)} />
                   </div>
                 </div>
