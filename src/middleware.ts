@@ -10,6 +10,7 @@ const PROTECTED_PATHS = [
   "/ajustes",
   "/onboarding",
   "/plan",
+  "/planes",
 ];
 
 const PAYWALL_EXEMPT = ["/plan", "/ajustes", "/onboarding", "/api/stripe"];
@@ -67,26 +68,29 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isProtected && !isPaywallExempt) {
-    try {
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("advisor_id", user.id)
-        .single();
+    const isDemo = user.email === "demo@nanniapp.com";
+    if (!isDemo) {
+      try {
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("advisor_id", user.id)
+          .single();
 
-      if (sub) {
-        const isActive = sub.status === "active";
-        const isTrialing = sub.status === "trialing";
-        const trialExpired = isTrialing && sub.trial_ends_at && new Date(sub.trial_ends_at) < new Date();
+        if (sub) {
+          const isActive = sub.status === "active";
+          const isTrialing = sub.status === "trialing";
+          const trialExpired = isTrialing && sub.trial_ends_at && new Date(sub.trial_ends_at) < new Date();
 
-        if (!isActive && (!isTrialing || trialExpired)) {
-          const url = request.nextUrl.clone();
-          url.pathname = "/plan";
-          return NextResponse.redirect(url);
+          if (!isActive && (!isTrialing || trialExpired)) {
+            const url = request.nextUrl.clone();
+            url.pathname = "/plan";
+            return NextResponse.redirect(url);
+          }
         }
+      } catch {
+        // If query fails, allow through rather than blocking
       }
-    } catch {
-      // If query fails, allow through rather than blocking
     }
   }
 
@@ -103,6 +107,7 @@ export const config = {
     "/ajustes/:path*",
     "/onboarding/:path*",
     "/plan/:path*",
+    "/planes/:path*",
     "/login",
     "/registro",
     "/cambiar-password",
